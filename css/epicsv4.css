@@ -1,0 +1,120 @@
+/*=====================================================================================
+
+EPICS V4 Stylesheet for documents, as opposed to web pages. Eg normative documents,
+gettingStarted.html etc. 
+ 
+---------------------------------------------------------------------------------------
+Auth: Greg White, greg@slac.stanford.edu.
+Mod:  28-Aug-2013, Greg White. Changed basic body font.
+      17-Sep-2012, Greg White. Added toc. Added page-break-before to (non nocount) h2.
+                   So, Abstract and Status will be on frnt page, all other sections
+                   will be started on a new page in printouts. 
+      11-Apr-2012, Greg White, added div.contents, to fix bug in Chrome support
+                   for class="nocount". 
+      21-Feb-2012, Greg White, greg@slac.stanford.edu, added page break control.
+       
+======================================================================================*/
+
+/* Basic body style for documentation */
+body { font: 12px/18px "Lucida Grande", "Lucida Sans Unicode", Helvetica, Arial, Verdana, sans-serif; color: #222; -webkit-font-smoothing: antialiased;  }
+
+/* Support for headers. Assume h1 is the title, so doesn't have a counter. Put counters
+   on h2 and h3, but not h4 or further. 
+
+   Page throw before h2 sections, unless they are of the
+   nocount class (which we should use for Abstract, Status of the Document, 
+   Table of Contents) 
+*/
+body { counter-reset: h2; }
+div.toc { page-break-before: always }
+div.contents { counter-reset: h2 }  
+h2.nocount:before { content: "" }
+h2.nocount {
+      counter-increment: none;
+      counter-reset: none;
+      page-break-before: auto;
+}
+h2:before {
+      content: counter(h2) ". ";
+      display: inline;
+      page-break-before: always;
+}
+h2 {
+      page-break-before: always;
+      counter-increment: h2;
+      counter-reset: h3;
+}
+h3:before {
+      content: counter(h2) "." counter(h3) " ";
+      display: inline;
+}
+h3 { counter-increment: h3; }
+h4 { margin-left: 0 }
+
+.about { margin-left: 3em; margin-right: 3em; font-size: .83em}
+table { margin-left: auto; margin-right: auto }
+.diagram { text-align: center; margin: 2.5em 0 }
+
+/* Editor is deprecated, see p class ed in base.css */
+.editor { font-color: red }
+
+body { 
+    margin-right: 10%;
+    margin-left: 10%;
+}
+
+@media print {
+     body { 
+	 font-size: smaller
+     }
+}
+
+/* li { margin-bottom:0.8em }  /* This would make list items more separated */
+
+/* pre, for coding and command line illustration */
+pre
+{
+	padding: 0.5em;
+	border-color: #c8e3ea;
+	border-width: 1px 1px 1px 3px;
+	border-style: solid;
+	font-family: "Courier", fixed;
+}
+
+/* Set kbd to same as pre */
+kbd { font-family: "Courier", fixed }
+code { font-family: "Courier", fixed }
+samp { font-family: "Courier", fixed }
+
+
+/* Tables, from http://www.w3.org/2005/09/table.css*/
+table
+{
+	border-collapse: collapse;
+	margin: 1em auto;
+}
+
+table caption
+{
+	margin-left: auto;
+	margin-right: auto;
+        margin-bottom: 4px;
+}
+
+table, tr, th, td { border: 1px solid black; }
+th, td { padding: 5px 1em; }
+
+th
+{
+	background: #005a9c;
+	color: #fff;
+}
+
+th a:link {
+  color: #fff;
+}
+
+th a:visited {
+  color: #aaa;
+}
+
