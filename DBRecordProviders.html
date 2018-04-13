@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>Network Providers for DBRecords</title>
+  <link rel="stylesheet" type="text/css"
+  href="http://epics-pvdata.sourceforge.net/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="http://epics-pvdata.sourceforge.net/epicsv4.css" />
+  <style type="text/css">
+/*<![CDATA[*/
+     .about { margin-left: 3em; margin-right: 3em; font-size: .83em}
+     table { margin-left: auto; margin-right: auto }
+     .diagram { text-align: center; margin: 2.5em 0 }
+     body { margin-right: 10% }
+/*]]>*/</style>
+
+ <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript" src="http://epics-pvdata.sourceforge.net/script/tocgen.js"></script>
+
+</head>
+
+<body>
+
+<div class="head">
+<h1>Network Providers for DBRecords</h1>
+<h2 class="nocount">2018.04.05</h2>
+
+<h2 class="nocount">Abstract</h2>
+<p>
+The following provide network access to ioc DBrecords:
+</p>
+<dl>
+   <dt>Channel Access</dt>
+     <dd>
+     This is the network provider that has existed since the late 1980's and
+     is provided with epics-base.<br />
+     There is also a Java implementation.
+     </dd>
+   <dt>qsrv</dt>
+     <dd>
+      This is a network provider that is provided with <b>pva2pva</b>
+      It runs in an ioc and provides access to DBRecords.
+      A client accesses it via the <b>pva</b> network protocol.
+     </dd>
+   <dt>ca</dt>
+     <dd>
+      This is a client side provider that is implemented in pvAccessCPP and pvAccessJava.<br />
+      This uses the <b>channel access</b> network protocol to communicate with a server.
+     </dd>
+</dl>
+
+</div> <!-- head -->
+
+<div id="toc">
+  <h2 class="nocount">Table of Contents</h2>
+</div>
+
+<!-- Place what you would like in the Table of Contents, inside the contents div -->
+<div id="contents" class="contents">	  
+<hr />
+<h2>Goals</h2>
+<h2>Known Issues</h2>
+<h2>Overview</h2>
+<h2>Examples</h2>
+<h2>value</h2>
+<h2>alarm,timeStamp</h2>
+<h2>display,control,valueAlarm</h2>
+
+I have added code to examplePP/database/ioc so that I could test more DBF types.
+This is in https://github.com/mrkraimer/exampleCPP.
+I have not issued a pull request in epics-base because I want to do more testing and documentation.
+I particularly wanted to test display,control,and valueAlarm.
+Note that  put can only change the value field and for monitor at most value,alarm,and timeStamp are allowed.
+This only get allows display,control,and valueAlarm.
+
+In particular I added record types to test:
+DBF_CHAR, DBF_UCHAR, DBF_SHORT, DBF_USHORT, and DBF_ULONG.
+I added these because epics-base has no record types for these types.
+
+For DBF_SHORT, DBF_LONG, DBF_FLOAT, DBF_DOUBLE, DBF_ENUM, and DBF_STRING
+There now appears to be compatibility between ca and pva other then if the request is
+-r ""
+provider pva returns all of value,alarm,timeStamp,display,control,valueAlarm
+provider ca does not return timeStamp because DBR_CTRL_* does not return timeStamp info.
+If the request is
+-r "display,control,valueAlarm"
+Then pva still returns all of value,alarm,timeStamp,display,control,valueAlarm.
+ca just returns display,control,valueAlarm
+There is not complete compatibility with channel access because both ca and pva both return type double for
+control and display limits. Also both ca and pva use special fields for control,display,and valueAlarm.
+Thus there is not complete compatibility between channel access and ca/pva.
+
+Let me give an example:
+mrk> caget -d 29 DBRshortout
+DBRshortout
+    Native data type: DBF_SHORT
+    Request type:     DBR_CTRL_SHORT
+    Element count:    1
+    Value:            0
+    Status:           NO_ALARM
+    Severity:         NO_ALARM
+    Units:           
+    Lo disp limit:        -100
+    Hi disp limit:         100
+    Lo alarm limit:        -80
+    Lo warn limit:         -60
+    Hi warn limit:          60
+    Hi alarm limit:         80
+    Lo ctrl limit:         -90
+    Hi ctrl limit:          90
+mrk> pvget -p ca -r "display,control,valueAlarm" DBRshortout
+DBRshortout
+structure
+    display_t display
+        double limitLow -100
+        double limitHigh 100
+        string description
+        string format I6
+        string units
+    control_t control
+        double limitLow -90
+        double limitHigh 90
+        double minStep 0
+    valueAlarm_t valueAlarm
+        boolean active false
+        short lowAlarmLimit -80
+        short lowWarningLimit -60
+        short highWarningLimit 60
+        short highAlarmLimit 80
+        int lowAlarmSeverity 0
+        int lowWarningSeverity 0
+        int highWarningSeverity 0
+        int highAlarmSeverity 0
+        short hysteresis 0
+
+
+mrk> pvget -p pva -r "display,control,valueAlarm" DBRshortout
+DBRshortout
+epics:nt/NTScalar:1.0
+    short value 0
+    alarm_t alarm NO_ALARM NO_STATUS NO_ALARM
+    time_t timeStamp <undefined> 0
+    display_t display
+        double limitLow -100
+        double limitHigh 100
+        string description shortout
+        string format
+        string units
+    control_t control
+        double limitLow -90
+        double limitHigh 90
+        double minStep 0
+    valueAlarm_t valueAlarm
+        boolean active false
+        short lowAlarmLimit -80
+        short lowWarningLimit -60
+        short highWarningLimit 60
+        short highAlarmLimit 80
+        int lowAlarmSeverity 0
+        int lowWarningSeverity 0
+        int highWarningSeverity 0
+        int highAlarmSeverity 0
+        short hysteresis 0
+
+</div> <!-- class="contents" -->
+</body>
+</html>
