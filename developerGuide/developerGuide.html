@@ -1,0 +1,2650 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>EPICS V4 Developer's Guide</title>
+  <link rel="stylesheet" type="text/css"
+  href="../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../css/epicsv4.css" />
+  <style type="text/css">
+  /*<![CDATA[*/
+     .about { margin-left: 3em; margin-right: 3em; font-size: .83em}
+     table { margin-left: auto; margin-right: auto }
+     .diagram { text-align: center; margin: 2.5em 0 }
+     span.opt { color: grey }
+     span.nterm { font-style:italic }
+     span.term { font-family:courier }
+     span.user { font-family:courier }
+     span.user:before { content:"<" }
+     span.user:after { content:">" }
+     .nonnorm { font-style:italic }
+     p.ed { color: #AA0000 }
+     span.ed { color: #AA0000 }
+     p.ed.priv { display: inline; }
+     span.ed.priv { display: inline; }
+  /*]]>*/</style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../css/tocgen.js">
+  </script>
+</head>
+<body>
+
+<div class="head">
+<h1>EPICS V4 Developer's Guide</h1>
+<!-- Maturity: Working Draft or Request for Comments, or Recommendation, and date.  -->
+
+<h2 class="nocount">EPICS V7 Working Draft, 2018.04.13</h2>
+<p>
+<b>NOTE: This is the working version of the developerGuide.</b>
+<br />
+EPICS V4 release versions are:
+<br />
+  <a href="http://epics-pvdata.sourceforge.net/informative/developerGuide/developerGuide_V4Release4_6.html">developerGuide_V4Release4_6</a>
+<br />
+  <a href="http://epics-pvdata.sourceforge.net/informative/developerGuide/developerGuide_20150825.html">developerGuide_V4Release4_5</a>
+</p>
+<dl>
+    <dt>Editors:</dt>
+   <dd>
+      Marty Kraimer
+    </dd>
+  </dl>
+
+<h2 class="nocount">Abstract</h2>
+
+<p>This is Developer's Guide for the PVA components of EPICS 7,
+which is a set of related products:<br />
+<a href="http://epics-pvdata.sourceforge.net/relatedDocumentsV4.html">relatedDocumentsV4.html</a>
+</p>
+
+</div>
+
+
+<div id="toc">
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+<div id="contents" class="contents">
+
+<h2>Overview of the PVA components of EPICS 7</h2>
+<p>
+This document briefly describes a set of application programming interfaces (APIs)
+for PVA.</p>
+<p>
+These core APIs provide a toolkit for creating applications that access and/or provide sources of structured data. This document is intended for EPICS PVAs software developers who want to implement applications via the core APIs.
+</p>
+<h3>EPICS PVA resources and website</h3>
+<p>This document is a tutorial rather then a detailed reference manual.
+Links to the reference manual for each PVA modules are provided in the following overview sections.
+</p>
+<p>In addition the following are standards:</p>
+<ul>
+    <li><a href="http://epics-pvdata.sourceforge.net/pvAccess_Protocol_Specification.html">
+  Network protocol for <b>pva</b> provider</a>
+   </li>
+    <li><a href="http://epics-pvdata.sourceforge.net/alpha/normativeTypes/normativeTypes.html">
+  Normative Types Specification</a>
+   </li>
+</ul>
+<h3>PVA Modules</h3>
+<p>
+The current release of EPICS 7 includes the following PVA modules:
+</p>
+<dl>
+   <dt>pvData</dt>
+      <dd>
+       The EPICS PVA type system, which describes and implements structured data.
+      </dd>
+   <dt>normativeTypes</dt>
+      <dd>
+        A set of standard pvData structures.
+      </dd>
+   <dt>pvAccess</dt>
+      <dd>
+       Support for connecting a client and server and for transporting pvData between client and server.
+      </dd>
+   <dt>pvaClient</dt>
+      <dd>
+       pvAccess is a callback based API.
+       pvaClient provides a synchronous interface,
+      simpified callback classes, and a number of convenience methods.
+      </dd>
+   <dt>pvDatabase</dt>
+      <dd>
+       A memory resident database of PVRecords and a pvAccess channel provider for accessing the PVRecords.
+      </dd>
+   <dt>pva2pva</dt>
+      <dd>
+       This consists of two components: 1) A PVA gateway, and 2) qsrv.
+       This document only discusses qsrv.
+       <br />
+       <b>qsrv</b>
+       is a PVA channel provider for EPICS DBRecords.
+      </dd>
+</dl>
+<p>In addition the following, although not part of the current EPICS 7 release,
+are based on PVA:
+</p>
+<dl>
+   <dt>example</dt>
+       <dd>
+       A set of examples that use all of the above components.
+       </dd>
+    <dt>pvaPy</dt>
+       <dd>
+       Python wrapper for pvData and pvAccess.
+       This is not described in this docmument.
+       </dd>
+</dl>
+
+
+<p><b>pva2pva</b> and <b>pvaPy</b> are implemented only in C++.
+Each has a single github repository.
+</p>
+<p>
+The other components are implemented in both C++ and Java,
+with each language having it's own github repository.
+For example pvData has the repositories
+<a href="https://github.com/epics-base/pvDataJava">pvDataJava</a>
+and
+<a href="https://github.com/epics-base/pvDataCPP">pvDataCPP</a>
+</p>
+<p>EPICS 7 has separate C++ and Java releases.
+</p>
+<h3>Terminology</h3>
+<dl>
+   <dt>EPICS 7</dt>
+     <dd>
+      This is a combination of <b>epics base</b> and what was previously called EPICS V4,
+       but is now called <b>PVA</b>.
+       <br />
+       <b>epics base</b> is what has existed since about 1990.
+         It has had many releases: The oldest set of releases are the 3.11 series
+         and the newest is the 3.16 series.
+         <b>epics base</b> is also refered to as <b>EPICS V3</b>.<br />
+         <b>epics base</b> supports data as a flat structure.
+       <br />
+       <b>PVA</b> adds structured data and works along side <b>EPICS V3</b>.
+       It's main components are:
+       <dl>
+         <dt>pvData</dt>
+           <dd>API and implementation for structured data</dd>
+         <dt>normativeTypes</dt>
+           <dd>A set of structures designed for use by tools like display managers,
+            archivers, etc.
+           </dd>
+         <dt>pvAccess</dt>
+            <dd>Network support and API for transfering data between clients and servers.
+             All data is handled as pvData objects.
+           </dd>
+       </dl>
+     </dd>
+   <dt>API - Application Programming Interface </dt>
+     <dd>
+      The pvData API is how a client accesses the type system
+      and data objects for each type.
+      In Java this consists mainly of Java interfaces.
+      In C++ this is via C++ classes.
+      </dd>
+   <dt>Introspection API</dt>
+      <dd>The type system supports both introspection and data interfaces.
+       The introspection interfaces allow a client to determine the data types for objects
+       without requiring a data instance.
+      </dd>
+   <dt>Data API</dt>
+     <dd>These provide access to data instances.
+     </dd>
+     <dt>type</dt>
+        <dd>Often used when talking about a field.
+          In this case it means the intospection interface for the field.
+        </dd>
+     <dt>PVScalarType</dt>
+       <dd>Generic name for the data type for a scalar.
+        Thus a generic name for one of PVBoolean, PVByte, ..., PVString.
+        </dd>
+     <dt>PVScalarArrayType</dt>
+       <dd>Generic name for the data type for a scalarArray.
+        This a generic name for one of PVBooleanArray,
+         PVByteArray, ..., PVStringArray.
+        </dd>
+     <dt>PVType</dt>
+       <dd>Generic name for any valid Data API type.
+        </dd>
+     <dt>Special Field</dt>
+        <dd>These are a set standard structure definitions:
+        <b>enum</b>, <b>alarm</b>, <b>timeStamp</b>, <b>control</b>, <b>display</b>, and <b>alarmLimit</b>.
+        </dd>
+</dl>
+<h3>Overview: pvData</h3>
+<p>Detailed Documentation is available at:
+<a href="
+http://epics-pvdata.sourceforge.net/docbuild/pvDataCPP/tip/documentation/html/index.html">
+pvDataCPP
+</a>
+and
+<a href="
+http://epics-pvdata.sourceforge.net/docbuild/pvDataJava/tip/documentation/html/index.html">
+pvDataJava
+</a>
+</p>
+<p>
+pvData supports structured data where a structure is a set of fields.
+Each field is composed of one of the following types:
+</p>
+<dl>
+   <dt>scalar</dt>
+      <dd>
+        The field holds data that has a single scalarType:
+        <dl>
+            <dt>boolean</dt>
+               <dd>Can be <b>true</b> or <b>false</b>.
+               </dd>
+            <dt>signed Integer</dt>
+               <dd>Integers of 8, 16, 32, and 64 bits are supported.</dd>
+            <dt>unsigned Integer</dt>
+                <dd>Unsigned integers of 8, 16, 32, and 64 bits are supported.</dd>
+            <dt>float</dt>
+                <dd>IEEE 32 bit floating point.</dd>
+            <dt>double</dt>
+                <dd>IEEE 64 bit floating point.</dd>
+            <dt>string</dt>
+                <dd>In C++ std::string and in Java String. On the network UTF8.</dd>
+        </dl>
+      </dd>
+   <dt>scalarArray</dt>
+      <dd>An array of one of the scalar types.</dd>
+   <dt>structure</dt>
+      <dd>A set of fields and a name for each field.
+       Each field can have any valid type but the type can not change.
+      </dd>
+   <dt>structureArray</dt>
+      <dd>
+       An array of structures. Each element must have the same introspection interface.
+      </dd>
+   <dt>union</dt>
+      <dd>
+        A field that has a single sub field which can dynamically change type.
+      A variant union allows any valid type. A restricted union allows for a set of valid types.
+      </dd>
+   <dt>unionArray</dt>
+      <dd>
+       A array of unions. Each element must have the same introspection interface.
+      </dd>
+</dl>
+<h3>Overview: normativeTypes</h3>
+<p>Detailed Documentation is available at:
+<a href="
+http://epics-pvdata.sourceforge.net/docbuild/normativeTypesCPP/tip/documentation/html/index.html">
+normativeTypesCPP
+</a>
+and
+<a href="
+http://epics-pvdata.sourceforge.net/docbuild/normativeTypesJava/tip/documentation/html/index.html">
+normativeTypesJava
+</a>
+</p>
+<p>
+Each normative type defines a structure that has a set of standard fields.
+For example NTScalar defines:</p>
+<pre>
+epics:nt/NTScalar:1.0
+    double value                        // mandatory and can be any scalar type
+    string descriptor                   // optional
+    alarm_t alarm                       // optional
+        int severity
+        int status
+        string message
+    time_t timeStamp                    // optional
+        long secondsPastEpoch
+        int nanoseconds
+        int userTag
+    display_t display                   // optional
+        double limitLow
+        double limitHigh
+        string description
+        string format
+        string units
+    control_t control                   // optional
+        double limitLow
+        double limitHigh
+        double minStep
+    string extra1                       // extra
+    string[] extra2                     //
+</pre>
+<h3>Overview: pvAccess</h3>
+<p>Detailed Documentation is available at:
+<a href="
+http://epics-pvdata.sourceforge.net/docbuild/pvAccessCPP/tip/documentation/html/index.html">
+pvAccessCPP
+</a>
+and
+<a href="
+http://epics-pvdata.sourceforge.net/docbuild/pvAccessJava/tip/documentation/html/index.html">
+pvAccessJava
+</a>
+</p>
+<p>
+A client written in either Java or C++ can communicate with a server written in either Java or C++.
+All communication between client and server is done via the methods provided by pvAccess and by pvData objects.
+</p>
+<p>
+pvAccess provides:</p>
+<dl>
+   <dt>channelProviderRegistry</dt>
+     <dd>An arbitrary number of channelProviders can be created.
+       Starting with EPICS 7, a separate registry exists for client and server.
+     </dd>
+   <dt>channelProvider</dt>
+     <dd>Code that provides access to a pvData data source.
+      It creates channels.<br />
+       A channel:
+       <ul>
+          <li>Provides access to a pvData structure.</li>
+          <li>Has an associated channelName.</li>
+       </ul>
+     </dd>
+   <dt>channel</dt>
+      <dd>Methods for each of the following:
+        <dl>
+           <dt>getField</dt>
+              <dd>Get the pvData introspection information.</dd>
+           <dt>channelGet</dt>
+              <dd>Get data.</dd>
+           <dt>channelPut</dt>
+               <dd>Put data.</dd>
+           <dt>channelPutGet</dt>
+               <dd>Put data, let server process, and then get result.</dd>
+           <dt>monitor</dt>
+               <dd>Monitor pvData changes.</dd>
+           <dt>channelArray</dt>
+               <dd>get/put subArray data.</dd>
+           <dt>channelRPC</dt>
+               <dd>Like channelPutGet but on each request pvData
+                 interfaces for put and get can change.</dd>
+        </dl>
+       </dd>
+</dl>
+<p>
+channelPutGet and channelRPC provide the equivalent of a Remote Procedure Call.
+The client passes a pvData object to the server.
+This pvData object is the argument for the RPC.
+The server uses this to decide what to do
+and sends a pvData object back to the client, which is the RPC result.
+</p>
+<h3>Overview: pvaClient</h3>
+<p>Detailed Documentation is available at:
+<a href="
+http://epics-pvdata.sourceforge.net/docbuild/pvaClientCPP/tip/documentation/html/index.html">
+pvaClientCPP
+</a>
+and
+<a href="
+http://epics-pvdata.sourceforge.net/docbuild/pvaClientJava/tip/documentation/html/index.html">
+pvaClientJava
+</a>
+</p>
+<p>pvaClient is a synchronous wrapper for the pvAccess API, which is a callback based API.
+In addition pvaClient provides many convenience methods.
+Thus it is easier to use than pvAccess itself.
+</p>
+<p>pvaClientCPP also provides simplified callback classes, which can be used to implement
+non blocking client code.
+pvaClientJava will be upgraded to support the same features.
+</p>
+<h3>Overview: pvDatabase</h3>
+<p>Detailed Documentation is available at:
+<a href="
+http://epics-pvdata.sourceforge.net/docbuild/pvDatabaseCPP/tip/documentation/html/index.html">
+pvDatabaseCPP
+</a>
+and
+<a href="
+http://epics-pvdata.sourceforge.net/docbuild/pvDatabaseJava/tip/documentation/html/index.html">
+pvDatabaseJava
+</a>
+</p>
+<p>A framework for implementing a network accessible database of smart memory resident
+records. Network access is via pvAccess. The data in each record is a top level PVStructure as defined by
+pvData. A complete implementation of ChannelProvider is provided for accessing the records.
+The framework can be extended in order to create record instances that implement services.
+The minimum that an extension must provide is a top level PVStructure, a record name, and a process method.
+</p>
+
+<h3>Overview: pva2pva</h3>
+<p>Detailed Documentation is available at:
+<a href="
+http://epics-pvdata.sourceforge.net/docbuild/pva2pva/tip/documentation/html/index.html">
+pva2pva
+</a>
+</p>
+<p><b>qsrv</b> (a major component of pva2pva) is a channel provider for accessing DBRecords in an IOC.
+qsrv allows clients to get, put and monitor V3 PVs (fields of EPICS DB records) via pvAccess, translating
+the value and its meta data (graphics limits, alarm status, timestamp) to or from V4 Normative Type (NT)
+pvData structures (NTScalar, NTScalarArray, and NTEnum).</p>
+<h3>Overview: pvaPy</h3>
+<p>A Python wrapper for pvData and pvAccess.
+This is not discussed in this document.
+</p>
+<h3>Overview: channelProvider</h3>
+<p>The basic requirements for a channel provider are:</p>
+<ol>
+   <li>Given a channel name, find and connect to the data source</li>
+   <li>Implement one or more of the channel methods: getField, createChannelGet, etc.</li>
+   <li>get/put all data as pvData.</li>
+   <li>Prefer normative types instead of raw pvData</li>
+</ol>
+<p><b>pvAccess</b> implements <b>channelProviderRegistry</b>, which
+allows an arbitrary number of providers.
+Starting with EPICS 7 there are separate client and server registries.
+</p>
+<p>
+A provider is one of the following:</p>
+<dl>
+   <dt>Client Provider</dt>
+     <dd>Called by code that wants to access a <b>channel</b>, where
+       each channel has a unique channel name</dd>
+   <dt>Server Provider</dt>
+     <dd>A provider for the remote side of the <b>pva</b> provider, which is
+       described next.</dd>
+</dl>
+<p>
+Before either kind of provider can be used it must first register itself with the 
+<b>channelProviderRegistry</b>
+</p>
+<h4>Provider pva</h4>
+<p>An important component of EPICS V4 is provider <b>pva</b>, which is a provider
+that implements a connection between a client and a server that uses the pva network
+      protocal as defined in:
+         <a
+          href="http://epics-pvdata.sourceforge.net/pvAccess_Protocol_Specification.html">
+          pvAccess_Protocol_Specification.html</a>
+</p>
+<p>Provider <b>pva</b> has two components:</p>
+<dl>
+  <dt>client</dt>
+     <dd>This is what a pvAccess client uses.</dd>
+  <dt>remote</dt>
+     <dd>This connects to server providers</dd>
+</dl>
+<p>Network communcation is used between client and server.
+Remote <b>pva</b> transfers data between the network and channel providers that
+have registered at the remote node.</p>
+<h4>Client Providers</h4>
+<p>An arbitrary number of client providers can be implemented.
+Each provider must implement the <b>channel</b> interface
+mentioned above and must register with the <b>channelProviderRegistry</b>
+before it can be used by a client.
+</p>
+<p>pvAccess itself provides the following client providers:</p>
+<dl>
+   <dt>pva</dt>
+      <dd>The client side of provider <b>pva</b>.
+       </dd>
+   <dt>ca</dt>
+     <dd>This is a connection that uses channel access to access an epics V3 channel.</dd>
+   <dt>pipelineService</dt>
+      <dd>
+       A pipelineService is a service that provides a lossless channel monitor.
+       A client requests access to a pipelineService via a pvRequest argument.<br />
+      pvGet and eget provide support.<br />
+      Other clients could also access a server that implements a pipelineService.
+       </dd>
+</dl>
+<h4>Server Providers</h4>
+<p>At present the following providers are available for the remote side of <b>pva</b></p>
+<dl>
+   <dt>local</dt>
+      <dd>This is implemented by pvDatabase</dd>
+   <dt>qsrv</dt>
+      <dd>This is a provider that directly accesses V3 DBRecord.</dd>
+   <dt>pipelineService</dt>
+      <dd>
+        
+         pvAccess provides a helper class for a service that wants to implement a  pipelineService.
+      </dd>
+</dl>
+<h4>Client Provider Choices</h4>
+<p>At present a client that is not running as part of a V3 IOC or a pvDatabase
+has two choices for channelProvider: <b>pva</b> and <b>ca</b>.
+A client running as part of a V3 IOC that is also
+using pvDatabase has all of the following choices:
+<b>pva</b>, <b>ca</b>, <b>local</b>, and <b>pvSrv</b>.
+Note that if a client directly connects to either <b>local</b> or <b>pvSrv</b>
+no network communication is involved.
+</p>
+<p>
+And since <b>channelProviderRegistry</b> allows any arbitrary number of providers
+additional providers can be developed for either the client or remote side of <b>pva</b>.
+</p>
+<h2>pvlist, pvget, pvput, pvinfo, and eget</h2>
+<p>pvAccessCPP provides command line tools. Each provides help. For example:</p>
+<pre>
+pvlist -help
+</pre>
+<p>
+The examples shown in this section assume that the example database described in the next secton is running.
+Also your <b>PATH</b> environment variable must include the appropriate bin directory from pvAccessCPP.
+For example:</p>
+<pre>
+export PATH=$PATH:${EPICSV7}/pvAccessCPP/bin/${EPICS_HOST_ARCH}
+</pre>
+<h3>pvlist</h3>
+<p>The options are:</p>
+<pre>
+mrk&gt; pvlist -help
+
+Usage: pvlist [options] [server address or GUID starting with '0x']...
+
+options:
+  -h: Help: Print this message
+  -V: Print version and exit
+  -i                 Print server info (when server address list/GUID is given)
+  -w &lt;sec&gt;:          Wait time, specifies timeout, default is 3.000000 second(s)
+  -q:                Quiet mode, print only error messages
+  -d:                Enable debug output
+
+examples:
+	pvlist
+	pvlist ioc0001
+	pvlist 10.5.1.205:10000
+	pvlist 0x83DE3C540000000000BF351F
+</pre>
+<p>Without any arguments this shows the location of all V4 servers it can locate.
+For example:</p>
+<pre>
+pvlist
+GUID 0x7F06B2560000000047B97D25, version 1: tcp@[192.168.124.1:45345, 10.0.0.37:45345]
+</pre>
+<p>This only shows one line because only the exampleDatabase server is running.
+In an operational system the output could be quite extensive.</p>
+<p>
+Once the location of a server is known the list of channel names can be shown by asking for either
+the GUID or tcp address.
+Thus either:</p>
+<pre>
+pvlist 0x7F06B2560000000047B97D25
+</pre>
+or
+<pre>
+pvlist 10.0.0.37:45345
+</pre>
+produces:
+<pre>
+DBRao01
+DBRdouble00
+...
+</pre>
+
+<h3>pvget</h3>
+<p>pvget provides functionality similar to caget.
+For example:</p>
+<pre>
+mrk&gt; caget DBRdouble01
+DBRdouble01                    0
+</pre>
+<p>The options are:</p>
+<pre>
+mrk&gt; pvget -help
+
+Usage: pvget [options] PVname...
+
+options:
+  -h: Help: Print this message
+  -V: Print version and exit
+  -r &lt;pv request&gt;:   Request, specifies what fields to return and options, default is 'field(value)'
+  -w &lt;sec&gt;:          Wait time, specifies timeout, default is 3 seconds for get, inf. for monitor
+  -t:                Terse mode - print only value, without names
+  -i:                Do not format standard types (enum_t, time_t, ...)
+  -m:                Monitor mode
+  -p &lt;provider&gt;:     Set default provider name, default is 'pva'
+  -v:                Show entire structure
+  -q:                Quiet mode, print only error messages
+  -d:                Enable debug output
+  -F &lt;ofs&gt;:          Use &lt;ofs&gt; as an alternate output field separator
+  -f &lt;input file&gt;:   Use &lt;input file&gt; as an input that provides a list PV name(s) to be read, use '-' for stdin
+ enum format:
+  -n: Force enum interpretation of values as numbers (default is enum string)
+
+
+example: pvget double01
+</pre>
+<p>Some examples are:</p>
+<pre>
+mrk&gt; pvget PVRdouble
+PVRdouble                      5
+mrk&gt; pvget PVRdoubleArray
+PVRdoubleArray 5 1 2 3 4 5
+mrk&gt; pvget PVRenum01
+PVRenum01                         zero
+mrk&gt; pvget -i PVRenum01
+enum01
+epics:nt/NTEnum:1.0 
+    enum_t value
+        int index 0
+        string[] choices [zero,one,two,three]
+
+
+mrk&gt; pvget -i -r "value,alarm,timeStamp" enum01
+PVRenum01
+epics:nt/NTEnum:1.0 
+    enum_t value
+        int index 0
+        string[] choices [zero,one,two,three]
+    alarm_t alarm
+        int severity 3
+        int status 0
+        string message UDF
+    time_t timeStamp
+        long secondsPastEpoch 631152000
+        int nanoseconds 0
+        int userTag 0
+</pre>
+<p>Multiple channels can be accessed witn a single command. For example:</p>
+<pre>
+mrk&gt; pvget PVRdouble01 PVRdouble02
+PVRdouble01                       0
+PVRdouble02                       0
+</pre>
+<p>The above examples all use channel provider pva, i. e. the pvAccess server for network
+communication.
+It is also possible to use ca, i. e. the channel access server that comes with iocCore.
+Thus it can access a V3 IOC even if the IOC has no V4 support.
+</p>
+<pre>
+mrk&gt; pvget -p ca DBRdouble01
+DBRdouble01                       0
+mrk&gt; pvget -p ca -r "value,alarm,timeStamp" DBRdouble01
+DBRdouble01
+epics:nt/NTScalar:1.0 
+    double value 0
+    alarm_t alarm INVALID RECORD UDF_ALARM
+    time_t timeStamp &lt;undefined&gt; 0
+</pre>
+<p>pvget can also monitor, i. e. it has functionality similer to camonitor.</p>
+<pre>
+mrk&gt; pvget -m -r "value,alarm,timeStamp" PVRdouble02
+PVRdouble02
+epics:nt/NTScalar:1.0 
+    double value 0
+    alarm_t alarm INVALID NO_STATUS UDF
+    time_t timeStamp &lt;undefine&gt; 0
+
+
+PVRdouble02
+epics:nt/NTScalar:1.0 
+    double value 1
+    alarm_t alarm NO_ALARM NO_STATUS NO_ALARM
+    time_t timeStamp 2015-05-14T08:29:55.769 0
+</pre>
+
+<h3>pvput</h3>
+<p>pvput provides functionality similar to caput.
+For example:</p>
+<pre>
+mrk&gt; caput DBRdouble01 1.0
+Old : DBRdouble01                       0
+New : DBRdouble01                       1
+mrk&gt; pvput DBRdouble01 2.0
+Old : DBRdouble01                       1
+New : DBRdouble01                       2
+</pre>
+<p>The options are:</p>
+<pre>
+mrk&gt; pvput -help
+Usage: pvput [options] &lt;PV name&gt; &lt;value&gt;
+       pvput [options] &lt;PV name&gt; &lt;size/ignored&gt; &lt;value&gt; [&lt;value&gt; ...]
+       pvput [options] &lt;PV name&gt; &lt;field&gt;=&lt;value&gt; ...
+       pvput [options] &lt;PV name&gt; &lt;json_array&gt;
+       pvput [options] &lt;PV name&gt; &lt;json_map&gt;
+
+
+options:
+  -h: Help: Print this message
+  -v: Print version and exit
+  -r &lt;pv request&gt;:   Request, specifies what fields to return and options, default is 'field(value)'
+  -w &lt;sec&gt;:          Wait time, specifies timeout, default is 3.000000 second(s)
+  -t:                Terse mode - print only successfully written value, without names
+  -p &lt;provider&gt;:     Set default provider name, default is 'pva'
+  -v:                Show entire structure
+  -q:                Quiet mode, print only error messages
+  -d:                Enable debug output
+  -F &lt;ofs&gt;:          Use &lt;ofs&gt; as an alternate output field separator
+  -f &lt;input file&gt;:   Use &lt;input file&gt; as an input that provides a list PV name(s) to be read, use '-' for stdin
+ enum format:
+  default: Auto - try value as enum string, then as index number
+  -n: Force enum interpretation of values as numbers
+  -s: Force enum interpretation of values as strings
+
+ JSON support is present
+
+Examples:
+
+  pvput double01 1.234       # shorthand
+  pvput double01 value=1.234
+
+  pvput arr:pv X 1.0 2.0  # shorthand  (X is arbitrary and ignored)
+  pvput arr:pv "[1.0, 2.0]"            # shorthand
+  pvput arr:pv value="[1.0, 2.0]"
+
+Field values may be given with JSON syntax.
+
+Complete structure
+
+  pvput double01 '{"value":1.234}'
+
+Sub-structure(s)
+
+  pvput group:pv some='{"value":1.234}' other='{"value":"a string"}'
+
+</pre>
+<p>Here are some examples:</p>
+<pre>
+mrk&gt; pvput PVRdouble 5
+Old : PVRdouble                      0
+New : PVRdouble                      5
+mrk&gt; pvput PVRdoubleArray 5 1 2 3 4 5
+Old : PVRdoubleArray 0
+New : PVRdoubleArray 5 1 2 3 4 5
+mrk&gt; pvput -r "field(scalar)" PVRBigRecord scalar.boolean='{"value":true}' scalar.byte='{"value":9}'
+Old : 
+structure 
+    structure scalar
+        structure boolean
+            boolean value false
+        structure byte
+            byte value 2
+        structure long
+            long value 0
+        structure double
+            double value 0
+        structure string
+            string value 
+
+
+New : 
+structure 
+    structure scalar
+        structure boolean
+            boolean value true
+        structure byte
+            byte value 9
+        structure long
+            long value 0
+        structure double
+            double value 0
+        structure string
+            string value 
+
+</pre>
+<h3>pvinfo</h3>
+<p>pvinfo retrieves the introspection interface for selected channels
+</p>
+<p>The options are:</p>
+<pre>
+mrk> pvinfo -help
+
+Usage: pvinfo [options] &lt;PV name&gt;...
+
+
+options:
+  -h: Help: Print this message
+  -V: Print version and exit
+  -w &lt;sec&gt;:          Wait time, specifies timeout, default is 3.000000 second(s)
+  -p &lt;provider&gt;:     Set default provider name, default is 'pva'
+  -d:                Enable debug output
+  -c:                Wait for clean shutdown and report used instance count (for expert users)
+Example: pvinfo double01
+</pre>
+<h3>eget</h3>
+<p>eget provides many of the same features but in addition supports
+channelRPC and understands some of the normative types.
+</p>
+<p>The options are:</p>
+<pre>
+mrk&gt; eget -help
+
+Usage: eget [options] [&lt;PV name&gt;... | -s &lt;service name&gt;]
+
+
+options:
+  -h: Help: Print this message
+  -V: Print version and exit
+  -s &lt;service name&gt;:   Service API compliant based RPC service name (accepts NTURI request argument)
+  -a &lt;service arg&gt;:    Service argument in 'name[=value]' or 'name value' form
+  -r &lt;pv request&gt;:     Get request string, specifies what fields to return and options, default is 'field(value)'
+  -w &lt;sec&gt;:            Wait time, specifies timeout, default is 3.000000 second(s)
+  -z:                  Pure pvAccess RPC based service (send NTURI.query as request argument)
+  -N:                  Do not format NT types, dump structure instead
+  -i:                  Do not format standard types (enum_t, time_t, ...)
+  -t:                  Terse mode
+  -T:                  Transpose vector, table, matrix
+  -m:                  Monitor mode
+  -x:                  Use column-major order to decode matrix
+  -p &lt;provider&gt;:       Set default provider name, default is 'pva'
+  -q:                  Quiet mode, print only error messages
+  -d:                  Enable debug output
+  -F &lt;ofs&gt;:            Use &lt;ofs&gt; as an alternate output field separator
+  -f &lt;input file&gt;:     Use &lt;input file&gt; as an input that provides a list PV name(s) to be read, use '-' for stdin
+  -c:                  Wait for clean shutdown and report used instance count (for expert users)
+ enum format:
+  -n: Force enum interpretation of values as numbers (default is enum string)
+
+
+examples:
+
+#! Get the value of the PV corr:li32:53:bdes
+&gt; eget corr:li32:53:bdes
+
+#! Get the table of all correctors from the rdb service
+&gt; eget -s rdbService -a entity=swissfel:devicenames
+
+#! Get the archive history of quad45:bdes;history between 2 times, from the archive service
+&gt; eget -s archiveService -a entity=quad45:bdes;history -a starttime=2012-02-12T10:04:56 -a endtime=2012-02-01T10:04:56
+
+#! Get polynomials for bunch of quads using a stdin to give a list of PV names
+&gt; eget -s names -a pattern=QUAD:LTU1:8%:POLYCOEF | eget -f -
+
+</pre>
+
+
+
+<h2>example code</h2>
+<p>
+<b>NOTE:</b>
+exampleCPP and exampleJava are not part of the EPICS 7 release.
+They must be cloned from github:
+</p>
+<pre>
+git clone https://github.com/epics-base/exampleCPP.git
+</pre>
+or
+<pre>
+git clone https://github.com/epics-base/exampleJava.git
+</pre>
+<p><b>exampleCPP</b> and <b>exampleJava</b> both have examples that use code from all modules
+described in this document except for <b>pvaPy</b>.
+In particular they both have examples:</p>
+<dl>
+    <dt>database</dt>
+       <dd>
+         Example server code implemented via pvDatabase.<br />
+         In addition it shows how to have PVRecords and V3 Records both running as part of a V3 IOC.
+         <br />
+         It also shows how to start provider <b>qsrv</b> so that both <b>ca</b> and <b>pva</b>
+         can be used to access the V3 records.
+       </dd>
+    <dt>exampleClient</dt>
+        <dd>
+          example client code using the pvaClient API.
+       </dd>
+    <dt>exampleLink</dt>
+        <dd>
+        Implements PVRecords that monitor, get, and put to channel.<br />
+        </dd>
+</dl>
+<p>These examples that can be used while learning what is described in this document.
+Both exampleJava and exampleCPP have other examples.
+</p>
+
+<p>Examples in <b>exampleJava/exampleClient</b>, <b>exampleCPP/exampleClient</b>, and <b>pvaPy</b> require that the database in <b>exampleCPP/exampleClient</b> 
+or <b>exampleJava/exampleClient</b> 
+is started.
+If exampleCPP is used the exampleDatabase can be started either as a main
+program or as part of a V3 IOC.
+If started as part of a V3 IOC, it also has V3 records and starts <b>qsrv</b>.
+If started as a main program the result is the same as starting <b>exampleJava/database</b>
+All the V4 PVRecords have the prefix <b>PVR</b> and all the V3 DBRecords have the prefix
+<b>DBR</b>.
+</p>
+<p>
+In linux <b>exampleCPP/database</b> can be started as follows:</p>
+<pre>
+mrk&gt; pwd
+/home/epicsv4/master/exampleCPP/database/iocBoot/exampleDatabase
+mrk&gt; ../../bin/linux-x86_64/exampleDatabase st.cmd
+</pre>
+<p>The example database has both V3 IOC records and V4 PVRecords.
+In addition <b>qsrv</b> is running. Thus all V3 records are available via either <b>ca</b> or <b>pva</b>.
+The PVRecords are only available via <b>pva</b>.
+Examples of using ca and pva command line tools are:</p>
+<pre>
+mrk&gt; pvlist 
+GUID 0x7F06B2560000000047B97D25, version 1: tcp@[10.0.0.37:45345, 192.168.124.1:45345]
+mrk&gt; pvlist 0x7F06B2560000000047B97D25
+DBRao01
+DBRdouble00
+.... many more records
+mrk&gt; pvget PVRlong
+PVRlong                        0
+mrk&gt; caget PVRlong
+Channel connect timed out: 'PVRlong' not found.
+mrk&gt; caget DBRdouble01
+DBRdouble01                       0
+mrk&gt; pvget DBRdouble01
+DBRdouble01                       0
+mrk&gt; caget PVRushort01
+Channel connect timed out: 'PVRushort01' not found.
+mrk&gt; pvget PVRushort01
+PVRushort01                       0
+mrk&gt; 
+</pre>
+<p>The examples in <b>exampleCPP/exampleClient</b> and <b>exampleJava/exampleClient</b> can now be run.
+For example:</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/exampleCPP/exampleClient
+mrk> ls bin/linux-x86_64/
+examplePvaClientGet          examplePvaClientPut  monitorNoBlock
+examplePvaClientMonitor      getFieldNoBlock      putNoBlock
+examplePvaClientMultiDouble  getNoBlock           putUnion
+examplePvaClientNTMulti      helloWorldPutGet
+examplePvaClientProcess      helloWorldRPC
+mrk> 
+mrk&gt; bin/linux-x86_64/examplePvaClientGet
+_____examplePvaClientGet starting_______
+__exampleDouble__
+short way
+as double 0
+long way
+as double 0
+... LOTS MORE OUTPUT
+
+</pre>
+
+<h2>pvaClient Tutorial</h2>
+<h3>Some Basic Concepts</h3>
+<h4>Special Field Structures</h4>
+<p>The following provide PVA definitions for EPICS V3 DBD
+data other than just scalar and scalar array data associated with a value field:
+<br />
+<b>alarm</b>, <b>timeStamp</b>, <b>enum</b>, <b>display</b>, <b>control</b>, and <b>alarmLimit</b>.
+<br />
+Each is a structure that also has an associated structure id name.
+For example <b>alarm_t</b> is the structure id name for an alarm structure.
+For the tutorial <b>alarm</b>, <b>timeStamp</b>, and <b>enum</b> are briefly discussed
+A later section provides more details about these and the other special fields.
+</p>
+<dl>
+   <dt>alarm</dt>
+   <dd>
+<pre>
+alarm_t alarm
+    int severity
+    int status
+    string message 
+</pre>
+     <p>
+     pvData provides code associated with a alarm structure.
+     This code restricts severity to be one of:
+     </p>
+<pre>
+NONE,MINOR,MAJOR,INVALID,UNDEFINED
+</pre>
+    <p> and status to be one of:</p>
+<pre>
+NONE,DEVICE,DRIVER,RECORD,DB,CONF,UNDEFINED,CLIENT
+</pre>      
+   </dd>
+   <dt>timeStamp</dt>
+   <dd>
+<pre>
+time_t timeStamp
+    long secondsPastEpoch
+    int nanoseconds
+    int userTag
+</pre>
+     <p>
+     pvData provides code associated with a timeStamp structure.
+      This code provides support that makes the timeStamp
+      UTC (Universial Time Coordinated) compliant.
+     </p>
+   </dd>
+   <dt>enum</dt>
+   <dd>
+<pre>
+enum_t value
+    int index
+    string[] choices
+</pre>
+     <p>
+     pvData provides code associated with an enum structure.
+     This forces the index to select an element of the choices.
+     </p>
+   </dd>
+</dl>
+<h4>pvRequest</h4>
+<p>Each of the PVChannel create methods has a PVStructure argument named <b>pvRequest</b>.
+This structure allows the client to 1) select a subset of the fields in the top level structure
+from the server, 2) provide record options, and 3) provide field specific options.
+</p>
+<p>
+<b>pvAccess</b> provides a method <b>createRequest</b> that, given a string,
+creates a <b>pvRequest</b> structure.
+A later section provides more details but for this tutorial lets just give a simple example:
+</p>
+<pre>
+"field(value, alarm, timeStamp):
+or just
+"value, alarm, timeStamp"
+</pre>
+Specifies that the client wants to receive the top level fields named <b>value</b>,
+<b>alarm</b> , and <b>timeStamp</b>.
+<h3>C++ Tutorial</h3>
+<p>
+The tutorial is not part of an EPICS 7 release.
+It can be cloned via the command:
+</p>
+<pre>
+git clone  https://github.com/mrkraimer/pvaClientTutorialCPP.git
+cd pvaClientTutorialCPP
+make
+</pre>
+<p>Clone it in the same directory that holds your EPICS 7 release.
+Documentation is provided in pvaClientTutorialCPP/documentation/clientTutorialCPP.html.
+</p>
+<h3>Java Tutorial</h3>
+<p>
+<b>NOT IMPLEMENTED</b>
+The current plan is to create this after pvaClientJava has been
+upgraded to support the same features that have been added to pvaClientCPP.
+</p>
+<h2>pvDatabase Tutorial</h2>
+<p>
+<b>NOT IMPLEMENTED</b>
+The current plan is to create this for both C++ and Java after pvaClientTutorialJava has been created.
+</p>
+
+<h2>pvAccess Channel Providers.</h2>
+<p>
+<b>NOTES:</b>
+</p>
+<dl>
+   <dt>pvaClient</dt>
+   <dd>
+If you are using pvaClientCPP or pvaClientJava to write client code then pvaClient takes care of starting
+and destroying client providers.
+   </dd>
+   <dt>pvDatabase</dt>
+    <dd>
+If You are using exampleCPP/database or exampleJava/database as a basis for creating your own 
+server then the examples show how to start and destroy the server providers.
+exampleCPP/exampleLink or exampleJava/exampleLink show how to start and destroy both the client and server
+providers.
+    </dd>
+    <dt>pav2pva</dt>
+     <dd>This provides support for starting a remote pva server and provider qsrv as part of an IOC.
+     </dd>
+</dl>
+<p>pvAccessJava and pvAccessCPP implement the following providers:</p>
+<dl>
+   <dt>pva</dt>
+     <dd>This is a provider that trasfers data via the network protocol defined in
+    <a href="http://epics-pvdata.sourceforge.net/pvAccess_Protocol_Specification.html">pvAccess Protocol Specification </a>
+     <br/>
+      This provides the client and server side of the network protocol.
+      The client side is a complete implementation.
+      The server side requires additional code to access data sources but takes care of all network code.
+     </dd>
+    <dt>ca</dt>
+      <dd>This is client support for transfering data via the EPICS V3 channel access protocol.
+      </dd>
+</dl>
+<p>Providers can be provided for other data sources.
+A provider must implement ChannelProvider and Channel.
+pvAccess supports an arbitrary number of providers.
+On the server side of remote pvAccess providers must be implemented,
+because it calls the providers to implement the CHannel methods.
+</p>
+<p>
+At present C++ provides two server side providers:
+</p>
+<dl>
+   <dt>qsrv</dt>
+      <dd>This is a pvAccess server that accesses V3 records,</dd>
+   <dt>local</dt>
+      <dd>This is implemented by pvDatabaseCPP</dd>
+</dl>
+<p>
+At present Java provides one server side provider:
+</p>
+<dl>
+   <dt>local</dt>
+      <dd>This is implemented by pvDatabaseJava</dd>
+</dl>
+
+<h2>Special Fields</h2>
+<h3>enum</h3>
+<p>An enumerated structure is a structure that has fields:</p>
+<pre>
+enum_t
+    int index
+    string[] choices
+</pre>
+<h4>PVEnumerated</h4>
+<pre>
+PVEnumerated
+    boolean attach(PVField pvField)
+    void detach()
+    boolean isAttached()
+    boolean setIndex(int index)
+    int getIndex()
+    String getChoice()
+    boolean choicesMutable()
+    String[] getChoices()
+    boolean setChoices(String[] choices)
+</pre>
+
+<p>where</p>
+<dl>
+  <dt>attach</dt>
+    <dd>Attempts to attach to <span
+     >pvField</span> It returns (false,true) if
+      pvField (is not, is) an enumerated structure.</dd>
+  <dt>detach</dt>
+    <dd>Detaches from the pvData structure.</dd>
+  <dt>isAttached</dt>
+    <dd>Is there an attachment to an enumerated structure?</dd>
+  <dt>setIndex</dt>
+    <dd>Set the index field in the pvData structure. An exception is thrown if
+      not attached to a pvData structure. </dd>
+  <dt>getIndex</dt>
+    <dd>Get the index field in the pvData structure. </dd>
+  <dt>getChoice</dt>
+    <dd>Get the String value corresponding to the current index field in the
+      pvData structure. An exception is thrown if not attached to a pvData
+      structure. </dd>
+  <dt>choicesMutable</dt>
+    <dd>Can the choices be changed? Note that this is often true. An exception
+      is thrown if not attached to a pvData structure. </dd>
+  <dt>getChoices</dt>
+    <dd>Get the array of choices. An exception is thrown if not attached to a
+      pvData structure. </dd>
+  <dt>getNumberChoices</dt>
+    <dd>Get the number of choices. An exception is thrown if not attached to a
+      pvData structure. </dd>
+  <dt>setChoices</dt>
+    <dd>Change the choices. An exception is thrown if not attached to a pvData
+      structure. </dd>
+</dl>
+
+<h3>alarm</h3>
+<p>An alarm structure is defined as follows:</p>
+<pre>
+alarm_t alarm
+    int severity
+    int status
+    string message
+</pre>
+<p>Note that severity and status are NOT defined as enumerated structures.
+The reason is performance, i. e. prevent passing the array of choice strings everywhere.
+The AlarmStatus and AlarmSeverity provide the equivalent of choices for an
+enumerated structure.</p>
+<h4>AlarmSeverity</h4>
+<p>Alarm Severity defines the possible alarm severities</p>
+<pre>
+enum AlarmSeverity
+    NONE,MINOR,MAJOR,INVALID,UNDEFINED
+    AlarmSeverity getSeverity(int value)
+    final String[] alarmSeverityNames
+    String[] getSeverityNames()
+</pre>
+where
+<dl>
+  <dt>getSeverity</dt>
+    <dd>Get the alarm severity corresponding to the integer value.</dd>
+  <dt>getSeverityNames</dt>
+    <dd>Get the array of severity choices.</dd>
+</dl>
+<h4>AlarmStatus</h4>
+<p>Alarm Status defines the possible alarm status conditions</p>
+<pre>
+enum AlarmStatus
+    NONE,DEVICE,DRIVER,RECORD,DB,CONF,UNDEFINED,CLIENT;
+
+    AlarmStatus getStatus(int value)
+    String[] alarmStatusNames
+    String[] getStatusNames()
+</pre>
+where
+<dl>
+  <dt>getStatus</dt>
+    <dd>Get the alarm status corresponding to the integer value.</dd>
+  <dt>getStatusNames</dt>
+    <dd>Get the array of status choices.</dd>
+</dl>
+<h4>Alarm</h4>
+<pre>
+Alarm
+    String getMessage()
+    void setMessage(String message)
+    AlarmSeverity getSeverity()
+    void setSeverity(AlarmSeverity alarmSeverity)
+    AlarmStatus getStatus()
+    void setStatus(AlarmStatus alarmStatus)
+}</pre>
+where
+<dl>
+  <dt>getMessage</dt>
+    <dd>Get the message.</dd>
+  <dt>setMessage</dt>
+    <dd>Set the message.</dd>
+  <dt>getSeverity</dt>
+    <dd>Get the severity.</dd>
+  <dt>setSeverity</dt>
+    <dd>Set the severity.</dd>
+  <dt>getStatus</dt>
+    <dd>Get the status.</dd>
+  <dt>setStatus</dt>
+    <dd>Set the status.</dd>
+</dl>
+<h4>PVAlarm</h4>
+<pre>
+PVAlarm 
+    boolean attach(PVField pvField)
+    void detach()
+    boolean isAttached()
+    void get(Alarm alarm)
+    boolean set(Alarm alarm)
+</pre>
+<p>where</p>
+<dl>
+  <dt>PVAlarm</dt>
+    <dd>The default constructor. Attach must be called before get or set can be
+      called.</dd>
+  <dt>attach</dt>
+    <dd>Attempts to attach to <span
+     >pvField</span> It returns (false,true) if
+      it found an appropriate pvData structure. It looks first a pvField itself
+      and if is not an appropriate pvData structure but the field name is value
+      it looks to see if the parent structure has an appropriate sub
+    structure.</dd>
+  <dt>detach</dt>
+    <dd>Detaches from the pvData structure.</dd>
+  <dt>isAttached</dt>
+    <dd>Is there an attachment to an alarm structure?</dd>
+  <dt>get</dt>
+    <dd>Copies data from the pvData structure to an Alarm. An exception is
+      thrown if not attached to a pvData structure. </dd>
+  <dt>set</dt>
+    <dd>Copies data from Alarm to the pvData structure. An exception is thrown
+      if not attached to a pvData structure. </dd>
+</dl>
+
+
+<h3>timeStamp</h3>
+<p>A timeStamp is represented by the following structure</p>
+<pre>
+time_t timeStamp
+    long secondsPastEpoch
+    int nanoseconds
+    int userTag
+</pre>
+
+<p>The Epoch is the POSIX epoch, i.e. Jan 1, 1970 00:00:00 UTC. Both the
+seconds and nanoseconds are signed integers and thus can be negative. Since the
+seconds is kept as a 64 bit integer, it allows for a time much greater than the
+present age of the universe. Since the nanoseconds portion is kept as a 32 bit
+integer it is subject to overflow if a value that corresponds to a value that
+is greater than a little more than 2 seconds of less that about -2 seconds. The
+support code always adjust seconds so that the nanoSecconds part is normalized,
+i. e. it has is 0&lt;=nanoseconds&lt;nanoSecPerSec..</p>
+<h4>TimeStamp</h4>
+<p>The definition of TimeStamp is:</p>
+<pre>
+TimeStamp 
+    void normalize()
+    long getSecondsPastEpoch()
+    long getEpicsSecondsPastEpoch()
+    int getNanoseconds()
+    int getUserTag()
+    void setUserTag(int userTag)
+    void put(long secondsPastEpoch,int nanoseconds)
+    long getMilliSeconds()
+    void put(long milliSeconds)
+    void getCurrentTime()
+    boolean equals(TimeStamp other)
+    boolean lt(TimeStamp other)
+    boolean le(TimeStamp other)
+    void add(long seconds)
+    void add(double seconds)
+    double diff(TimeStamp a,TimeStamp b)
+}
+</pre>
+<p>where:</p>
+<dl>
+  <dt>normalize</dt>
+    <dd>Adjust secondsPastEpoch and nanoseconds so that 0&lt;=nanoseconds&lt;nanoSecPerSec.</dd>
+  <dt>getSecondsPastEpoch</dt>
+    <dd>Get the seconds part of timeStamp</dd>
+  <dt>getEpicsSecondsPastEpoch</dt>
+    <dd>Get seconds relative to the EPICS epoch. The epics epoch starts on Jan
+      1 1990 00:00:00 UTC.</dd>
+  <dt>getNanoseconds</dt>
+    <dd>Get the nanoseconds part of timeStamp.</dd>
+  <dt>getUserTag</dt>
+    <dd>Get the userTag</dd>
+  <dt>setUserTag</dt>
+    <dd>Set the userTag</dd>
+  <dt>put(long secondsPastEpoch,int nanoseconds)</dt>
+    <dd>Put a value into the timeStamp.</dd>
+  <dt>getMilliSeconds</dt>
+    <dd>Get the number of milliseconds since the epoch.</dd>
+  <dt>put(long milliSeconds);</dt>
+    <dd>Put a value into the timeStamp given the number of milliSeconds since
+      the epoch.</dd>
+  <dt>getCurrentTime</dt>
+    <dd>Get the current time.</dd>
+  <dt>equals</dt>
+    <dd>Is this time equal other?</dd>
+  <dt>lt</dt>
+    <dd>Is this time less than other.</dd>
+  <dt>le</dt>
+    <dd>Is this time less that or equal to other.</dd>
+  <dt>add(long seconds)</dt>
+    <dd>Add the specified number of seconds.</dd>
+  <dt>add(double seconds)</dt>
+    <dd>Add the specified number of seconds.</dd>
+  <dt>diff</dt>
+    <dd>Compute a-b. The result is in seconds.</dd>
+</dl>
+<p>The TimeStamp class provides arithmetic and comparison methods for time
+stamps. The result is always kept in normalized form, which means that the
+nanosecond portion is 0&lt;=nano&lt;nanoSecPerSec. Note that it is OK to have
+timeStamps for times previous to the epoch.</p>
+
+<h4>PVTimeStamp</h4>
+<pre>
+PVTimeStamp 
+    boolean attach(PVField pvField)
+    void detach()
+    boolean isAttached()
+    void get(TimeStamp timeStamp)
+    boolean set(TimeStamp timeStamp)
+</pre>
+where
+<dl>
+  <dt>attach</dt>
+    <dd>Attempts to attach to <span
+     >pvField</span> It returns (false,true) if a
+      timeStamp structure is found. It looks first at pvField itself and if is
+      not an appropriate pvData structure but the field name is value it looks
+      up the parent structure tree.</dd>
+  <dt>detach</dt>
+    <dd>Detach from the pvData structure.</dd>
+  <dt>isAttached</dt>
+    <dd>Is there an attachment to a timeStamp structure?</dd>
+  <dt>get</dt>
+    <dd>Copies data from the pvData structure to a TimeStamp. An exception is
+      thrown if not attached to a pvData structure. </dd>
+  <dt>set</dt>
+    <dd>Copies data from TimeStamp to the pvData structure. An exception is
+      thrown if not attached to a pvData structure. </dd>
+</dl>
+
+<h3>display</h3>
+<p>Display information is represented by the following structure</p>
+<pre>
+display_t display
+    double limitLow
+    double limitHigh
+    string description
+    string format
+    string units
+</pre>
+<h4>Display</h4>
+<pre>
+Display
+    double getLow()
+    double getHigh()
+    void setLow(double value)
+    void setHigh(double value)
+    String getDescription()
+    void setDescription(String value)
+    String getFormat()
+    void setFormat(String value)
+    String getUnits()
+    void setUnits(String value)
+</pre>
+<p>where</p>
+<dl>
+  <dt>getLow</dt>
+    <dd>Get the low limit.</dd>
+  <dt>getHigh</dt>
+    <dd>Get the high limit.</dd>
+  <dt>setLow</dt>
+    <dd>Set the low limit.</dd>
+  <dt>setHigh</dt>
+    <dd>Set the high limit.</dd>
+  <dt>getDescription</dt>
+    <dd>Get the description.</dd>
+  <dt>setDescription</dt>
+    <dd>Set the description.</dd>
+  <dt>getFormat</dt>
+    <dd>Get the format.</dd>
+  <dt>setFormat</dt>
+    <dd>Set the format.</dd>
+  <dt>getUnits</dt>
+    <dd>Get the units.</dd>
+  <dt>setUnits</dt>
+    <dd>Set the units.</dd>
+</dl>
+
+<h4>PVDisplay</h4>
+<pre>
+PVDisplay
+    boolean attach(PVField pvField)
+    void detach()
+    boolean isAttached()
+    void get(Display display)
+    boolean set(Display display)
+</pre>
+
+<p>where</p>
+<dl>
+  <dt>attach</dt>
+    <dd>Attempts to attach to <span
+     >pvField</span> It returns (false,true) if
+      it found an appropriate pvData structure. It looks first a pvField itself
+      and if is not an appropriate pvData structure but the field name is value
+      it looks to see if the parent structure has an appropriate sub
+    structure.</dd>
+  <dt>detach</dt>
+    <dd>Detaches from the pvData structure.</dd>
+  <dt>isAttached</dt>
+    <dd>Is there an attachment to a display structure?</dd>
+  <dt>get</dt>
+    <dd>Copies data from the pvData structure to a Display. An exception is
+      thrown if not attached to a pvData structure.</dd>
+  <dt>set</dt>
+    <dd>Copies data from Display to the pvData structure. An exception is
+      thrown if not attached to a pvData structure. </dd>
+  <dt>create</dt>
+    <dd>Create a PVDisplay instance. Attach must be called before get or set
+      can be called.</dd>
+</dl>
+
+<h3>control</h3>
+<p>Control information is represented by the following structure</p>
+<pre>
+structure control
+    double limitLow
+    double limitHigh
+    double minStep
+</pre>
+<h4>Control</h4>
+The definition for Control is:
+<pre>
+Control
+    double getLow()
+    double getHigh()
+    void setLow(double value)
+    void setHigh(double value)
+</pre>
+
+<p>where</p>
+<dl>
+  <dt>getLow</dt>
+    <dd>Get the low limit.</dd>
+  <dt>getHigh</dt>
+    <dd>Get the high limit.</dd>
+  <dt>setLow</dt>
+    <dd>Set the low limit.</dd>
+  <dt>setHigh</dt>
+    <dd>Set the high limit.</dd>
+</dl>
+<h4>PVControl</h4>
+<pre>
+PVControl
+    boolean attach(PVField pvField)
+    void detach()
+    boolean isAttached()
+    void get(Control control)
+    boolean set(Control control)
+</pre>
+<p>where</p>
+<dl>
+  <dt>attach</dt>
+    <dd>
+      Attempts to attach to <span>pvField</span> It returns (false,true) if
+      it found an appropriate pvData structure. It looks first a pvField itself
+      and if is not an appropriate pvData structure but the field name is value
+      it looks to see if the parent structure has an appropriate sub
+    structure.
+     </dd>
+  <dt>detach</dt>
+    <dd>Detaches from the pvData structure.</dd>
+  <dt>isAttached</dt>
+    <dd>Is there an attachment to a control structure?</dd>
+  <dt>get</dt>
+    <dd>Copies data from the pvData structure to a Control. An exception is
+      thrown if not attached to a pvData structure. </dd>
+  <dt>set</dt>
+    <dd>Copies data from Control to the pvData structure. An exception is
+      thrown if not attached to a pvData structure. </dd>
+  <dt>create</dt>
+    <dd>Create a PVControl instance. Attach must be called before get or set
+      can be called.</dd>
+</dl>
+
+<h3>alarmLimit</h3>
+<p>This has unresolved issues.</p>
+
+<h2>Standard for Field::ID</h2>
+<p>The introspection interface for every field has an ID, which is available via method:</p>
+<pre>
+class Field {
+...
+    string getID();
+...
+};
+</pre>
+<p>This section describes how the IDs are assigned.</p>
+<h3>Scalar</h3>
+<pre>
+boolean
+byte
+short
+int
+long
+ubyte
+ushort
+ulong
+float
+double
+string
+</pre>
+<h3>Scalar Array</h3>
+<pre>
+boolean[]
+byte[]
+short[]
+int[]
+long[]
+ubyte[]
+ushort[]
+ulong[]
+float[]
+double[]
+string[]
+</pre>
+<h3>Union</h3>
+<pre>
+any        // variant union
+union      // restricted union
+</pre>
+<h3>Union Array</h3>
+<pre>
+any[]
+union[]
+</pre>
+<h3>structure</h3>
+<h4>default</h4>
+<pre>
+structure
+</pre>
+<h4>standard fields</h4>
+<pre>
+alarm_t
+time_t
+display_t
+control_t
+enum_t
+alarmLimit_t
+valueAlarm_t
+</pre>
+<p><b>Issues:</b></p>
+<dl>
+   <dt>display_t</dt>
+      <dd>This has field
+      <pre>string format</pre>
+     The allowed syntax should be defined.
+      </dd>
+    <dt>alarmLimit_t,valueAlarm_t</dt>
+      <dd>standardField and standardPVField define
+      valueAlarm for boolean, each numeric scalar type, and for enum_t.
+     alarmLimit_t has the same fields as valueAlarm for double.
+     I suspect that most tools will only use alarmLimit_t.
+     What to do?
+      </dd>
+</dl>
+<h3>structure array</h3>
+<p>Like structure except that <b>[]</b> is appended.
+</p>
+<h2>pvRequest and pvCopy</h2>
+<h3>Oveview</h3>
+<p>Both pvDataJava and pvDataCPP implement the following:</p>
+<dl>
+   <dt>CreateRequest</dt>
+      <dd>
+       Creates a PVStructure that is a valid pvRequest
+       to be passed between a client a server.
+       The Channel class of pvAccess has methods
+       that have pvRequest arguments.
+       For example:
+<pre>
+ChannelGet createChannelGet(
+    ChannelGetRequester channelGetRequester,
+    PVStructure pvRequest);
+</pre>
+      A pvRequest structure allows a client to select:
+      <ol>
+         <li>An arbitrary subset of the fields in the top level data structure for the channel.</li>
+         <li>Global and field specific options</li>
+      </ol> 
+      </dd>
+   <dt>PVCopy</dt>
+     <dd>
+      PVCopy is a facility that copies data between a top
+      level PVStructure for the client and the
+      top level PVStructure from the server.
+      CreateRequest allows the client to select the fields desired.
+      PVCopy is used by the server side of pvAccess to 
+      transfer data between the two top level PVStructures.
+     </dd>
+</dl>
+<p>The following subsections discuss:</p>
+<dl>
+    <dt>CreateRequest</dt>
+      <dd>CreateRequest creates a pvRequest structure from a string argument.
+         This subsection describes the syntax for the string argument.</dd>
+    <dt>pvRequest</dt>
+       <dd>The layout of a valid pvRequest structure is described.</dd>
+    <dt>PVCopy</dt>
+       <dd>Some details about PVCopy are described.</dd> 
+    <dt>Guidelines for pvDatabase services</dt>
+       <dd>This subsection is of interest for implementing new services for channel providers.</dd>
+</dl>
+<h3>CreateRequest</h3>
+<h4>Goals</h4>
+<p>CreateRequest is a parser that creates a pvRequest structure from a string.
+It was created with the following goals:</p>
+<dl>
+   <dt>Create any valid pvRequest</dt>
+     <dd>The layout of a valid pvRequest structure is described below.</dd>
+   <dt>Concise Syntax</dt>
+     <dd>The goal is to allow simple and concise syntax for common requests.
+         For example:
+<pre>
+pvget -r "value,alarm,timeStamp" channelName
+</pre>
+      </dd>
+   <dt>Simple to parse</dt>
+     <dd>This does result in the syntax being somewhat rigid.
+      For example order matters.
+      A more flexible parser could be created but for now only the existing parser is described.
+     </dd>
+</dl>
+<h4>Definition</h4>
+<pre>
+CreateRequest
+    PVStructure createRequest(string request)
+    string getMessage()
+</pre>
+<dl>
+   <dt>createRequest</dt>
+     <dd>
+     Create a pvRequest PVStructure.
+     If an invalid request is made a null PVStructure is returned.
+     </dd>
+    <dt>getMessage</dt>
+     <dd>
+      The reason why the last request failed.
+     </dd>
+</dl>
+<h4>Purpose</h4>
+<p>CreateRequest allows a client to select an arbitrary subset of the fields in the top level structure
+associated with a channel.
+It also allows the client to specify options.
+Thus the client can specify:</p>
+<dl>
+  <dt>Global Options</dt>
+    <dd>Global options are options that apply to the record itself.</dd>
+  <dt>Desired Fields</dt>
+     <dd>An arbitrary set of fields can be selected from the top level structure that holds the
+      data in the record.</dd>
+  <dt>Field Options</dt>
+     <dd>These are options that apply to a selected field.
+      </dd>
+</dl>
+<p><b>NOTE:</b> The term record is adapted from pvDatabase. A pvDatabase has a memory resident database of <b>smart</b>
+records. A pvAcccess channel is a connection to a record. A record has a top level PVStructure that holds the
+data for the record.
+A pvAcccess server can be implemented that does not use the pvDatabase model but it must provide top level
+PVStructures to which a pvAcccess Channel can be attached.
+<b>qsrv</b>, which provides access to iocCore V3 records, is an example that also accepts a pvRequest
+created by a call to createRequest.
+</p>
+<h4>Relationship to Channel methods of pvAccess</h4>
+<p>Channel has methods:</p>
+<dl>
+   <dt>createChannelGet,createChannelPut,and createMonitor</dt>
+     <dd>For these the request string is of the form:
+<pre>
+record[option,...]field(fieldDef,...)
+OR
+field(fieldDef,...)
+OR
+fieldDef,...
+</pre>
+   </dd>
+   <dt>createChannelPutGet</dt>
+     <dd>For these the request string is of the form:
+<pre>
+record[option,...]putField(fieldDef,...)getField(fieldDef,...)
+OR
+putField(fieldDef,...)getField(fieldDef,...)
+</pre>
+   </dd>
+   <dt>createChannelProcess</dt>
+     <dd>Server dependent. Provider <b>local</b> accepts an empty string.</dd>
+   <dt>createChannelRPC</dt>
+      <dd>Server dependent.</dd>
+   <dt>createChannelArray</dt>
+      <dd>Server dependent. Provider <b>local</b> accepts an empty string or a string which is the field name.</dd>
+</dl>
+ 
+<h4>Syntax</h4>
+<p>A request argument has the syntax:</p>
+<pre>
+record[option,...]field(fieldDef,...)
+OR
+field(fieldDef,...)
+OR
+fieldDef,...
+OR
+record[option,...]putField(fieldDef,...)getField(fieldDef,...)
+OR
+putField(fieldDef,...)getField(fieldDef,...)
+</pre>
+<p>NOTES:</p>
+<ul>
+    <li>An empty string is also valid.
+       In this case an empty pvRequest structure is created.</li>
+    <li>Order is important, e. g. record can not appear after field.</li>
+    <li>The following:
+<pre>
+field()
+getField()
+putField()
+</pre>
+       means an entire data structure.
+      </li>
+</ul> 
+<p>Thus a request consists of record options and sets of field definitions or
+just field definitions. A record option is of the form:</p>
+<pre>
+record[name=value,...]
+</pre>
+
+<p>A field,putFeld,getField is a comma separated set of fieldDefs which are of
+the form:</p>
+<pre>
+fullFieldName
+or
+fullFieldName[option,...]
+or
+fullFieldName{fieldDef,...}     // recursive definition
+or
+fullFieldName[option,...]{fieldDef,...}     // recursive definition
+</pre>
+
+<p><b>fullFieldName</b> selects a subfield of the current sub-structure being accessed.
+Initially this means the top level structure of the data associated with the channel.
+In a recursive definition the current sub-structure becomes the location asscociated with fullFieldName
+</p>
+<p>If
+<b>fieldName{fieldDef,...}</b> is given then the generated data structure will have
+a structure field with subfields.</p>
+
+<p>Assume that the channel has the following data:</p>
+<pre>
+pvget -r "field()" -i powerSupply
+powerSupply
+structure 
+    alarm_t alarm
+        int severity 2
+        int status 0
+        string message bad voltage
+    time_t timeStamp
+        long secondsPastEpoch 0
+        int nanoseconds 0
+        int userTag 0
+    structure power
+        double value 0
+    structure voltage
+        double value 0
+    structure current
+        double value 0
+</pre>
+Then the following selects a subset of the fields:
+<pre>
+mrk&gt; pvget -r "field(alarm{severity,message},timeStamp.secondsPastEpoch,power)" -i powerSupply
+powerSupply
+structure 
+    structure alarm
+        int severity 2
+        string message bad voltage
+    structure timeStamp
+        long secondsPastEpoch 0
+    structure power
+        double value 0
+</pre>
+
+        
+
+
+<p>The syntax was chosen to be easy to use and to parse:</p>
+<dl>
+   <dt>record[...]</dt>
+      <dd>
+      Specifies a set of global options, i. e., options that apply to the record itself. 
+      </dd>
+   <dt>field(...)</dt>
+   <dt>putField(...)</dt>
+   <dt>getField(...)</dt>
+      <dd>
+      Each selects a set of subfields of the top level structure.
+      Each specifies a comma separated set of <b>fieldDef</b>s.
+      </dd>
+   <dt>fieldDef</dt>
+     <dd>Selects a single subfield of the current structure.</dd>
+   <dt>option</dt>
+      <dd>
+      A <b>name=value</b> pair. Both <b>name</b> and <b>value</b> are character strings.
+      </dd>
+   <dt>[...]</dt>
+      <dd>
+      Holds a comma separated set of <b>option</b>s.
+      </dd>
+   <dt>{...}</dt>
+      <dd>
+      Selects a set of subfields of a substructure within the top level structure.
+      Each defines a comma separated set of <b>fieldDef</b>s.
+      This is a recursive definition.
+      Thus a <b>fullFieldName</b> within <b>{}</b> is relative to structure that is referenced
+      by <b>{}</b>.
+      </dd>
+</dl>
+<h4>Naming conventions</h4>
+<dl>
+  <dt>blanks</dt>
+      <dd>All blanks are removed before parsing is started.</dd>
+   <dt>reserved characters</dt>
+      <dd>The following characters may not be used except as used in the above syntax:
+<pre>
+{ } ( ) [ ] = ,
+</pre>
+       <br />
+       The character
+<pre>
+.
+</pre>
+      in a fieldDef separates field names.
+      </dd>
+    <dt>field name</dt>
+       <dd>
+       A field name can only contain alphanumeric characters and the character <b>_</b>,
+       but must not start with the character <b>_</b>.
+       <br />
+       This is not enforced by the current parser but should be a rule for field names.
+       </dd>
+    <dt>option name</dt>
+      <dd>This should follow the same convertion as field name.
+       <br />
+       This is not enforced by the parser but future changes could.
+      </dd>
+   <dt>option value</dt>
+       <dd>For now the only illegal characters are the reserved characters.
+        At least the following character should also be allowed:
+<pre>
+: 
+</pre>
+       <br />
+       What other characters should be allowed?
+      </dd>
+
+</dl>
+
+<h4>Simple Examples</h4>
+<p>Clients like CSS, Synoptic Displays, Alarm Managers, and Archive Managers only want access to
+some combination of the following fields: <b>value</b>, <b>alarm</b>, <b>timeStamp</b>, <b>display</b>, and
+<b>control</b>. If the request is for a record that has these all as top level fields
+the request string is just a comma separated list of the field names. For
+example:</p>
+<pre>
+"value,alarm,timeStamp"
+</pre>
+
+<p>If the record is does not have the desired field at the top level then the
+field can still be accessed but in this case the full structure is preserved.
+For example:</p>
+<pre>
+"alarm,timeStamp,power.value"
+</pre>
+
+<p>Will get the top level alarm and timeStamp and the value from a
+structure named power. Thus the above works for a record that is structured as
+follows:</p>
+<pre>powerSupply
+    alarm
+    timeStamp
+    power
+       value
+       display
+       ...
+    ...
+</pre>
+What is returned to the client is:
+<pre>powerSupply
+    alarm
+    timeStamp
+    power
+       value
+</pre>
+
+<p>The only option most clients want is to request that a record be processed
+as part of a get or put requests. This is done via requests like the
+following:</p>
+<pre>
+"record[process=true]field(value,alarm,timeStamp)"
+</pre>
+<h4>Power Supply Example</h4>
+
+<p>The following examples are for a power supply record:</p>
+<pre>
+powerSupply
+    alarm
+    timeStamp
+    power
+       value
+       alarm
+       .. other fields
+    voltage
+       value
+       alarm
+       .. other fields
+    current
+       value
+       alarm
+       .. other fields
+    .. other fields
+</pre>
+
+
+<p>The following request:</p>
+<pre>
+"field(alarm,timeStamp,power.value)"
+</pre>
+<p>Will return to the client the following:</p>
+<pre>
+record psSimple
+    alarm_t alarm
+        severity NONE status NONE
+        message null
+    time_t 2013-02-27 06:04:30.997 userTag 0
+    structure power
+        double value 10.0
+</pre>
+
+<p>Note that if the actual record does not have a requested field than it will
+not be present in the structure returned to the client.
+</p>
+
+<p>The following is the same except that a record option and an option for the
+value field will be given.</p>
+<pre>
+"record[process=true]field(alarm,timeStamp,power.value[monitorAlgorithm=onChange])"
+</pre>
+
+<p>The options are to process the record and to cause power.value to cause a monitor only if the value changes.</p>
+
+
+<p>The following:</p>
+<pre>
+"field(alarm,timeStamp,power{value,alarm},current{value,alarm},voltage{value,alarm})"
+</pre>
+<p>Will return to the client the following:</p>
+<pre>
+record psEmbeded
+    alarm_t alarm
+        severity NONE status NONE
+        message
+    time_t 1969-12-31 19:00:00.000 userTag 0
+    structure power
+        double value 0.0
+    structure current
+        double value 0.0
+        alarm_t alarm
+            severity NONE status NONE
+            message
+    structure voltage
+        double value 0.0
+        alarm_t alarm
+            severity NONE status NONE
+            message
+</pre>
+
+
+<h3>Syntax for pvRequest structure created by createRequest</h3>
+<p><b>NOTE:</b> This section is only of interest to someone who is implementing code that
+has to introspect a structure generated by createRequest.</p>
+
+<p>pvRequest is a PVStructure that describes 1) record options and 2) field
+requests and options. It has the following structure:</p>
+<pre>
+structure
+  structure record
+    structure _options
+      option
+      ...
+  structure field
+    structure fieldName
+      structure _options
+        option
+        ...
+      structure fieldName
+        structure _options
+          option
+          ...
+        ...
+  structure putField
+    structure fieldName
+      structure _options
+        option
+        ...
+      structure fieldName
+        structure _options
+          option
+          ...
+        ...
+  structure getField
+    structure fieldName
+      structure _options
+        option
+        ...
+      structure fieldName
+        structure _options
+          option
+          ...
+        ...
+</pre>
+<p>where</p>
+<dl>
+  <dt>record</dt>
+    <dd>The options that apply to the entire record.</dd>
+  <dt>option</dt>
+    <dd>This is of the form
+      <b>string name value</b>
+    </dd>
+  <dt>field</dt>
+    <dd>Definitions that select fields of the PVRecord and options for the
+      fields. This definition is recursive.</dd>
+  <dt>fieldName</dt>
+    <dd>The field name that will appear in the PVStructure that is a copy of
+      the fields selected from the PVRecord. </dd>
+</dl>
+
+<p>Note:</p>
+<ul>
+  <li>The definition is recursive , i.e. an arbitarily complex structure can be
+    defined.</li>
+  <li>If a pvRequest with no fields is specified than all fields if the target
+    PVRecord will appear in the PVCopy.</li>
+</ul>
+
+<p>An example of option is process.</p>
+
+<p>Process is a record option:</p>
+<pre>
+structure
+  structure record
+    structure _options
+      string process true
+
+</pre>
+<p>For example if process is an option to createGet then the record will be
+processed before data is fetched. NOTE: scalarType boolean is also
+supported.</p>
+
+<p>The following is an example of a field option:</p>
+<pre>
+structure
+    structure field
+        structure value
+            structure _options
+                string monitorAlgorithm onChange
+</pre>
+
+<p>Some examples are:</p>
+<pre>
+request
+structure
+
+request alarm,timeStamp,power.value
+structure
+    structure alarm
+    structure timeStamp
+    structure power
+        structure value
+
+request record[process=true]field(alarm,timeStamp,power.value)
+structure
+    structure record
+        structure _options
+            string process true
+    structure field
+        structure alarm
+        structure timeStamp
+        structure power
+            structure value
+request record[process=true]field(alarm,timeStamp[algorithm=onChange,causeMonitor=false],power{value,alarm})
+structure
+    structure record
+        structure _options
+            string process true
+    structure field
+        structure alarm
+        structure timeStamp
+            structure _options
+                string algorithm onChange
+                string causeMonitor false
+        structure power
+            structure value
+            structure alarm
+
+request record[process=true,xxx=yyy]field(alarm,timeStamp[causeMonitor=true],power.value)
+structure
+    structure record
+        structure _options
+            string process true
+            string xxx yyy
+    structure field
+        structure alarm
+        structure timeStamp
+            structure _options
+                string causeMonitor true
+        structure power
+            structure value
+</pre>
+
+<h3>PVCopy</h3>
+<p>This is the interface for mapping between a PVStructure that contain a copy
+of the data for a subset of the fields in a PVRecord. Note that this interface
+is NOT for a single PVStructure but for a single PVRecord and a single
+Structure introspection interface that describes a subset of the fields in the
+PVRecord. For example if a server supports monitor queues then the server will
+allocate a PVStructure for each queue element but will create a single
+PVCopy.</p>
+<pre>
+PVCopy
+    PVMaster getPVMaster()
+    void traverseMaster(PVCopyTraverseMasterCallback callback)
+    Structure getStructure()
+    PVStructure createPVStructure()
+    int getCopyOffset(PVField masterPVField)
+    int getCopyOffset(PVStructure masterPVStructure,PVField masterPVField)
+    PVField getMasterPVField(int structureOffset)
+    void initCopy(PVStructure pvCopy, BitSet bitSet,boolean masterLocked)
+    void updateCopySetBitSet(PVStructure copyPVStructure,BitSet bitSet,boolean lockMaster)
+    void updateCopyFromBitSet(PVStructure copyPVStructure,BitSet bitSet,boolean lockMaster)
+    boolean updateMaster(PVStructure pvCopy,BitSet bitSet,boolean lockMaster)
+    PVStructure getOptions(PVStructure copyPVStructure,int fieldOffset)
+    String dump()
+}
+</pre>
+<p>where</p>
+<dl>
+  <dt>getPVMaster</dt>
+    <dd>Get the PVMaster to which this PVCopy is attached</dd>
+  <dt>traverseMaster</dt>
+     <dd>
+      Traverse all the fields in master.
+      The callback is called for each field in master.
+     </dd>
+  <dt>getStructure</dt>
+    <dd>Get the introspection interface which describes the subset of the
+      fields in the PVMaster.</dd>
+  <dt>createPVStructure</dt>
+    <dd>Create a PVStructure which can hold a subset of the data from the
+      PVMaster. A client may require multiple PVStructures. For example if a
+      monitor request supports a queue than a PVStructure is required for each
+      queue element. </dd>
+  <dt>getCopyOffset(PVField masterPVField)</dt>
+    <dd>Given a PVField from the master determine the offset within the
+      PVStructure where the copy of the data is located.
+      PVStructure.getSubField(offset) can be called to locate the PVField
+      within the PVStructure. </dd>
+  <dt>getCopyOffset(PVStructure masterPVStructure,PVField masterPVField)</dt>
+    <dd>Given a masterPVField within a masterPVStructure determine the offset
+      within the PVStructure where the copy of the data is located.
+      PVStructure.getSubField(offset) can be called to locate the PVField
+      within the PVStructure. </dd>
+  <dt>getMasterPVField</dt>
+    <dd>Given an offset within a PVStructure return the corresponding PVField
+      in the PVMaster.</dd>
+  <dt>initCopy</dt>
+    <dd>Initialize PVStructure with the current data from the PVMaster. The
+      bitSet will have offset 0 set to 1 and all other bits set to 0. </dd>
+  <dt>updateCopySetBitSet</dt>
+    <dd>Update PVStructure from PVMaster. The BitSet shows which fields in
+      PVStructure have changed.</dd>
+  <dt>updateCopyFromBitSet</dt>
+    <dd>Update PVStructure from PVMaster. Only fields that have the offset in
+      bitSet set to true are modified.</dd>
+  <dt>updateMaster</dt>
+    <dd>Update the fields in PVMaster with data from PVStructure. Only fields
+      that have the offset in bitSet set to true are modified. </dd>
+  <dt>getOptions</dt>
+    <dd>Get options for a field in a PVStructure created by pvCopy
+    The arguments are the pvStructure and the offset of the field for which the options are wanted.
+    It returns the options or null if the field did not have options.
+    </dd>
+  <dt>dump</dt>
+    <dd>Provides a dump of the internal pvCopy nodes. This is useful for debugging
+     monitor algorithms.</dd>
+</dl>
+
+<h3>Guidelines for pvDatabase Services</h3>
+<p>This section is for services that use pvDatabaseCPP.
+A service provides a top level PVStructure
+and implements methods init, process, and destroy.
+pvDatabaseCPP and pvAccessCPP provide a complete implementation of the server
+side of pvAccess.
+From the PVStructure a PVRecord is created.
+This record can be locked.
+</p>
+<p>pvDatabaseJava is similar except that the service only implements method process.
+</p>
+<p>A server is providing data for multiple clients.
+Each client has it's own top level PVStructure that has data
+for a subset of the fields in the servers top level PVStructure.
+The service must be careful of how it updates data in it's top leve
+PVStructure or else data for a client can change after process completes
+and before it is sent to the client.
+</p>
+<p>Previously the mapping between a PVStructure and it's associated
+bitSet as shown:
+<a href="#bitAssignment">bitSet for pvStructure</a>
+</p>
+<p>This can also be used to present guidelines for modifing fields
+in the top level PVStructure for the service:</p>
+<p>The pvRecord must be locked whenever any field is modfied.</p>
+<p>Any union, unionArray, or structureArray field that has a bit
+of the bitSet assigned to it <b>must</b> be replaced.
+Modifing subFields of the field is <b>not</b> permisible.
+</p>
+
+<h2>pvRequest Options</h2>
+
+<h3>Overview</h3>
+<p>As described in the previous section, both record and field options can be specified.
+For this release of PVA only record options are implemented.
+</p>
+<h3>Record Options</h3>
+<p>At present the following record options are in use:</p>
+<dl>
+    <dt>queueSize</dt>
+     <dd>
+      This is used to define the queueSize for monitors.
+      The default is:
+<pre>
+record[queueSize=2]
+</pre>
+      A larger size can be specified.
+     </dd>
+    <dt>process</dt>
+     <dd>
+      This is used by qsrv and pvDatabaseCPP to specify of records should be processed.
+      The default is <b>false</b> for channelGet and <b>true</b> for channelPut and channelPutGet,
+       An example is:
+<pre>
+record[process=false]
+</pre>
+     </dd>
+    <dt>block</dt>
+     <dd>
+      This is used by qsrv to specify if a request to process a record should
+      block until the record completes processing.
+      It is also used by the ca provider (in pvAccess) for channelPuts.
+      The default is not to block.
+      An example is:
+<pre>
+record[block=true]
+</pre>
+     </dd>
+</dl>
+<h2>Convert Facility</h2>
+<p>Both pvDataJava and pvDataCPP have a Convert Facility.
+Although they have some common features they are different enough that they
+will be discussed separately.
+</p>
+<p>
+They main difference is support for scalar arrays.
+</p>
+<p>
+The Java Convert facility supports sub-array copies between any two numeric
+arrays.
+It does a deep copy except for a complete copy between two array of the same
+type and the source array is immutable.
+In this case to calls the shareData method and also makes the destination
+array immutable.
+</p>
+<p>
+The C++ faclity only supports complete array copies between 
+two scalar arrays of the same type and only does a shallow copy.
+It also does a shallow copy for union, unionArray, and structureArray fields.
+It also has a separate facility that does sub-array copies between two
+arrays of the same type.
+</p>
+<h3>Java</h3>
+<p><b>NOTE:</b> copying immutable array fields. If an entire immutable array
+field is copied to another array that has the same elementType, both offsets
+are 0, and the length is the length of the source array, then the shareData
+method of the target array is called and the target array is set immutable.
+Thus the source and target share the same primitive array.</p>
+
+<p>This section describes the supported conversions between data types.</p>
+<ul>
+  <li>All supported types can be converted to a string. If you ask for a 100
+    megabyte array to be converted to a string expect a lot of output.</li>
+  <li>Conversion from a string to a scalar type.</li>
+  <li>Conversion from an array of strings to an array of scalar types.</li>
+  <li>Copy between the following types of scalar PVs
+    <ul>
+      <li>Numeric type to another numeric type</li>
+      <li>Both have the same type.</li>
+      <li>Either is a string</li>
+    </ul>
+  </li>
+  <li>Copy between PVArrays that satisfy one of the following.
+    <ul>
+      <li>Numeric to numeric</li>
+      <li>Both have the same type.</li>
+      <li>Either is a string.</li>
+    </ul>
+  </li>
+  <li>Conversions between numeric scalar types.</li>
+  <li>Conversions between arrays of numeric type.</li>
+  <li>Conversion between compatible structures.</li>
+  <li>Conversion between compatible unions.</li>
+  <li>Conversion between compatible union arrays.</li>
+  <li>Conversion between compatible structure arrays.</li>
+  <li>Support for unsigned integers. Because Java does primitive unsigned
+   integers the only support is in "widening" operations.
+   For example if a PVUByte is converted to short then the proper conversion will
+   be done.</li>
+  <li>A utility method the returns the full field name of a field.</li>
+</ul>
+<pre>
+interface Convert {
+    void getFullFieldName(StringBuilder builder,PVField pvField)
+    void getString(StringBuilder buf,PVField pv, int indentLevel);
+    void getString(StringBuilder buf,PVField pv);
+    void fromString(PVScalar pv,String from);
+    void fromString(PVScalarArray pv,String from);
+    int fromStringArray(PVScalarArray pv,
+         int offset, int len, String[]from, int fromOffset);
+    int toStringArray(PVScalarArray pv,
+         int offset, int len, String[]to, int toOffset);
+    boolean isCopyCompatible(Field from, Field to);
+    void copy(PVField from,PVField to);
+    boolean isCopyScalarCompatible(Field from, Field to);
+    void copyScalar(PVField from, PVField to);
+    boolean isCopyScalarArrayCompatible(ScalarArray from, ScalarArray to);
+    int copyScalarArray(PVScalarArray from, int offset,
+         PVScalarArray to, int toOffset, int len);
+    boolean isCopyStructureCompatible(Structure from, Structure to);
+    void copyStructure(PVStructure from, PVStructure to);
+    boolean isCopyUnionCompatible(Union from, Union to);
+    void copyUnion(PVUnion from, PVUnion to);
+    boolean isCopyStructureArrayCompatible(StructureArray from, StructureArray to);
+    void copyStructureArray(PVStructureArray from, PVStructureArray to);
+    boolean isCopyUnionArrayCompatible(UnionArray from, UnionArray to);
+    void copyUnionArray(PVUnionArray from, PVUnionArray to);
+    // For the following the pv Type must be PVByte, ...., PVDouble
+    byte toByte(PVField pv);
+    short toShort(PVField pv);
+    int   toInt(PVField pv);
+    long  toLong(PVField pv);
+    float toFloat(PVField pv);
+    double toDouble(PVField pv);
+    String toString(PVScalar pv);
+    void  fromByte(PVField pv, byte from);
+    void  fromShort(PVField pv, short from);
+    void  fromInt(PVField pv, int from);
+    void  fromLong(PVField pv, long from);
+    void  fromUByte(PVField pv, byte from);
+    void  fromUShort(PVField pv, short from);
+    void  fromUInt(PVField pv, int from);
+    void  fromULong(PVField pv, long from);
+    void  fromFloat(PVField pv, float from);
+    void  fromDouble(PVField pv, double from);
+// For the following the element type must be pvByte, ...., pvDouble
+    int toByteArray(PVScalarArray pv,
+        int offset, int len, byte[]to, int toOffset);
+    int toShortArray(PVScalarArray pv,
+        int offset, int len, short[]to, int toOffset);
+    int toIntArray(PVScalarArray pv,
+        int offset, int len, int[]to, int toOffset);
+    int toLongArray(PVScalarArray pv,
+        int offset, int len, long[]to, int toOffset);
+    int toFloatArray(PVScalarArray pv,
+        int offset, int len, float[]to, int toOffset);
+    int toDoubleArray(PVScalarArray pv,
+        int offset, int len, double[]to, int toOffset);
+    int fromByteArray(PVScalarArray pv,
+        int offset, int len, byte[]from, fromOffset);
+    int fromShortArray(PVScalarArray pv,
+        int offset, int len, short[]from, fromOffset);
+    int fromIntArray(PVScalarArray pv,
+        int offset, int len, int[]from, fromOffset);
+    int fromLongArray(PVScalarArray pv,
+        int offset, int len, long[]from, fromOffset);
+    int fromUByteArray(PVScalarArray pv,
+        int offset, int len, byte[]from, fromOffset);
+    int fromUShortArray(PVScalarArray pv,
+        int offset, int len, short[]from, fromOffset);
+    int fromUIntArray(PVScalarArray pv,
+        int offset, int len, int[]from, fromOffset);
+    int fromULongArray(PVScalarArray pv,
+        int offset, int len, long[]from, fromOffset);
+    int fromFloatArray(PVScalarArray pv,
+        int offset, int len, float[]from, fromOffset);
+    int fromDoubleArray(PVScalarArray pv,
+        int offset, int len, double[]from, fromOffset);
+    void newLine(StringBuilder builder, int indentLevel);
+}
+</pre>
+<p>The array methods all return the number of elements copied or converted.
+This can be less than <span>len</span> if the
+PVField array contains less than len elements.</p>
+
+<p><span>newLine</span> is a convenience method
+for code that implements <span>toString</span> It
+generates a newline and inserts blanks at the beginning of the newline.</p>
+
+<p>The getString methods dump the data in the metadata syntax described in the
+pvData project overview. Note that the toString methods of PVField are
+implemented by calling these convert methods.</p>
+
+<h3>C++</h3>
+<p>Many of the Java convert methods have been moved to <b>class PVField</b> and it's extensions.
+This include all the comparison methods and also conversion between numeric types.
+</p>
+<h4>convert.h</h4>
+
+<pre>
+class Convert;
+typedef std::tr1::shared_ptr&lt;Convert&gt; ConvertPtr;
+
+class Convert {
+public:
+    static ConvertPtr getConvert();
+    ~Convert();
+    void getString(std::string * buf,PVFieldPtr const &amp; pvField,int indentLevel);
+    void getString(std::string * buf,PVFieldPtr const &amp; pvField);
+    void getString(std::string * buf,PVField const * pvField,int indentLevel);
+    void getString(std::string * buf,PVField const * pvField);
+    std::size_t fromString(
+        PVStructurePtr const &amp;pv,
+        StringArray const &amp; from,
+        std::size_t fromStartIndex = 0);
+    void fromString(PVScalarPtr const &amp; pv, std::string const &amp; from);
+    std::size_t fromString(PVScalarArrayPtr const &amp; pv, std::string const &amp;from);
+    std::size_t fromStringArray(
+        PVScalarArrayPtr const &amp; pv,
+        std::size_t offset, std::size_t length,
+        StringArray const &amp; from,
+        std::size_t fromOffset);
+    std::size_t toStringArray(PVScalarArrayPtr const &amp; pv,
+        std::size_t offset,
+        std::size_t length,
+        StringArray &amp; to,
+        std::size_t toOffset);
+    int8 toByte(PVScalarPtr const &amp; pv);
+    int16 toShort(PVScalarPtr const &amp; pv);
+    int32 toInt(PVScalarPtr const &amp; pv);
+    int64 toLong(PVScalarPtr const &amp; pv);
+    uint8 toUByte(PVScalarPtr const &amp; pv);
+    uint16 toUShort(PVScalarPtr const &amp; pv);
+    uint32 toUInt(PVScalarPtr const &amp; pv);
+    uint64 toULong(PVScalarPtr const &amp; pv);
+    float toFloat(PVScalarPtr const &amp; pv);
+    double toDouble(PVScalarPtr const &amp; pv);
+    std::string toString(PVScalarPtr const &amp; pv);
+    void fromByte(PVScalarPtr const &amp; pv,int8 from);
+    void fromShort(PVScalarPtr const &amp; pv,int16 from);
+    void fromInt(PVScalarPtr const &amp; pv, int32 from);
+    void fromLong(PVScalarPtr const &amp; pv, int64 from);
+    void fromUByte(PVScalarPtr const &amp; pv,uint8 from);
+    void fromUShort(PVScalarPtr const &amp; pv,uint16 from);
+    void fromUInt(PVScalarPtr const &amp; pv, uint32 from);
+    void fromULong(PVScalarPtr const &amp; pv, uint64 from);
+    void fromFloat(PVScalarPtr const &amp; pv, float from);
+    void fromDouble(PVScalarPtr const &amp; pv, double from);
+}
+
+extern ConvertPtr getConvert();
+</pre>
+
+<h4>pvSubArrayCopy.h</h4>
+<p>This supports sub-array copying between arrays that have the same type.</p>
+<pre>
+template&lt;typename T&gt;
+void copy(
+    PVValueArray&lt;T&gt; &amp; pvFrom,
+    size_t fromOffset,
+    size_t fromStride,
+    PVValueArray&lt;T&gt; &amp; pvTo,
+    size_t toOffset,
+    size_t toStride,
+    size_t count);
+
+void copy(
+    PVScalarArray &amp; from,
+    size_t fromOffset,
+    size_t fromStride,
+    PVScalarArray &amp; to,
+    size_t toOffset,
+    size_t toStride,
+    size_t count);
+
+void copy(
+    PVStructureArray &amp; from,
+    size_t fromOffset,
+    size_t fromStride,
+    PVStructureArray &amp; to,
+    size_t toOffset,
+    size_t toStride,
+    size_t count);
+
+void copy(
+    PVArray &amp; from,
+    size_t fromOffset,
+    size_t fromStride,
+    PVArray &amp; to,
+    size_t toOffset,
+    size_t toStride,
+    size_t count);
+</pre>
+<p>The last copy is the only one most client need to call.
+It either throws an error if the element types do not match or calls the
+other copy functions. The arguments are:</p>
+<dl>
+   <dt>from</dt>
+     <dd>The source array.</dd>
+   <dt>fromOffset</dt>
+      <dd>The offset into the source array.</dd>
+   <dt>fromStride</dt>
+       <dd>The interval between source elements.</dd>
+   <dt>to</dt>
+      <dd>The destination array. The element type must be the same
+      as for the source array. If the element type is structure then
+      the introspection interface for the element types must be the same.
+      </dd>
+   <dt>toOffset</dt>
+      <dd>The offset into the destination array.</dd>
+   <dt>toStride</dt>
+       <dd>The interval between destination elements.</dd>
+   <dt>count</dt>
+      <dd>The  number of elements to copy.</dd>
+</dl>
+<p>An exception is thrown if:</p>
+<dl>
+   <dt>type mismatch</dt>
+     <dd>The element types for the source and destination differ.</dd>
+   <dt>immutable</dt>
+      <dd>The destination array is immutable.</dd>
+   <dt>capacity immutable</dt>
+      <dd>The destination array needs to have it's capacity extended
+        but the capacity is immutable.</dd>
+</dl>
+<h4>PVField::copy</h4>
+<p>PVField has a method copy.
+It allows copying between any two compatible fields.
+Both fields must have the same type.
+For scalar and scalarArray conversion between the various scalarTypes is supported.
+</p>
+<p>The following:</p>
+<pre>
+    PVDataCreatePtr create = getPVDataCreate();
+    PVDoublePtr pvDouble = create->createPVScalar&lt;PVDouble&gt;();
+    PVBytePtr pvByte = create->createPVScalar&lt;PVByte&gt;();
+    pvByte->put(10);
+    pvDouble->copy(*pvByte);
+    cout &lt;&lt; "double " &lt;&lt; pvDouble &lt;&lt; " byte " &lt;&lt; pvByte &lt;&lt; endl;
+
+    PVStringPtr pvString = create->createPVScalar&lt;PVString&gt;();
+    pvString->copy(*pvByte);
+    cout &lt;&lt; "string " &lt;&lt; pvString &lt;&lt; " byte " &lt;&lt; pvByte &lt;&lt; endl;
+</pre>
+produces:
+<pre>
+double 10 byte 10
+string 10 byte 10
+</pre>
+<p>Likewise for scalarArray:</p>
+<pre>
+    PVDataCreatePtr create = getPVDataCreate();
+    PVDoubleArrayPtr pvDoubleArray = create->createPVScalarArray&lt;PVDoubleArray&gt;();
+    PVByteArrayPtr pvByteArray = create->createPVScalarArray&lt;PVByteArray&gt;();
+    shared_vector&lt;int8&gt; data(2);
+    data[0] = 1; data[1] = 10;
+    pvByteArray->replace(freeze(data));
+    pvDoubleArray->copy(*pvByteArray);
+    cout &lt;&lt; "double " &lt;&lt; pvDoubleArray &lt;&lt; " byte " &lt;&lt; pvByteArray &lt;&lt; endl;
+
+    PVStringArrayPtr pvStringArray = create->createPVScalarArray&lt;PVStringArray&gt;();
+    pvStringArray->copy(*pvByteArray);
+    cout &lt;&lt; "string " &lt;&lt; pvStringArray &lt;&lt; " byte " &lt;&lt; pvByteArray &lt;&lt; endl;
+</pre>
+produces:
+<pre>
+double [1,10] byte [1,10]
+string [1,10] byte [1,10]
+</pre>
+</div>
+</body>
+</html>
