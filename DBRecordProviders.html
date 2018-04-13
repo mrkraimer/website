@@ -68,13 +68,19 @@ The following provide network access to ioc DBrecords:
 <h2>value</h2>
 <h2>alarm,timeStamp</h2>
 <h2>display,control,valueAlarm</h2>
-
+<p>
 I have added code to examplePP/database/ioc so that I could test more DBF types.
-This is in https://github.com/mrkraimer/exampleCPP.
-I have not issued a pull request in epics-base because I want to do more testing and documentation.
+This is in:
+<a
+href="https://github.com/mrkraimer/exampleCPP">exampleCPP
+</a>
+</p>
+<p>
+I have not issued a pull request in <b>epics-base</b> because I want to do more testing and documentation.
 I particularly wanted to test display,control,and valueAlarm.
 Note that  put can only change the value field and for monitor at most value,alarm,and timeStamp are allowed.
 This only get allows display,control,and valueAlarm.
+</p>S
 
 In particular I added record types to test:
 DBF_CHAR, DBF_UCHAR, DBF_SHORT, DBF_USHORT, and DBF_ULONG.
@@ -83,7 +89,7 @@ I added these because epics-base has no record types for these types.
 For DBF_SHORT, DBF_LONG, DBF_FLOAT, DBF_DOUBLE, DBF_ENUM, and DBF_STRING
 There now appears to be compatibility between ca and pva other then if the request is
 -r ""
-provider pva returns all of value,alarm,timeStamp,display,control,valueAlarm
+provider pva returns all Sof value,alarm,timeStamp,display,control,valueAlarm
 provider ca does not return timeStamp because DBR_CTRL_* does not return timeStamp info.
 If the request is
 -r "display,control,valueAlarm"
