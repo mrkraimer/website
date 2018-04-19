@@ -24,18 +24,19 @@
 
 <div class="head">
 <h1>Network Providers for DBRecords</h1>
-<p> Date: 2018.04.13</p>
+<p>Author: Marty Kraimer<br />
+Date: 2018.04.19</p>
 
 <h2 class="nocount">Abstract</h2>
+<p><b>WARNING:</b> This is a draft version of this document.</p>
 <p>
 The following provide network access to ioc DBrecords:
 </p>
 <dl>
-   <dt>Channel Access</dt>
+   <dt>channel access</dt>
      <dd>
      This is the network provider that has existed since the late 1980's and
-     is provided with epics-base.<br />
-     There is also a Java implementation.
+     is provided with <b>epics-base</b>.
      </dd>
    <dt>qsrv</dt>
      <dd>
@@ -45,8 +46,11 @@ The following provide network access to ioc DBrecords:
      </dd>
    <dt>ca</dt>
      <dd>
-      This is a client side provider that is implemented in pvAccessCPP and pvAccessJava.<br />
-      This uses the <b>channel access</b> network protocol to communicate with a server.
+      This is a client side provider that is implemented in pvAccessCPP and pvAccessJava.
+      <br />
+      This document only discuses C++.
+      <br />
+      <b>ca</b> uses the <b>channel access</b> network protocol to communicate with a server.
      </dd>
 </dl>
 <p>
@@ -62,117 +66,1446 @@ This document describes compatability issues between these network providers.
 <div id="contents" class="contents">	  
 <hr />
 <h2>Goals</h2>
+<h3>Immediate</h3>
+<p>The immediate goal is to start a discussion about possible changes to <b>ca</b> and <b>qsrv</b>.
+Hopefully this can be a topic at the BNL FTF meeting in May 2018.
+</p>
+<h3>Final</h3>
+<p>
+Starting with Overview, this document will descibe compatability issues between the three network providers.
+</p>
 <h2>Known Issues</h2>
+<h3>Issues for both ca and qsrv</h3>
+<dl>
+   <dt>format</dt>
+     <dd>The definition of <b>display</b> has a string field named <b>format</b><br />
+       How should this be defined? <br />
+       <b>NOTE:</b> channel access uses <b>precision</b>.
+       But this has problems. 
+       <a
+        href= "http://www.cplusplus.com/reference/cstdio/printf/">cstdio
+        </a>
+       states:
+<pre>
+precision	description
+For integer specifiers (d, i, o, u, x, X):
+precision specifies the minimum number of digits to be written. 
+...
+For a, A, e, E, f and F specifiers:
+this is the number of digits to be printed after the decimal point.
+...
+</pre>
+        If a channel access client makes a <b>DBR_STRING</b> request for 
+        reading a channel with native type <b>DBF_DOUBLE</b> or <b>DBF_FLOAT</b> 
+        then the server will use a <b>Fl.p</b> conversion where
+        <b>l</b> is the total number of characters and <b>p</b> is the <b>precision</b>.
+       But this is only done if the value is such that an <b>F</b> style format makes sense.
+       If it does not it uses an <b>E</b> style format and ignores <b>precision</b>.<br/>
+       For all other <b>DBF</b> types precision is ignored.
+     </dd>
+   <dt>byte array for long strings</dt>
+     <dd>
+     <b>channel access</b> enforces <b>MAX_STRING_SIZE</b>.
+     A workaround is to create a waveform record of type <b>DBF_CHAR</b>.
+     The client must be aware that the record actually holds a character string instead of an array of bytes.
+     For pva clients this means that instead of reading and writing byte array data it should read and write string data.
+     Neither <b>ca</b> or <b>qsrv</b> currently provides support for this.<br/>
+     Perhaps both could support a field option like:
+<pre>
+field(value[bytearray=string])
+</pre>
+     </dd>
+   <dt>limit number of elements for arrays</dt>
+      <dd>
+      <b>channel access</b> gets and monitors allow the caller to specify
+       the maximum number of array elements to be sent to the client.
+       Neither <b>ca</b> or <b>qsrv</b> curently provides support for this.<br/>
+     Perhaps both could support a field option like:
+<pre>
+field(value[maxelements=value])
+</pre>
+      </dd>
+</dl>
+<h3>Issues for ca</h3>
+<p>
+<b>channel access</b> allows the client to specify the data types to be received from the server.
+The necessary conversions are done on the server.
+This is especially a problem for DBF_CHAR fields.
+A DBRecord can have a DBF_CHAR or DBF_UCHAR value field,
+but <b>channel access</b> has no concept of signed and unsigned types.
+In the description of <b>channel access</b> below an example is given
+that demonstrates the problem:
+</p>
+<p>Note that the client does get correct values for DBF_CHAR but not for DBF_UCHAR</p>
+<p>Perhaps there could be a field option:</p>
+<pre>
+field(value[byte=signed])
+or
+field(value[byte=unsigned])
+</pre>
+<h3>Issues for qsrv</h3>
+<dl>
+   <dt>Does not allow the user to select desired set of fields</dt>
+     <dd>
+      If the client specifies:
+<pre>
+mrk> pvget  -p pva -m -r "value,alarm,timeStamp" DBRlongout
+</pre>
+      The client will also get display,control, and valueAlarm fields.<br />
+      If the client specifies:
+<pre>
+mrk> pvget  -p ca -m -r "value,alarm,timeStamp" DBRlongout
+</pre>
+     The client will only receive the requested fields.
+     </dd>
+   <dt>get and monitor always return all fields</dt>
+     <dd>
+      Unlike provider <b>ca</b> all fields are returned for each get or monitor instead of only the fields that have
+      changed.
+     </dd>
+</dl>
 <h2>Overview</h2>
-<h2>Examples</h2>
-<h2>value</h2>
-<h2>alarm,timeStamp</h2>
-<h2>display,control,valueAlarm</h2>
 <p>
-I have added code to examplePP/database/ioc so that I could test more DBF types.
-This is in:
-<a href="https://github.com/mrkraimer/exampleCPP">exampleCPP
+<b>EPICS</b> has existed since the early 1990's. It evolved from a control system named <b>GTACS</b> which
+was developed at <b>LANL</b> in the second half of the 1980's. Two major features are:
+</p>
+<dl>
+   <dt>Memory Resident Database of Smart Records</dt>
+     <dd>An IOC has a database consisting of <b>DBRecord</b> instances.
+       Each instance has a record name that should be  unique in the local area network.
+       A <b>DBRecord</b> has a "flat" record structure, i. e., it has a set of fields that
+       hold the data for the record instance.
+      </dd>
+   <dt>channel access</dt>
+      <dd>
+       This is the software that allows a client to read, write, and monitor data in a <b>DBRecord</b> instance.
+       <br />
+       It implements a network based client/server model.
+      </dd>
+</dl>
+<p>An extensible set of record types can be created.
+Each record type has associated code, which is what makes the record "smart".
+Many record types are designed to interact with hardware like ADCs, DACs, etc.
+This document only discusses how a client, via <b>channel access</b>, or <b>qsrv</b> or <b>ca</b>
+can read, write, a monitor data from <b>DBRecord</b> instances.
+</p>
+<h2>exampleCPP</h2>
+<p>
+<a
+href= "https://github.com/epics-base/exampleCPP">exampleCPP
 </a>
+has a number of examples. This document uses two of the examples.
+</p>
+<h3>database</h3>
+<p>
+<b>database</b> supports an IOC that has a combination of <b>PVRecords</b>
+and <b>DBRecords</b>.
+In this document we are  only interested in <b>DBRecords</b>.
 </p>
 <p>
-In particular I added record types to test:
-DBF_CHAR, DBF_UCHAR, DBF_SHORT, DBF_USHORT, and DBF_ULONG.
-I added these because epics-base has no record types for these types.
-</p>
-<p>
-For DBF_SHORT, DBF_LONG, DBF_FLOAT, DBF_DOUBLE, DBF_ENUM, and DBF_STRING
-There now appears to be compatibility between ca and pva other then if the request is:
+If an IOC is started as follows:
 </p>
 <pre>
--r ""
+mrk> pwd
+/home/epicsv4/masterCPP/exampleCPP/database/iocBoot/exampleDatabase
+mrk> ../../bin/linux-x86_64/exampleDatabase st.cmdtypes 
 </pre>
 <p>
-provider pva returns all of value,alarm,timeStamp,display,control,valueAlarm
-provider ca does not return timeStamp because DBR_CTRL_* does not return timeStamp info.
-If the request is:
+Then a set of <b>DBRecords</b> are available for every possible <b>DBF</b> type:
 </p>
 <pre>
--r "display,control,valueAlarm"
+epics> dbnr
+Records  Aliases  Record Type
+     1        0    longout
+     2        0    mbbi
+     1        0    bi
+     1        0    floatout
+     1        0    ucharout
+     1        0    mbbo
+     1        0    ao
+     1        0    simpleBusy
+     1        0    bo
+     1        0    charout
+     9        0    waveform
+     1        0    stringout
+     1        0    ushortout
+     1        0    ai
+     1        0    calc
+     1        0    longin
+     1        0    stringin
+     1        0    shortout
+     1        0    calcout
+     1        0    ulongout
+Total 29 records, 0 aliases
+epics> dbl longout
+DBRlongout
+... // similar for other scalar types
+epics> dbl waveform
+DBRbyteArray
+DBRshortArray
+DBRintArray
+DBRubyteArray
+DBRushortArray
+DBRuintArray
+DBRstringArray
+DBRfloatArray
+DBRdoubleArray
+epics> 
 </pre>
 <p>
-Then <b>pva</b> still returns all of value,alarm,timeStamp,display,control,valueAlarm.
-<b>ca</b> just returns display,control,valueAlarm
-There is not complete compatibility with channel access because both ca and pva both return type double for
-control and display limits. Also both ca and pva use special fields for control,display,and valueAlarm.
-Thus there is not complete compatibility between channel access and ca/pva.
+The examples in this document access these records.
 </p>
+<h3>exampleClient</h3>
 <p>
-Let me give an example:
+This has examples for issuing client <b>get</b>, <b>put</b> and <b>monitor</b>
+requests. For example:
 </p>
 <pre>
-mrk> caget -d 29 DBRshortout
-DBRshortout
-    Native data type: DBF_SHORT
-    Request type:     DBR_CTRL_SHORT
+mrk> exampleClient/get -help
+ -h -p provider -r request - d debug channelNames 
+default
+-p pva -r value,alarm,timeStamp -d false PVRdouble
+</pre>
+<h2>IOC DBRecord database</h2>
+An IOC database consists of a set of <b>DBRecord</b>s.
+Each is an instance of an extensible set of record types.
+Each record type has associated record support code.
+<h3>DBRecord structure</h3>
+<p>A DBRecord instance is a structure with a set of fields defined by the record type.
+Each field name consists of at most 4 characters. For the database the characters are all lower case and
+for client access the same name but in upper case.
+There is a set of fields that are common to all record types and each record type defines an additional set of
+fields. Some of the fields accessable to clients are:
+</p>
+<pre>
+char           name[61];   /* Record Name */
+char           desc[41];   /* Descriptor */
+...
+epicsTimeStamp time;       /* Time */
+...
+</pre>
+<p>
+Each record type must define a field name <b>val</b>, must be one of the types defined in the next subsection.
+Many fields are declared <b>NOACCESS</b>, which means that clients can not directly access these fields.
+Each DBRecord instance has a record name. A client can access a record via a channel name.
+A channel name is identical to the record name with an optional <b>.fieldname</b>.
+If a field name is not specified then <b>recordname.VAL</b> is implied.
+A field accessible to clients is one of the following:
+</p>
+<dl>
+   <dt>numeric type</dt>
+      <dd>
+       One of the numeric types defined in the next section.<br />
+      </dd>
+   <dt>character string</dt>
+      <dd>
+       A fixed length character string.
+      </dd>
+   <dt>timeStamp</dt>
+      <dd>
+       This is the only field, accessable by clients, that is a structure.<br />
+       It is defined as follows:
+<pre>
+typedef struct epicsTimeStamp {
+    epicsUInt32    secPastEpoch;   /* seconds since 0000 Jan 1, 1990 */
+    epicsUInt32    nsec;           /* nanoseconds within second */
+} epicsTimeStamp;
+</pre>
+      <b>NOTE</b> secPastEpoch overflows 136 years after 1900, i. e. in 2126.
+      </dd>
+     <dt>array</dt>
+       <dd>
+          This is an array of one of the numeric types or an array of strings of size <b>MAX_STRING_SIZE</b>.
+       </dd>
+</dl>
+
+<h3>VAL types</h3>
+<p>Each record type must define a value field.
+Client code refers to this field with the name <b>VAL</b> and record support code the name <b>val</b>.
+Each record type must define the value field to be one of the following types.
+</p>
+<pre>
+typedef enum {
+	DBF_STRING,    // char[40];
+	DBF_CHAR,      // epicsInt8
+	DBF_UCHAR,     // epicsUInt8
+	DBF_SHORT,     // epicsInt16
+	DBF_USHORT,    // epicsUInt16
+	DBF_LONG,      // epicsInt32
+	DBF_ULONG,     // epicsUInt32
+	DBF_INT64,     // epicsInt64     NOTE: Only starting with base 3.15 releases
+	DBF_UINT64,    // epicsUInt64    NOTE: Only starting with base 3.15 releases
+	DBF_FLOAT,     // epicsFloat32
+	DBF_DOUBLE,    // epicsFloat64
+	DBF_ENUM,      // epicsEnum16
+	...
+}dbfType;
+</pre>
+<h3>record structure</h3>
+<pre>
+struct aRecord {
+    char                name[61];   /* Record Name */
+    char                desc[41];   /* Descriptor */
+    ...                             /* other fields */
+    epicsEnum16         stat;       /* Alarm Status */
+    epicsEnum16         sevr;       /* Alarm Severity */
+    ...                             /* other fields */
+    epicsTimeStamp      time;       /* Time */
+    &lt;type&gt;              val;        /* Current value. Type is record type specific */
+    ...                             /* record type specific fields */
+}
+
+</pre>
+<p>The val field type can be:</p>
+<dl>
+   <dt>scalar</dt>
+       <dd>any of <b>epicsInt8</b>, ..., <b>epicsFloat64</b> except <b>epicsEnum16</b>.<br/>
+         for <b>DBF_STRING</b> it is <b>"val char[MAX_STRING_SIZE]"</b>.
+      </dd>
+   <dt>scalar array</dt>
+        <dd>
+        Is defined as <b>void *val</b>.<br />
+        The record support must make it a array of any of
+         <b>epicsInt8</b>, ..., <b>epicsFloat64</b> except <b>epicsEnum16</b>.
+         Thus arrays of enum are not supported.<br />
+        For an array of strings it must be an array of <b>char[MAX_STRING_SIZE]</b>
+       </dd>
+   <dt>enumerated</dt>
+      <dd>These are record types like the <b>epics-base</b> record types <b>bi</b>, <b>bo</b>, <b>mbbi</b>, and <b>mbbo</b>. <br />
+       These must have value type <b>epicsEnum16</b>, which is actually <b>epicsUInt16</b>.
+      </dd>
+</dl>
+        
+<h3>record support methods related to data access</h3>
+<p>Each record support can implement a combination of the methods
+described in this section.
+Only the methods that make sense for the record type need to be implemented.
+</p>
+<p>
+This section only describes the methods used for client access.
+Methods related to record processing are not described.
+</p>
+<dl>
+    <dt>get_units</dt>
+       <dd>
+<pre>
+long get_units(DBADDR *, char * units);
+</pre>
+       </dd>
+    <dt>get_precision</dt>
+       <dd>
+<pre>
+long get_precision(const DBADDR *, long *precision);
+</pre>
+       </dd>
+    <dt>get_graphic_double</dt>
+       <dd>
+<pre>
+long get_graphic_double(DBADDR *, struct dbr_grDouble *);
+struct dbr_grDouble {
+        epicsFloat64    upper_disp_limit;       /*upper limit of graph*/
+        epicsFloat64    lower_disp_limit;       /*lower limit of graph*/
+}
+</pre>
+       </dd>
+    <dt>get_control_double</dt>
+       <dd>
+<pre>
+long get_control_double(DBADDR *, struct dbr_ctrlDouble *)
+struct dbr_ctrlDouble {
+        epicsFloat64    upper_ctrl_limit;       /*upper limit of graph*/
+        epicsFloat64    lower_ctrl_limit;       /*lower limit of graph*/
+}
+</pre>
+       </dd>
+    <dt>get_alarm_double</dt>
+       <dd>
+<pre>
+long get_alarm_double(DBADDR *, struct dbr_alDouble *);
+struct dbr_alDouble {
+        epicsFloat64    upper_alarm_limit;
+        epicsFloat64    upper_warning_limit;
+        epicsFloat64    lower_warning_limit;
+        epicsFloat64    lower_alarm_limit;
+}
+</pre>
+       </dd>
+    <dt>get_enum_str</dt>
+       <dd>
+<pre>
+long get_enum_str(const DBADDR *, char *choice);
+</pre>
+       </dd>
+    <dt>get_enum_strs</dt>
+       <dd>
+<pre>
+long get_enum_strs(const DBADDR *, struct dbr_enumStrs *)
+struct dbr_enumStrs {
+	epicsUInt32	no_str;		/* number of strings*/
+	epicsInt32	padenumStrs;	/*padding to force 8 byte align*/
+	char		strs[DB_MAX_CHOICES][MAX_STRING_SIZE];	/* string values    */
+}
+#define MAX_STRING_SIZE 40
+#define DB_MAX_CHOICES 30
+</pre>
+       </dd>
+    <dt>put_enum_str</dt>
+       <dd>
+<pre>
+long put_enum_str(const DBADDR *, const char *choice);
+</pre>
+       </dd>
+    <dt>get_array_info</dt>
+       <dd>
+<pre>
+long get_array_info(DBADDR *, long *no_elements, long *offset);
+</pre>
+       </dd>
+    <dt>put_array_info</dt>
+       <dd>
+<pre>
+long put_array_info(DBADDR *, long nNew);
+</pre>
+       </dd>
+</dl>
+<h2>Overview of channel access</h2>
+<p>
+The basic functionality of <b>channel access</b> is defined in the header files <b>db_access.h</b>
+and <b>cadef.h</b>.
+</p>
+<h3>Data types</h3>
+<p>
+The primitive types supported are:
+</p>
+<pre>
+DBR_STRING    char[MAX_STRING_SIZE]   // MAX_STRING_SIZE=40
+DBR_CHAR      epicsInt8
+DBR_SHORT     epicsInt16
+DBR_LONG      epicsInt32
+DBR_FLOAT     epicsFloat32
+DBR_DOUBLE    epicsFloat64
+DBR_ENUM      epicsUInt16 // SEE BELOW FOR MORE DETAILS
+</pre>
+<p>
+Except for DBR_ENUM, an array of each type is also supported.
+</p> 
+<p>Notice that, other than DBR_ENUM, there is no concept of unsigned integer types.
+When a client connects to a channel, i.e <b>recordname</b> or <b>recordname.fieldname</b>,
+the client can get the type defined in the record.
+If the record holds an unsigned type then the type reported to the client is promoted to a wider
+type as follows:
+</p>
+<pre>
+BBR_CHAR  NO PROMOTION
+DBR_SHORT => DBR_LONG
+DBR_LONG  => DBR_DOUBLE
+</pre>
+<p>
+Note that since there is no promotion for DBR_CHAR the client can have strange behavior as follows:
+</p>
+<pre>
+mrk> caput DBRucharout -1
+mrk> caget DBRucharout
+DBRucharout                    -1
+mrk> caget -d DBR_CHAR DBRucharout
+DBRucharout
+    Native data type: DBF_CHAR
+    Request type:     DBR_CHAR
     Element count:    1
-    Value:            0
+    Value:            -1
+mrk> caget -d DBR_LONG DBRucharout
+DBRucharout
+    Native data type: DBF_CHAR
+    Request type:     DBR_LONG
+    Element count:    1
+    Value:            255
+</pre>
+<h3>Conversion between types</h3>
+<p>The client can ask for any type it wants and the server side will convert between requested and actual types.
+In particular if the client ask for <b>DBR_STRING</b> then most conversion will be what the client desires.
+But this can be quite expensive, especially for arrays.
+</p>
+<p>
+
+If the client specifies a type that is not the native type than the server converts between the native type and
+the type the client requests.
+If the client requests a type that is narrower than the native type then overflow can happen.
+The client will not be notified when this happens.
+Also note the problem mentioned above about unsigned integer types.
+</p>
+<h4>limit conversions</h4>
+<p>Note that the record support methods for limits, e. g.
+<b>get_graphic_double</b>, <b>get_control_double</b>, and
+<b>get_alarm_double</b> only get limit values as double.
+This means that for other types conversion are made when a client
+makes a request that involves limits.
+</p>
+<p>For example consider a <b>longout</b> record and the client issues
+a <b>DBR_CNTL_LONG</b> request.
+The limit values in the record are type <b>epicsInt32</b>.
+When the limit values are read from the record they are converted to double.
+But the client requested limit values as <b>epicsInt32</b> so
+the values are converted from double to <b>epicsInt32</b>.
+This works but causes some cpu usage.
+</p>
+<h3>caget request type</h3>
+<p><b>caget</b> is used in many of the examples below.
+It allows you to specify the request type:
+</p>
+<pre>
+mrk> caget -help
+...
+  -d &lt;type&gt;: Request specific dbr type; use string (DBR_ prefix may be omitted)
+      or number of one of the following types:
+ DBR_STRING     0  DBR_STS_FLOAT    9  DBR_TIME_LONG   19  DBR_CTRL_SHORT    29
+ DBR_INT        1  DBR_STS_ENUM    10  DBR_TIME_DOUBLE 20  DBR_CTRL_INT      29
+ DBR_SHORT      1  DBR_STS_CHAR    11  DBR_GR_STRING   21  DBR_CTRL_FLOAT    30
+ DBR_FLOAT      2  DBR_STS_LONG    12  DBR_GR_SHORT    22  DBR_CTRL_ENUM     31
+ DBR_ENUM       3  DBR_STS_DOUBLE  13  DBR_GR_INT      22  DBR_CTRL_CHAR     32
+ DBR_CHAR       4  DBR_TIME_STRING 14  DBR_GR_FLOAT    23  DBR_CTRL_LONG     33
+ DBR_LONG       5  DBR_TIME_INT    15  DBR_GR_ENUM     24  DBR_CTRL_DOUBLE   34
+ DBR_DOUBLE     6  DBR_TIME_SHORT  15  DBR_GR_CHAR     25  DBR_STSACK_STRING 37
+ DBR_STS_STRING 7  DBR_TIME_FLOAT  16  DBR_GR_LONG     26  DBR_CLASS_NAME    38
+ DBR_STS_SHORT  8  DBR_TIME_ENUM   17  DBR_GR_DOUBLE   27
+ DBR_STS_INT    8  DBR_TIME_CHAR   18  DBR_CTRL_STRING 28
+
+</pre>
+<h3>Example conversions</h3>
+<p>Some examples are:</p>
+<h4>DBRecord has value of type DBF_DOUBLE</h4>
+<pre>
+mrk> caput DBRdoubleout 1.33333
+mrk> caget DBRdoubleout
+DBRdoubleout                   1.33333
+mrk> caget -d DBR_STRING DBRdoubleout
+DBRdoubleout
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_STRING
+    Element count:    1
+    Value:            1.33               // NOTE PREC=2
+mrk> caget -d DBR_SHORT DBRdoubleout
+DBRdoubleout
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_SHORT
+    Element count:    1
+    Value:            1
+mrk> caput DBRdoubleout 1e6
+mrk> caget DBRdoubleout
+DBRdoubleout                   1e+06
+mrk> caget -d DBR_STRING DBRdoubleout
+DBRdoubleout
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_STRING
+    Element count:    1
+    Value:            1000000.00
+mrk> caget -d DBR_SHORT DBRdoubleout
+DBRdoubleout
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_SHORT
+    Element count:    1
+    Value:            16960          // NOTE OVERFLOW
+mrk> 
+</pre>
+<h4>DBRecord has value of type DBF_USHORT</h4>
+<pre>
+mrk> caput DBRushortout 65535
+mrk> caget DBRushortout
+DBRushortout                   65535
+mrk> caget -d DBR_STRING DBRushortout
+DBRushortout
+    Native data type: DBF_LONG        // NOTE PROMOTION TO WIDER TYPE
+    Request type:     DBR_STRING
+    Element count:    1
+    Value:            65535
+mrk> caget -d DBR_SHORT DBRushortout
+DBRushortout
+    Native data type: DBF_LONG
+    Request type:     DBR_SHORT
+    Element count:    1 
+    Value:            -1              // NOTE CONVERSION TO SIGNED
+mrk> caget -d DBR_DOUBLE DBRushortout
+DBRushortout
+    Native data type: DBF_LONG
+    Request type:     DBR_DOUBLE
+    Element count:    1
+    Value:            65535
+</pre>
+<h4>Workaround for MAX_STRING_SIZE</h4>
+<p>A way to pass strings longer than <b>MAX_STRING_SIZE</b> is to create a record with
+a value field that is an array of type DBF_UCHAR.
+The client must know that this is why the record exists and must convert the array of bytes to a string.
+</p>
+<p>For example:</p>
+<pre>
+mrk> caput -a -S DBRbyteArray test
+mrk> caget -S DBRbyteArray
+DBRbyteArray test
+mrk> 
+</pre>
+<h3>DBR_ENUM</h3>
+<p>This is how <b>channel access</b> provides access to record types like <b>bi</b>,
+ <b>bo</b>, <b>mbbbi</b>,and  <b>mbbo</b>.
+The <b>value</b> field is just an <b>epicsUInt16</b>.
+</p>
+<p>The <b>value</b> is the index of a set of choices.
+The choices can be obtained as follows:
+</p>
+<pre>
+mrk> caget -d DBR_GR_ENUM DBRmbbout
+DBRmbbout
+    Native data type: DBF_ENUM
+    Request type:     DBR_GR_ENUM
+    Element count:    1
+    Value:            one
+    Status:           UDF
+    Severity:         NO_ALARM
+    Enums:            (16)
+                      [ 0] zero
+                      [ 1] one
+                      [ 2] two
+                      [ 3] three
+                      [ 4] four
+                      [ 5] five
+                      [ 6] six
+                      [ 7] seven
+                      [ 8] eight
+                      [ 9] nine
+                      [10] ten
+                      [11] eleven
+                      [12] twelve
+                      [13] thirteen
+                      [14] fourteen
+                      [15] fifteen
+</pre>
+<h3>DBR_STS</h3>
+<p>This is the prefix to obtain the status and severity in addition to a value.
+The complete set of types are <b>DBR_STS_STRING</b>,
+<b>DBR_STS_STRING</b>, <b>DBR_STS_CHAR</b>, <b>DBR_STS_SHORT</b>, <b>DBR_STS_LONG</b>,
+<b>DBR_STS_FLOAT</b>,<b>DBR_STS_DOUBLE</b> and <b>DBR_STS_ENUM</b>.
+</p>
+<p>Some examples are:</p>
+<pre>
+mrk> caget -d DBR_STS_ENUM DBRmbbout
+DBRmbbout
+    Native data type: DBF_ENUM
+    Request type:     DBR_STS_ENUM
+    Element count:    1
+    Value:            2
     Status:           NO_ALARM
     Severity:         NO_ALARM
-    Units:           
-    Lo disp limit:        -100
-    Hi disp limit:         100
+mrk> caget -d DBR_STS_STRING DBRmbbout
+DBRmbbout
+    Native data type: DBF_ENUM
+    Request type:     DBR_STS_STRING
+    Element count:    1
+    Value:            two
+    Status:           NO_ALARM
+    Severity:         NO_ALARM
+mrk> caget -d DBR_STS_DOUBLE DBRdoubleout
+DBRdoubleout
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_STS_DOUBLE
+    Element count:    1
+    Value:            1.5
+    Status:           NO_ALARM
+    Severity:         NO_ALARM
+</pre>
+<h3>DBR_TIME</h3>
+<p>This is similar to <b>DBR_STS</b> except that the time is also returned.</p>
+<p>Some examples are:</p>
+<pre>
+mrk> caget -d DBR_TIME_ENUM DBRmbbout
+DBRmbbout
+    Native data type: DBF_ENUM
+    Request type:     DBR_TIME_ENUM
+    Element count:    1
+    Value:            2
+    Timestamp:        2018-04-17 13:43:38.936139
+    Status:           NO_ALARM
+    Severity:         NO_ALARM
+mrk> caget -d DBR_TIME_STRING DBRmbbout
+DBRmbbout
+    Native data type: DBF_ENUM
+    Request type:     DBR_TIME_STRING
+    Element count:    1
+    Value:            two
+    Timestamp:        2018-04-17 13:43:38.936139
+    Status:           NO_ALARM
+    Severity:         NO_ALARM
+mrk> caget -d DBR_TIME_DOUBLE DBRdoubleout
+DBRdoubleout
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_TIME_DOUBLE
+    Element count:    1
+    Value:            1.5
+    Timestamp:        2018-04-17 13:43:27.019340
+    Status:           NO_ALARM
+    Severity:         NO_ALARM
+</pre>
+<h3>DBR_GR</h3>
+<p>This returns value, status, severity, units, precision, display limits, and alarm limits.
+Note that it is similar to <b>DBR_CTRL</b> except that it does not return control limits,
+</p>
+<h3>DBR_CTRL</h3>
+<p>This returns value, status, severity, units, precision, display limits, alarm limits,
+and control limits.<br />
+Note that <b>epicsTimeStamp</b> is not returned.
+</p>
+<p>Some examples are:</p>
+<pre>
+mrk> caget -d DBR_CTRL_DOUBLE DBRdoubleout
+DBRdoubleout
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_CTRL_DOUBLE
+    Element count:    1
+    Value:            1.5
+    Status:           NO_ALARM
+    Severity:         NO_ALARM
+    Units:            volts
+    Precision:        2
+    Lo disp limit:    -10
+    Hi disp limit:    10
+    Lo alarm limit:   -8
+    Lo warn limit:    -6
+    Hi warn limit:    6
+    Hi alarm limit:   8
+    Lo ctrl limit:    -1e+29
+    Hi ctrl limit:    1e+29
+mrk> caget -d DBR_CTRL_LONG DBRlongout
+DBRlongout
+    Native data type: DBF_LONG
+    Request type:     DBR_CTRL_LONG
+    Element count:    1
+    Value:            100
+    Status:           HIHI
+    Severity:         MAJOR
+    Units:            volts
+    Lo disp limit:    -2147483648
+    Hi disp limit:    2147483647
     Lo alarm limit:        -80
     Lo warn limit:         -60
     Hi warn limit:          60
     Hi alarm limit:         80
-    Lo ctrl limit:         -90
-    Hi ctrl limit:          90
-mrk> pvget -p ca -r "display,control,valueAlarm" DBRshortout
-DBRshortout
-structure
+    Lo ctrl limit:    -2147483648
+    Hi ctrl limit:    2147483647
+mrk> 
+</pre>
+<h3>DBR_CHAR behavior</h3>
+<p>As mentioned above the database has field types <b>DBF_CHAR</b> and <b>DBF_UCHAR</b>
+but channel access only has <b>DBR_CHAR</b>.
+In addition <b>DBF_UCHAR</b> is not promoted to <b>DBR_SHORT</b>.
+</p>
+<p>
+This leads to strange behavior as the following examples show.
+</p>
+<p>For <b>channel access</b></p>
+<pre>
+mrk> caget -d DBR_GR_CHAR DBRcharout
+DBRcharout
+    Native data type: DBF_CHAR
+    Request type:     DBR_GR_CHAR
+    Element count:    1
+    Value:            -127
+    Status:           NO_ALARM
+    Severity:         NO_ALARM
+    Units:            
+    Lo disp limit:        -128
+    Hi disp limit:         127
+    Lo alarm limit:       -100
+    Lo warn limit:         -80
+    Hi warn limit:          80
+    Hi alarm limit:        100
+mrk> caget -d DBR_GR_CHAR DBRucharout
+DBRucharout
+    Native data type: DBF_CHAR
+    Request type:     DBR_GR_CHAR
+    Element count:    -127        //NOT CORRECT
+    Value:            0           //NOT CORRECT
+    Status:           NO_ALARM
+    Severity:         NO_ALARM
+    Units:            
+    Lo disp limit:           0
+    Hi disp limit:          -1 //NOT CORRECT
+    Lo alarm limit:         20
+    Lo warn limit:          50
+    Hi warn limit:        -106 //NOT CORRECT
+    Hi alarm limit:        -56 //NOT CORRECT
+mrk> caget -d DBR_GR_DOUBLE DBRcharout
+DBRcharout
+    Native data type: DBF_CHAR
+    Request type:     DBR_GR_DOUBLE
+    Element count:    1
+    Value:            -127
+    Status:           NO_ALARM
+    Severity:         NO_ALARM
+    Units:            
+    Precision:        0
+    Lo disp limit:    -128
+    Hi disp limit:    127
+    Lo alarm limit:   -100
+    Lo warn limit:    -80
+    Hi warn limit:    80
+    Hi alarm limit:   100
+mrk> caget -d DBR_GR_DOUBLE DBRucharout
+DBRucharout
+    Native data type: DBF_CHAR
+    Request type:     DBR_GR_DOUBLE
+    Element count:    1
+    Value:            129
+    Status:           NO_ALARM
+    Severity:         NO_ALARM
+    Units:            
+    Precision:        0
+    Lo disp limit:    0
+    Hi disp limit:    255
+    Lo alarm limit:   20
+    Lo warn limit:    50
+    Hi warn limit:    150
+    Hi alarm limit:   200
+</pre>
+<p>If the client specifies <b>DBR_GR_DOUBLE</b> the client always gets correct values for limits and value.
+If the client specifies <b>DBR_GR_CHAR</b> the client does <b>not</b> always get correct values for limits and value.
+</p>
+
+<h2>pvData for DBRecords</h2>
+<h3>value</h3>
+<p>The mapping from the DBF types for the value field of DBRecord to pvData is:</p>
+<pre>
+DBF_STRING  pvString
+DBF_CHAR    pvByte
+DBF_SHORT   pvShort
+DBF_UCHAR   pvUByte
+DBF_USHORT  pvUShort
+DBF_LONG    pvInt
+DBF_ULONG   pvUInt
+DBF_INT64   pvLong
+DBF_UINT64  pvULong
+DBF_FLOAT   pvFloat
+DBF_DOUBLE  pvDouble
+DBF_ENUM    SEE BELOW
+</pre>
+Except for enum each of these is either type <b>scalar</b> or <b>scalarArray</b>.
+<p><b>pvDataCPP</b> defines property structures 
+for <b>enum</b>,<b>alarm</b>,<b>timeStamp</b>,<b>display</b>,<b>control</b>, and <b>valueAlarm</b>.
+</p>
+<h3>enum</h3>
+<p>This is a structure for representing DBF_ENUM DBRecord fields.
+</p>
+<p>An example is:</p>
+<pre>
+mrk> pvget -i -p ca -r "value" DBRmbbout
+DBRmbbout
+epics:nt/NTEnum:1.0 
+    enum_t value
+        int index 2
+        string[] choices [zero,one,two,three,four,five,six,
+            seven,eight,nine,ten,eleven,twelve,thirteen,fourteen,fifteen]
+</pre>
+<h3>alarm</h3>
+<p>A structure with fields for status, severity, message, and userTag.</p>
+<p>An example is:</p>
+<pre>
+mrk> pvget -i -p ca -r "alarm" DBRdoubleout
+DBRdoubleout
+structure 
+    alarm_t alarm
+        int severity 2
+        int status 3
+        string message HIHI
+</pre>
+<p><b>pvDataCPP</b> provides <b>alarm.h</b>
+and <b>pvAlarm.h</b> to make it easier to work with alarms.
+</p>
+
+<h3>timeStamp</h3>
+<p>A structure with fields for a timeStamp and userTag.</p>
+<p>An example is:</p>
+<pre>
+mrk> pvget -i -p ca -r "timeStamp" DBRdoubleout
+DBRdoubleout
+structure 
+    time_t timeStamp
+        long secondsPastEpoch 1523989803
+        int nanoseconds 829527650
+        int userTag 0
+</pre>
+<p>Note that <b>secondsPastEpoch</b> is a 64 bit integer and the base year is the posix base year
+which is Jan 1, 1970 UTC.
+</p>
+<p>
+<b>qsrv</b> and <b>ca</b> both convert the DBRecord time stamp so that the client has the correct posix base.<br />
+Note also that, since <b>secondsPastEpoch</b> is a 64 bit integer, it will not overflow for a number
+of years greater than the age of our universe.
+</p>
+<p><b>pvDataCPP</b> provides <b>timeStamp.h</b>
+and <b>pvTimeStamp.h</b> to make it easier to work with timeStamps.
+</p>
+<h3>display</h3>
+<p>A structure of the form:</p>
+<pre>
+mrk> pvget -i -p ca -r "display" DBRdoubleout
+DBRdoubleout
+structure 
     display_t display
-        double limitLow -100
-        double limitHigh 100
-        string description
-        string format I6
-        string units
+        double limitLow -10
+        double limitHigh 10
+        string description 
+        string format F8.2
+        string units volts
+</pre>
+<p><b>pvDataCPP</b> provides <b>display.h</b>,
+which makes it easier to work with display.
+</p>
+<h3>control</h3>
+<p>A structure of the form:</p>
+<pre>
+mrk> pvget -i -p ca -r "control" DBRdoubleout
+DBRdoubleout
+structure 
     control_t control
-        double limitLow -90
-        double limitHigh 90
-        double minStep 0
+        double limitLow -1e+29
+        double limitHigh 1e+29
+        double minStep 0           //NOTE that channel access does not define this
+</pre>
+<p><b>pvDataCPP</b> provides <b>control.h</b>,
+which makes it easier to work with control.
+</p>
+<h3>valueAlarm</h3>
+<p>A structure of the form:</p>
+<pre>
+mrk> pvget -i -p ca -r "valueAlarm" DBRdoubleout
+DBRdoubleout
+structure 
     valueAlarm_t valueAlarm
         boolean active false
-        short lowAlarmLimit -80
-        short lowWarningLimit -60
-        short highWarningLimit 60
-        short highAlarmLimit 80
+        double lowAlarmLimit -8
+        double lowWarningLimit -6
+        double highWarningLimit 6
+        double highAlarmLimit 8
+        int lowAlarmSeverity 0    //NOTE that channel access does not define this
+        int lowWarningSeverity 0  //NOTE that channel access does not define this 
+        int highWarningSeverity 0 //NOTE that channel access does not define this
+        int highAlarmSeverity 0   //NOTE that channel access does not define this
+        double hysteresis 0
+</pre>
+<h2>DBRecord Providers qsrv and ca</h2>
+<p><b>qsrv</b> is a server side channel provider that directly accesses the DBRecord database,
+i. e. it does NOT use <b>channel access</b>.
+</p>
+<p><b>ca</b> is a client side channel provider. It uses the <b>channel access</b> network
+protocol to communicate with an IOC.
+Thus no pvData related code needs to be in the IOC.
+It converts between pvData and the data used by channel access.
+</p>
+<p>
+A major difference between both <b>qsrv/ca</b> and pure <b>channel access</b>
+is that all conversion between datatypes is done by the client instead of by the server.
+For example there is no equivalent to:
+</p>
+<pre>
+mrk> caget -d DBR_STRING DBRdoubleout
+DBRdoubleout
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_STRING
+    Element count:    1
+    Value:            100.00
+</pre>
+<p>With <b>qsrv</b> and <b>ca</b> the following happens:</p>
+<pre>
+mrk> pvget -i -p pva -r "value" DBRdoubleout
+DBRdoubleout
+epics:nt/NTScalar:1.0 
+    double value 100
+mrk> pvget -i -p ca -r "value" DBRdoubleout
+DBRdoubleout
+structure 
+    double value 100
+</pre>
+<h4>qsrv</h4>
+<p>Since <b>qsrv</b> interfaces directly to the DBRecord database,
+it supports all <b>DBF</b> types including unsigned integers.
+</p>
+<h4>ca</h4>
+<p>
+Since <b>ca</b> uses <b>channel access</b> to communicated with the IOC DBRecords,
+it is subject to the same restrictions as <b>channel access</b> itself.
+In particular it does not support 64 bit integers.
+It also has behavior similar to <b>channel access</b> for unsigned integers,
+</p>
+<h2>Examples</h2>
+<h3>A signed 32 bit integer value with alarm and timeStamp</h3>
+<pre>
+mrk> caget -d DBR_TIME_STRING DBRlongout
+DBRlongout
+    Native data type: DBF_LONG
+    Request type:     DBR_TIME_STRING
+    Element count:    1
+    Value:            100
+    Timestamp:        2018-04-17 13:53:55.932364
+    Status:           HIHI
+    Severity:         MAJOR
+mrk> caget -d DBR_TIME_DOUBLE DBRlongout
+DBRlongout
+    Native data type: DBF_LONG
+    Request type:     DBR_TIME_DOUBLE
+    Element count:    1
+    Value:            100
+    Timestamp:        2018-04-17 13:53:55.932364
+    Status:           HIHI
+    Severity:         MAJOR
+mrk> pvget -p pva -r "value,alarm,timeStamp" DBRlongout
+DBRlongout
+epics:nt/NTScalar:1.0 
+    int value 100
+    alarm_t alarm MAJOR DEVICE HIHI
+    time_t timeStamp 2018-04-17T13:53:55.932 0 // NOTE trailing 0 is userTag
+    display_t display                    // NOTE THAT THIS WAS NOT REQUESTED
+        double limitLow -2.14748e+09
+        double limitHigh 2.14748e+09
+        string description longout
+        string format 
+        string units volts
+    control_t control                    // NOTE THAT THIS WAS NOT REQUESTED
+        double limitLow -2.14748e+09
+        double limitHigh 2.14748e+09
+        double minStep 0
+    valueAlarm_t valueAlarm              // NOTE THAT THIS WAS NOT REQUESTED
+        boolean active false
+        int lowAlarmLimit -80
+        int lowWarningLimit -60
+        int highWarningLimit 60
+        int highAlarmLimit 80
         int lowAlarmSeverity 0
         int lowWarningSeverity 0
         int highWarningSeverity 0
         int highAlarmSeverity 0
-        short hysteresis 0
-mrk> pvget -p pva -r "display,control,valueAlarm" DBRshortout
-DBRshortout
-epics:nt/NTScalar:1.0
-    short value 0
+        int hysteresis 0
+mrk> pvget -p ca -r "value,alarm,timeStamp" DBRlongout
+DBRlongout
+structure 
+    int value 100
+    alarm_t alarm MAJOR RECORD HIHI
+    time_t timeStamp 2018-04-17T13:53:55.932 0 // NOTE trailing 0 is userTag
+</pre>
+<h3>An unsigned 32 bit integer value with alarm and timeStamp</h3>
+<pre>
+mrk> caget -d DBR_TIME_STRING DBRulongout
+DBRulongout
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_TIME_STRING
+    Element count:    1
+    Value:            10
+    Timestamp:        2018-04-18 06:21:31.829911
+    Status:           LOLO
+    Severity:         MAJOR
+mrk> caget -d DBR_TIME_DOUBLE DBRulongout
+DBRulongout
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_TIME_DOUBLE
+    Element count:    1
+    Value:            10
+    Timestamp:        2018-04-18 06:21:31.829911
+    Status:           LOLO
+    Severity:         MAJOR
+mrk> pvget -p pva -r "value,alarm,timeStamp" DBRulongout
+DBRulongout
+epics:nt/NTScalar:1.0 
+    uint value 10
+    alarm_t alarm MAJOR DEVICE LOLO
+    time_t timeStamp 2018-04-18T06:21:31.830 0
+    display_t display                    // NOTE THAT THIS WAS NOT REQUESTED
+        double limitLow 0
+        double limitHigh 4.29497e+09
+        string description ulongout
+        string format 
+        string units 
+    control_t control                    // NOTE THAT THIS WAS NOT REQUESTED
+        double limitLow 0
+        double limitHigh 4.29497e+09
+        double minStep 0
+    valueAlarm_t valueAlarm              // NOTE THAT THIS WAS NOT REQUESTED
+        boolean active false
+        uint lowAlarmLimit 20
+        uint lowWarningLimit 40
+        uint highWarningLimit 60
+        uint highAlarmLimit 80
+        int lowAlarmSeverity 0
+        int lowWarningSeverity 0
+        int highWarningSeverity 0
+        int highAlarmSeverity 0
+        uint hysteresis 0
+mrk> pvget -p ca -r "value,alarm,timeStamp" DBRulongout
+DBRulongout
+structure 
+    double value 10
+    alarm_t alarm MAJOR CONF LOLO
+    time_t timeStamp 2018-04-18T06:21:31.830 0
+</pre>
+<h3>A double value with alarm and timeStamp.</h3>
+<pre>
+mrk> caget -d DBR_TIME_STRING DBRdoubleout
+DBRdoubleout
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_TIME_STRING
+    Element count:    1
+    Value:            90.00
+    Timestamp:        2018-04-18 06:25:04.045084
+    Status:           HIHI
+    Severity:         MAJOR
+mrk> caget -d DBR_TIME_DOUBLE DBRdoubleout
+DBRdoubleout
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_TIME_DOUBLE
+    Element count:    1
+    Value:            90
+    Timestamp:        2018-04-18 06:25:04.045084
+    Status:           HIHI
+    Severity:         MAJOR
+mrk> pvget -p pva -r "value,alarm,timeStamp" DBRdoubleout
+DBRdoubleout
+epics:nt/NTScalar:1.0 
+    double value 90
+    alarm_t alarm MAJOR DEVICE HIHI
+    time_t timeStamp 2018-04-18T06:25:04.045 0
+    display_t display                    // NOTE THAT THIS WAS NOT REQUESTED
+        double limitLow -10
+        double limitHigh 10
+        string description ao
+        string format 
+        string units volts
+    control_t control                    // NOTE THAT THIS WAS NOT REQUESTED
+        double limitLow -1e+29
+        double limitHigh 1e+29
+        double minStep 0
+    valueAlarm_t valueAlarm              // NOTE THAT THIS WAS NOT REQUESTED
+        boolean active false
+        double lowAlarmLimit -8
+        double lowWarningLimit -6
+        double highWarningLimit 6
+        double highAlarmLimit 8
+        int lowAlarmSeverity 0
+        int lowWarningSeverity 0
+        int highWarningSeverity 0
+        int highAlarmSeverity 0
+        double hysteresis 0
+mrk> pvget -p ca -r "value,alarm,timeStamp" DBRdoubleout
+DBRdoubleout
+structure 
+    double value 90
+    alarm_t alarm MAJOR RECORD HIHI
+    time_t timeStamp 2018-04-18T06:25:04.045 0
+</pre>
+<h3>An array of doubles with alarm and timeStamp</h3>
+<pre>
+mrk> caget -d DBR_TIME_STRING DBRdoubleArray
+DBRdoubleArray
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_TIME_STRING
+    Element count:    5
+    Value:            1.11 2.22 3.33 4.44 5.56
+    Timestamp:        2018-04-18 06:28:26.644374
+    Status:           NO_ALARM
+    Severity:         NO_ALARM
+mrk> caget -d DBR_TIME_DOUBLE DBRdoubleArray
+DBRdoubleArray
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_TIME_DOUBLE
+    Element count:    5
+    Value:            1.11111 2.22222 3.33333 4.44444 5.55555
+    Timestamp:        2018-04-18 06:28:26.644374
+    Status:           NO_ALARM
+    Severity:         NO_ALARM
+mrk> pvget -p pva -r "value,alarm,timeStamp" DBRdoubleArray
+DBRdoubleArray
+epics:nt/NTScalarArray:1.0 
+    double[] value [1.11111,2.22222,3.33333,4.44444,5.55555]
     alarm_t alarm NO_ALARM NO_STATUS NO_ALARM
-    time_t timeStamp &lt;undefined&gt; 0
-    display_t display
-        double limitLow -100
-        double limitHigh 100
-        string description shortout
-        string format
-        string units
-    control_t control
-        double limitLow -90
-        double limitHigh 90
+    time_t timeStamp 2018-04-18T06:28:26.644 0
+    display_t display                    // NOTE THAT THIS WAS NOT REQUESTED
+        double limitLow -1000
+        double limitHigh 1000
+        string description doubleArray
+        string format 
+        string units 
+    control_t control                    // NOTE THAT THIS WAS NOT REQUESTED
+        double limitLow -1000
+        double limitHigh 1000
         double minStep 0
-    valueAlarm_t valueAlarm
+    valueAlarm_t valueAlarm               // NOTE THAT THIS WAS NOT REQUESTED
         boolean active false
-        short lowAlarmLimit -80
-        short lowWarningLimit -60
-        short highWarningLimit 60
-        short highAlarmLimit 80
+        double lowAlarmLimit nan
+        double lowWarningLimit nan
+        double highWarningLimit nan
+        double highAlarmLimit nan
         int lowAlarmSeverity 0
         int lowWarningSeverity 0
         int highWarningSeverity 0
         int highAlarmSeverity 0
-        short hysteresis 0
+        double hysteresis 0
+mrk> pvget -p ca -r "value,alarm,timeStamp" DBRdoubleArray
+DBRdoubleArray
+structure 
+    double[] value [1.11111,2.22222,3.33333,4.44444,5.55555]
+    alarm_t alarm NO_ALARM NO_STATUS &lt;no message&gt;
+    time_t timeStamp 2018-04-18T06:28:26.644 0
+</pre>
+<h3>An enumerated value with alarm and timeStamp</h3>
+<pre>
+mrk> caget -d DBR_TIME_STRING DBRbinaryout
+DBRbinaryout
+    Native data type: DBF_ENUM
+    Request type:     DBR_TIME_STRING
+    Element count:    1
+    Value:            one
+    Timestamp:        2018-04-18 06:31:47.470022
+    Status:           LINK
+    Severity:         INVALID
+mrk> caget -d DBR_TIME_ENUM DBRbinaryout
+DBRbinaryout
+    Native data type: DBF_ENUM
+    Request type:     DBR_TIME_ENUM
+    Element count:    1
+    Value:            1
+    Timestamp:        2018-04-18 06:31:47.470022
+    Status:           LINK
+    Severity:         INVALID
+mrk> pvget -p pva -r "value,alarm,timeStamp" DBRbinaryout
+DBRbinaryout
+epics:nt/NTEnum:1.0 
+    enum_t value one
+    alarm_t alarm INVALID RECORD LINK
+    time_t timeStamp 2018-04-18T06:31:47.470 0
+mrk> pvget -p ca -r "value,alarm,timeStamp" DBRbinaryout
+DBRbinaryout
+epics:nt/NTEnum:1.0 
+    enum_t value one
+    alarm_t alarm INVALID 14 LINK
+    time_t timeStamp 2018-04-18T06:31:47.470 0
+mrk> exampleClient/get -p ca -r "value,alarm,timeStamp" DBRbinaryout
+...
+Type exit to stop: 
+// enter key pressed
+channelGetDone DBRbinaryout status Status [type=OK]
+changed DBRbinaryout
+ = epics:nt/NTEnum:1.0 
+    enum_t value
+        int index 1
+        string[] choices [zero,one]
+    alarm_t alarm
+        int severity 3
+        int status 14
+        string message LINK
+    time_t timeStamp
+        long secondsPastEpoch 1524047507
+        int nanoseconds 470022134
+        int userTag 0
+
+bitSet {0}
+Type exit to stop: 
+exit
+</pre>
+<h3>display,control,valueAlarm</h3>
+<pre>
+mrk> caget -d DBR_CTRL_STRING  DBRdoubleout
+DBRdoubleout
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_CTRL_STRING
+    Element count:    1
+    Value:            0.00
+    Status:           UDF
+    Severity:         INVALID
+mrk> caget -d DBR_CTRL_DOUBLE  DBRdoubleout
+DBRdoubleout
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_CTRL_DOUBLE
+    Element count:    1
+    Value:            0
+    Status:           UDF
+    Severity:         INVALID
+    Units:            volts
+    Precision:        2
+    Lo disp limit:    -10
+    Hi disp limit:    10
+    Lo alarm limit:   -8
+    Lo warn limit:    -6
+    Hi warn limit:    6
+    Hi alarm limit:   8
+    Lo ctrl limit:    -1e+29
+    Hi ctrl limit:    1e+29
+mrk> pvget -p pva -r "display,control,valueAlarm" DBRdoubleout
+DBRdoubleout
+epics:nt/NTScalar:1.0 
+    double value 0                   // NOT REQUESTED
+    alarm_t alarm INVALID DRIVER UDF // NOT REQUESTED
+    time_t timeStamp &lt;undefined&gt; 0   // NOT REQUESTED
+    display_t display
+        double limitLow -10
+        double limitHigh 10
+        string description ao
+        string format 
+        string units volts
+    control_t control
+        double limitLow -1e+29
+        double limitHigh 1e+29
+        double minStep 0
+    valueAlarm_t valueAlarm
+        boolean active false
+        double lowAlarmLimit -8
+        double lowWarningLimit -6
+        double highWarningLimit 6
+        double highAlarmLimit 8
+        int lowAlarmSeverity 0
+        int lowWarningSeverity 0
+        int highWarningSeverity 0
+        int highAlarmSeverity 0
+        double hysteresis 0
+mrk> pvget -p ca -r "display,control,valueAlarm" DBRdoubleout
+DBRdoubleout
+structure 
+    display_t display
+        double limitLow -10
+        double limitHigh 10
+        string description 
+        string format F8.2
+        string units volts
+    control_t control
+        double limitLow -1e+29
+        double limitHigh 1e+29
+        double minStep 0
+    valueAlarm_t valueAlarm
+        boolean active false
+        double lowAlarmLimit -8
+        double lowWarningLimit -6
+        double highWarningLimit 6
+        double highAlarmLimit 8
+        int lowAlarmSeverity 0
+        int lowWarningSeverity 0
+        int highWarningSeverity 0
+        int highAlarmSeverity 0
+        double hysteresis 0
+</pre>
+<h3>Monitor double value with alarm and timeStamp using provider pva</h3>
+<pre>
+mrk> pvget -i -p pva -m -r "value,alarm,timeStamp" DBRdoubleout
+DBRdoubleout
+epics:nt/NTScalar:1.0 
+    double value 0
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message NO_ALARM
+    time_t timeStamp
+        long secondsPastEpoch 1524049231
+        int nanoseconds 383230407
+        int userTag 0
+    display_t display            // NOT REQUESTED
+        double limitLow -10
+        double limitHigh 10
+        string description ao
+        string format 
+        string units volts
+    control_t control            // NOT REQUESTED
+        double limitLow -1e+29
+        double limitHigh 1e+29
+        double minStep 0
+    valueAlarm_t valueAlarm      // NOT REQUESTED
+        boolean active false
+        double lowAlarmLimit -8
+        double lowWarningLimit -6
+        double highWarningLimit 6
+        double highAlarmLimit 8
+        int lowAlarmSeverity 0
+        int lowWarningSeverity 0
+        int highWarningSeverity 0
+        int highAlarmSeverity 0
+        double hysteresis 0
+// NOTE A PUT WAS ISSUED
+DBRdoubleout
+epics:nt/NTScalar:1.0 
+    double value 1
+    alarm_t alarm          // DID NOT CHANGE
+        int severity 0
+        int status 0
+        string message NO_ALARM
+    time_t timeStamp
+        long secondsPastEpoch 1524049280
+        int nanoseconds 90405898
+        int userTag 0
+    display_t display    // DID NOT CHANGE AND NOT REQUESTED
+        double limitLow -10
+        double limitHigh 10
+        string description ao
+        string format 
+        string units volts
+    control_t control    // DID NOT CHANGE AND NOT REQUESTED
+        double limitLow -1e+29
+        double limitHigh 1e+29
+        double minStep 0
+    valueAlarm_t valueAlarm  // DID NOT CHANGE AND NOT REQUESTED
+        boolean active false
+        double lowAlarmLimit -8
+        double lowWarningLimit -6
+        double highWarningLimit 6
+        double highAlarmLimit 8
+        int lowAlarmSeverity 0
+        int lowWarningSeverity 0
+        int highWarningSeverity 0
+        int highAlarmSeverity 0
+        double hysteresis 0
+</pre>
+<h3>Monitor double value with alarm and timeStamp using provider ca</h3>
+<p>With pvget</p>
+<pre>
+mrk> pvget -m -p ca -r "value,alarm,timeStamp" -i DBRdoubleout
+DBRdoubleout
+structure 
+    double value 0
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1524049508
+        int nanoseconds 416616659
+        int userTag 0
+// NOTE THAT WHEN A PUT CAUSES AN EVENT pvput still displays all fields.
+DBRdoubleout
+structure 
+    double value 1
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1524049828
+        int nanoseconds 542712998
+        int userTag 0
+</pre>
+<p>Now with exampleClient</p>
+<pre>
+mrk> exampleClient/monitor -p ca -r "value,alarm,timeStamp" DBRdoubleout
+event DBRdoubleout
+monitor 
+changed
+ = structure 
+    double value 1
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1524049423
+        int nanoseconds 322158828
+        int userTag 0
+overrun
+// NOTE THAT WHEN PUT IS ISSUED ONLY CHANGED FIELDS ARE DISPLAYED
+event DBRdoubleout
+monitor 
+changed
+value = 0
+timeStamp.secondsPastEpoch = 1524049508
+timeStamp.nanoseconds = 416616659
+overrun
 </pre>
 </div> <!-- class="contents" -->
 </body>
