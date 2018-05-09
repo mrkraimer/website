@@ -25,7 +25,7 @@
 <div class="head">
 <h1>Network Providers for DBRecords</h1>
 <p>Author: Marty Kraimer<br />
-Date: 2018.05.08</p>
+Date: 2018.05.09</p>
 
 <h2 class="nocount">Abstract</h2>
 <p><b>WARNING:</b> This is a draft version of this document.</p>
@@ -67,8 +67,10 @@ This document describes compatability issues between these network providers.
 <hr />
 <h2>Goals</h2>
 <h3>Immediate</h3>
-<p>The immediate goal is to start a discussion about possible changes to <b>ca</b> and <b>qsrv</b>.
-Hopefully this can be a topic at the BNL FTF meeting in May 2018.
+<p>
+The immediate goal is to start a discussion about possible changes to <b>ca</b> and <b>qsrv</b>.
+At the BNL FTF meeting in May 2018 we did discuss the Known issues.
+This document has been updated to give the current status.
 </p>
 <h3>Final</h3>
 <p>
@@ -78,7 +80,10 @@ Starting with Overview, this document will descibe compatability issues between 
 <h3>Issues for both ca and qsrv</h3>
 <dl>
    <dt>format</dt>
-     <dd>The definition of <b>display</b> has a string field named <b>format</b><br />
+     <dd>
+       <b>Current Status:</b> unresolved.
+        We need to get input from tool developers.<br /><br />
+       The definition of <b>display</b> has a string field named <b>format</b><br />
        How should this be defined? <br />
        <b>NOTE:</b> channel access uses <b>precision</b>.
        But this has problems. 
@@ -105,6 +110,16 @@ this is the number of digits to be printed after the decimal point.
      </dd>
    <dt>byte array for long strings</dt>
      <dd>
+     <b>Current Status:</b>
+     <dl>
+       <dt>syntax</dt>
+         <dd>Need input about syntax</dd>
+       <dt>ca</dt>
+         <dd>Will be implemented</dd>
+       <dt>qsrv</dt>
+         <dd>Will be implemented via info tags instead of via pvRequest</dd>
+     </dl>
+     <br /><br />
      <b>channel access</b> enforces <b>MAX_STRING_SIZE</b>.
      A workaround is to create a waveform record of type <b>DBF_CHAR</b>.
      The client must be aware that the record actually holds a character string instead of an array of bytes.
@@ -117,16 +132,28 @@ field(value[bytearray=string])
      </dd>
    <dt>limit number of elements for arrays</dt>
       <dd>
+    <b>Current Status:</b>
+     <dl>
+       <dt>syntax</dt>
+         <dd>has been changed from maxelements to elements</dd>
+       <dt>ca</dt>
+         <dd>Will be implemented</dd>
+       <dt>qsrv</dt>
+         <dd>undecided if anything will be done</dd>
+     </dl>
+     <br /><br />
       <b>channel access</b> gets and monitors allow the caller to specify
        the maximum number of array elements to be sent to the client.
        Neither <b>ca</b> or <b>qsrv</b> curently provides support for this.<br/>
      Perhaps both could support a field option like:
 <pre>
-field(value[maxelements=value])
+field(elements=value])
 </pre>
       </dd>
    <dt>valueAlarm</dt>
      <dd>
+      <b>Current Status:</b> unresolved.
+        We need to get input from tool developers.<br /><br />
       This has definitions for each numeric scalarType.
       <b>display</b> and <b>control</b> only support <b>double</b>.
       <br />
@@ -135,6 +162,7 @@ field(value[maxelements=value])
 </dl>
 <h3>Issues for ca</h3>
 <p>
+<b>Current Status:</b> Will be implemented.<br/><br/>
 <b>channel access</b> allows the client to specify the data types to be received from the server.
 The necessary conversions are done on the server.
 This is especially a problem for DBF_CHAR fields.
@@ -154,21 +182,21 @@ field(value[byte=unsigned])
 <dl>
    <dt>Does not allow the user to select desired set of fields</dt>
      <dd>
+     <b>Current Status:</b> Michael has serious objections and
+      does not think it is necessary.
+      But when I try <b>pvget -p pva -r "alarm" DBRdoubleArray</b>
+      It returns all fields including all elements for the value field.
+      <br /><br />
       If the client specifies:
 <pre>
-mrk> pvget  -p pva -m -r "value,alarm,timeStamp" DBRlongout
+mrk> pvget -m -r "alarm" -i DBRdoubleArray
 </pre>
-      The client will also get display,control, and valueAlarm fields.<br />
+      The client will also get value,display,control, and valueAlarm fields.<br />
       If the client specifies:
 <pre>
-mrk> pvget  -p ca -m -r "value,alarm,timeStamp" DBRlongout
+mrk> pvget  -p ca -m -r "alarm" -i DBRdoubleArray
 </pre>
      The client will only receive the requested fields.
-     </dd>
-   <dt>get and monitor always return all fields</dt>
-     <dd>
-      Unlike provider <b>ca</b> all fields are returned for each get or monitor instead of only the fields that have
-      changed.
      </dd>
 </dl>
 <h2>Overview</h2>
