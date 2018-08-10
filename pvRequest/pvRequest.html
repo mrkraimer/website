@@ -9,22 +9,7 @@
   <link rel="stylesheet" type="text/css"
   href="../css/epicsv4.css" />
   <style type="text/css">
-  /*<![CDATA[*/
-     .about { margin-left: 3em; margin-right: 3em; font-size: .83em}
-     table { margin-left: auto; margin-right: auto }
-     .diagram { text-align: center; margin: 2.5em 0 }
-     span.opt { color: grey }
-     span.nterm { font-style:italic }
-     span.term { font-family:courier }
-     span.user { font-family:courier }
-     span.user:before { content:"<" }
-     span.user:after { content:">" }
-     .nonnorm { font-style:italic }
-     p.ed { color: #AA0000 }
-     span.ed { color: #AA0000 }
-     p.ed.priv { display: inline; }
-     span.ed.priv { display: inline; }
-  /*]]>*/</style>
+  </style>
   <!-- Script that generates the Table of Contents -->
   <script type="text/javascript"
   src="../css/tocgen.js">
@@ -53,7 +38,7 @@
 <h2 class="nocount">Abstract</h2>
 
 <p>
-Each create method of pvAccess::Channel has an argument <b>PVStructure pvRequest</b>.
+Each create method of class <b>Channel</b>, in <b>pvAccess</b>,  has an argument <b>PVStructure pvRequest</b>.
 This document discusses how this argument is defined and used.
 </p>
 <p>This product is available via an
@@ -74,9 +59,7 @@ href="../LICENSE">open source license
 <h3>pvAccess: pvRequest argument</h3>
 <p><b>pvAccess</b> defines interface <b>Channel</b>,
 which is a connection between a client and a server.
-<br />
 <b>Channel</b> has a number of create methods.
-<br />
 Each has an argument <b>pvRequest</b>:
 </p>
 <pre>
@@ -126,23 +109,21 @@ Monitor createMonitor(
             <dt>provider API</dt>
                 <dd>
                   An API for use by channel providers.
-                  <br />
                  A provider can exist on either the client or server.
                 </dd>
             <dt>implementation</dt>
                 <dd>
-                Both client and server side implementations for the network protocol are provided.
+                A provider for both client and server side of the network protocol is implemented.
                 </dd>
         </dl>
    </dd>
    <dt>ca</dt>
    <dd>
-       This is a client side channel provider that uses <b>channel access</b>
-       to communicate with DBRecords.
+       This is a client side provider that uses the <b>channel access</b> network protocol.
    </dd>
    <dt>qsrv</dt>
    <dd>
-       This is a server side channel provider that provides access to DBRecords.
+       This is a server side provider that provides access to DBRecords.
    </dd>
 </dl>
 <h3>brief history of pvRequest</h3>
@@ -153,7 +134,7 @@ Until about 2000, they were the only <b>javaIOC</b> developers.
 <p>
 The pvAccess API was one of the first projects.
 How to pass client requests to the  server was a big problem.
-Then they realized that, because pvData supports structured data,
+Then it was agreed that, since pvData supports structured data,
 a single argument can be used to pass client requests to the server, i.e.
 </p>
 <pre>
@@ -167,7 +148,7 @@ It takes a <b>request</b> string and creates a <b>pvRequest</b>.
 <p>
 In about 2000 work started on a C++ implementation of what was in the javaIOC.
 At this time more people became involved with develpment.
-This is now what is called the <b>V4</b> modules in <b>EPICS 7</b>.
+This is now what is called the <b>EPICS 7</b> <b>V4</b> modules.
 Both Java, C++, and Python implementations are now provided.
 </p>
 <h3>createRequest</h3>
@@ -199,25 +180,24 @@ A pvRequest structure allows a client to select:
       </dd>
 </dl>
 <h3>client guidelines</h3>
-<p>When a client connects to a channel, the client callback provides an introspection structure.
-The structure is the introspection interface for the top level PVStructure associated with the channel.
-The client can use this to select which fields it wants to get, put, monitor, etc.
+<p>When a client connects to a channel, the client callback has a  <b>Structure</b> argument.
+The <b>Structure</b> is the introspection interface for the <b>PVStructure</b> associated with the channel.
+The client can use <b>Structure</b> to select the fields it wants to get, put, monitor, etc.
 </p>
 <p>
 Another way is for the client to guess which fields the channel supports.
 This is what most clients will do.
-For example when a widget is being configured for a display manager, the widget knows what fields
-it expects.
+For example a widget for a display manager knows which fields it requires.
 </p>
 <p>The server may provide a different set of fields then the client requests.
 When a get, put, etc, connects the client code must be prepared to accept what the server provides.
 </p>
 <h3>server guidelines</h3>
 <p>A server only provides fields it supports for the operation, e. g. get, put.
-It it supports none of the fields the client requests then it should return an error to the client.
+If it does not support any fields the client requests then it should return an error.
 </p>
-<p>The server look for options, record and field, it supports.
-It just ignores other options.
+<p>The server looks for record and field options it supports,
+and just ignores other options.
 </p>
 
 <h2>Goals</h2>
@@ -225,10 +205,9 @@ It just ignores other options.
 Since the data can be quite complex it could be very difficult for clients to use.
 Lets consider a few typical types of clients.</p>
 <h3>client tools</h3>
-<p>Think of tools like CSS caqtDM, etc.
-They provide widgets like strip chart , alarm display, slider, etc.
-These types of tools want data like EPICS base provides.
-Thus some combination of <b>value</b>, <b>alarm</b>, <b>timeStamp</b>,
+<p>Tools like CSS caqtDM, etc., provide widgets like strip chart , alarm display, slider, etc.
+These widgets want data like EPICS base provides.
+That means some combination of <b>value</b>, <b>alarm</b>, <b>timeStamp</b>,
 <b>display</b>, and <b>control</b> information.
 </p>
 <h3>channelPutGet services</h3>
@@ -275,27 +254,28 @@ associated with the channel.
 It also allows the client to specify options.
 Thus the client can specify:</p>
 <dl>
-  <dt>global options</dt>
-    <dd>Global options are options that apply to the record itself.</dd>
   <dt>desired fields</dt>
      <dd>An arbitrary set of fields can be specified.</dd>
+   <dt>global options</dt>
+    <dd>Global options are options that apply to the record itself.</dd>
   <dt>field options</dt>
      <dd>These are options that apply to a field.
       </dd>
 </dl>
-<p><b>NOTE:</b> The term record is adapted from pvDatabase. A pvDatabase has a memory resident database of <b>smart</b>
-records.
+<p><b>NOTE:</b> The term record is adapted from pvDatabase. A pvDatabase is database of
+a memory resident <b>smart</b> records.
 A pvAcccess channel is a connection to a record.
 A record has a top level <b>PVStructure</b> that holds the data for the record.
 </p>
 <p>
-Other pvAcccess servers must provide a <b>PVStructure</b> for each channel it provides.
+Other pvAcccess providers must provide a <b>PVStructure</b> for each channel it supports.
 </p>
 <p>
 <b>qsrv</b> is a channel provider for iocCore <b>DBRecord</b>s.
 </p>
 <h3>syntax</h3>
 <p><b>NOTE:</b> an appendix has a <b>BNF</b> description of request.
+<br />
 This section provides an easier (hopefully) to understand description.
 </p>
 <p>A request argument has the syntax:</p>
@@ -329,7 +309,7 @@ just field definitions. A record option is of the form:</p>
 record[name=value,...]
 </pre>
 
-<p>A <b>field()</b>,<b>getField()</b>,<b>putField()</b> is a comma separated set of <b>fieldDefs</b>
+<p>A <b>field(...)</b>,<b>getField(...)</b>,<b>putField(...)</b> is a comma separated set of <b>fieldDefs</b>
 which are of
 the form:</p>
 <pre>
@@ -397,8 +377,8 @@ a structure field with subfields.</p>
       </dd>
     <dt>field name</dt>
        <dd>
-       A field name can only contain alphanumeric characters and the character <b>_</b>,
-       but must not start with the character <b>_</b>.
+       A field name can only contain alphanumeric characters and the character <b>'_'</b>,
+       but must not start with the character <b>'_'</b>.
        <br />
        This is not enforced by the current parser but should be a rule for field names.
        </dd>
@@ -409,19 +389,22 @@ a structure field with subfields.</p>
       </dd>
    <dt>option value</dt>
        <dd>For now the only illegal characters are the reserved characters.
-        At least the following character should also be allowed:
-<pre>
-: 
-</pre>
-       <br />
-       What other characters should be allowed?
+        <br />
+        Alphanumeric characters are valid.
+        <br />
+        The characters <b>':'</b> and <b>'?'</b> are also valid.
+        <br />
+        What other characters should be allowed?
       </dd>
 
 </dl>
 
 
-<p>Thus a request consists of record options and sets of field definitions or
-just field definitions. A record option is of the form:</p>
+<p>
+Thus a request consists of record options and sets of field definitions or
+just field definitions.
+<br />
+A record option is of the form:</p>
 <pre>
 record[name=value,...]
 </pre>
@@ -502,10 +485,10 @@ structure
 </pre>
 
 <h2>Existing Options</h2>
-<p>Currently only record options are offically supported.
+<p>Some record options, but no field options, are officialy supported. 
 The next section describe possible field options.
 </p>
-<p>At present the following record options are in use:</p>
+<p>At present the following record options are supported:</p>
 <dl>
     <dt>queueSize</dt>
      <dd>
@@ -602,20 +585,21 @@ epics:nt/NTScalar:1.0
         double hysteresis 0
 </pre>
 <h2>Proposed Field Options</h2>
-<p>This section describes a set of proposed field options.
-It first briefly describes channel filters that motivated the proposed field options.
-Next it describes a pvDataBase that implements filters that a client can request
-via field options.
-Then a set of proposed options are described.
+<p>This section describes a set of proposed field options,
+but first a brief description of channel filters is provided.
+The channel filters were the inspiration for many of the proposed field options.
+Next a brief description of an implementation of filters for PVRecords is provided.
+A client makes requests via field options.
+Finally a set of proposed options is described.
 </p>
 <h3>iocCore channel filters</h3>
 <p>Beginning with the 3.15 releases of <b>epics-base</b>
 channel filters are supported.
 Currently there is support for <b>TimeStamp</b>, <b>Deadband</b>, <b>Array</b>, and <b>Synchronize</b>.
-In addition code can be written to support other plugins without requiring and changes to <b>epics-base</b>.
+In addition code can be written to support other plugins without requiring any changes to <b>epics-base</b>.
 </p>
 <p>
-Using <b>channel access</b>, the client requests plugins by appending to the channel name.
+Using the <b>channel access</b> client API, the client requests plugins by appending to the channel name.
 <br />
 For example:
 </p>
@@ -632,7 +616,7 @@ caget test:channel 'test:channel.{"arr":{"s":2,"i":2,"e":8}}' test:channel.[3:5]
   <dt>channel access does not provide for client options</dt>
     <dd>
       The client API allows the client to choose one of the <b>DBR_...</b>
-      data types. It does not provide for other options.
+      data types. It does not provide for client specific options.
     </dd>
   <dt>client specifies filter by appending to the  channel name</dt>
     <dd>
@@ -641,7 +625,7 @@ caget test:channel 'test:channel.{"arr":{"s":2,"i":2,"e":8}}' test:channel.[3:5]
    </dd>
   <dt>channel filters only make sense for value field</dt>
    <dd>
-    This means the field <b>VAL</b>, which is the default field if no field name is specified.
+    Filters only make sense for field <b>VAL</b>, which is the default field if no field name is specified.
    </dd>
    <dt>current implementation does not connect if client gives an incorrect request</dt>
      <dd>
@@ -666,12 +650,11 @@ DBRdoubleArray.[2:4] 3 2.50321e-308 0 0
       </dd>
 </dl>
 <h3>pvDatabase plugin support</h3>
-<p>The following:
+<p>
 <a
 href="https://github.com/mrkraimer/pvDatabaseCPP">pvDatabaseCPPMRK
 </a>
-<br />
-Implements support for plugins.
+implements support for plugins.
 It does that via the <b>pvCopy</b> facility.
 </p>
 <p>
@@ -679,8 +662,8 @@ It does that via the <b>pvCopy</b> facility.
 <b>pvDatabaseCPPMRK</b> has a local version of <b>pvCopy</b> which has been modified to support plugins.
 It currently has support for <b>array</b>, <b>deadband</b> , and <b>timeStamp</b> similar to what
 iocCore filter implements.
+Since <b>pvCopy</b> implements the support,
 PVRecord code does not have to know about the plugins.
-<b>pvCopy</b> implements the support.
 </p>
 <p>Other plugins can be created and registered with the plugin support.
 </p>
@@ -702,8 +685,7 @@ structure
 <h3>array plugin</h3>
 <p>
 This  filter is used to retrieve parts of an array (subarrays and strided subarrays).
-It is modeled after the array Filter that is provided with epics base starting with
-the 3.15 releases.
+It is modeled after the iocCore array channel filter.
 </p>
 <p>
 This filter works for both get and put.
@@ -758,13 +740,12 @@ The request:
 </pre>
 gets
 <pre>
-0,2,4,6,8,10
+1,3,5,7,9
 </pre>
 <h3>deadband plugin</h3>
 <p>
-This filter is used to limit the changes to a numeric scalar field that are reported to a client. 
-It is modeled after the deadband Filter that is provided with epics base starting with
-the 3.15 releases.
+This filter is used to limit the changes to a numeric scalar field that are reported to a client.
+It is modeled after the iocCore deadband channel filter.
 </p>
 <p>
 This filter only works for numeric scalar fields and only for toCopy.
@@ -777,7 +758,7 @@ This filter only works for numeric scalar fields and only for toCopy.
 where
 <dl>
    <dt>abs</dt>
-    <dd>The value must change by at least this amount since the last value the client received.</dd>
+    <dd>The amount value must change since the last value the client received.</dd>
    <dt>rel</dt>
      <dd>
        The percentage amount the value must change since the last value the client received. 
@@ -786,8 +767,7 @@ where
 <h3>timeStamp plugin</h3>
 <p>
 This filter is used for accessing a timeStamp field. 
-It is modeled after the timeStamp Filter that is provided with epics base starting with
-the 3.15 releases.
+It is modeled after the iocCore timeStamp channel filter.
 </p>
 <p>
 This filter only works for a timeStamp field.
@@ -828,8 +808,8 @@ methods for passing data from the server to the client.
 If a <b>ca</b> client asks for more than <b>value,alarm,timeStamp</b>,
 then a request is made for <b>DBR_CTRL...</b> data.
 However this type does not include a timeStamp.
-</p>
-<p>Perhaps the following option can be provided:
+<br />
+Perhaps the following option can be provided:
 </p>
 <pre>
 record[getTimeStamp=true]
@@ -860,7 +840,8 @@ is specified then <b>ca</b> could append the following to the channel name:
 <h4>client field selection</h4>
 <p>
 <b>qsrv</b> should be changed so that it only provides fields the client requests.
-This instead of the example above the following would happen:
+<br />
+Thus instead of the example above the following would happen:
 </p>
 <pre>
 mrk> pvget -p pva -r "value" -i DBRdouble
@@ -882,9 +863,7 @@ then qsrv should honor the request.
 <a
 href="https://github.com/mrkraimer/pvDatabaseCPP">pvDatabaseCPPMRK
 </a>
-<br />
 should be merged into:
-<br />
 <a
 href="https://github.com/epics-base/pvDatabaseCPP">pvDatabaseCPP
 </a>
@@ -903,7 +882,7 @@ href="https://github.com/epics-base/epicsCoreJava">epicsCoreJava
 </a>
        has a package that provides support for unsigned integers.
        <br/>
-      <b>pvDataJava</b> should changed to use this package.
+      <b>pvDataJava</b> should use this package.
       </dd>
     <dt>pvAccess: ca provider</dt>
       <dd>
@@ -912,7 +891,7 @@ href="https://github.com/epics-base/epicsCoreJava">epicsCoreJava
       </dd>
     <dt>pvDatabase</dt>
       <dd>
-       If the pvDatabase plugin support is adapted, then the Java version also has provide plugin support.
+       If the pvDatabaseCPP plugin support is adapted, then Java should also provide plugin support.
       </dd>
 </dl>
 

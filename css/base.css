@@ -5,18 +5,17 @@
  
    Auth: Greg White, SLAC / PSI, Sep 2011.
    Based on the w3c base.css but extended and modified quite a lot.
- */
+
+   Marty Kraimer copied from SLAC.
+*/
 
 body {
   margin: 0;
   font-family: sans-serif;
-  font-size: 100%;
+  font-size: medium;
   font-weight: normal;
   color: black;
   background: white;
-  background-position: top left;
-  background-attachment: fixed;
-  background-repeat: no-repeat;
 }
 
 a:link { text-decoration: none; color: blue }

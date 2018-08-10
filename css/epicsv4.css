@@ -5,18 +5,9 @@ gettingStarted.html etc.
  
 ---------------------------------------------------------------------------------------
 Auth: Greg White, greg@slac.stanford.edu.
-Mod:  28-Aug-2013, Greg White. Changed basic body font.
-      17-Sep-2012, Greg White. Added toc. Added page-break-before to (non nocount) h2.
-                   So, Abstract and Status will be on frnt page, all other sections
-                   will be started on a new page in printouts. 
-      11-Apr-2012, Greg White, added div.contents, to fix bug in Chrome support
-                   for class="nocount". 
-      21-Feb-2012, Greg White, greg@slac.stanford.edu, added page break control.
+Mod:  -9-aug-2018  Marty Kraimer copied from SLAC
        
 ======================================================================================*/
-
-/* Basic body style for documentation */
-body { font: 12px/18px "Lucida Grande", "Lucida Sans Unicode", Helvetica, Arial, Verdana, sans-serif; color: #222; -webkit-font-smoothing: antialiased;  }
 
 /* Support for headers. Assume h1 is the title, so doesn't have a counter. Put counters
    on h2 and h3, but not h4 or further. 
@@ -59,15 +50,10 @@ table { margin-left: auto; margin-right: auto }
 .editor { font-color: red }
 
 body { 
-    margin-right: 10%;
-    margin-left: 10%;
+    margin-right: 7%;
+    margin-left: 7%;
 }
 
-@media print {
-     body { 
-	 font-size: smaller
-     }
-}
 
 /* li { margin-bottom:0.8em }  /* This would make list items more separated */
 
