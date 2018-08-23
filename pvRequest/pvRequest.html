@@ -821,9 +821,20 @@ record[getTimeStamp=true]
 Perhaps the following field options could be provided:
 </p>
 <pre>
-field(value[VAL=uint8])
-field(value[VAL=uint16])
-field(value[VAL=uint32])
+field(value[dbtype=uint8])
+field(value[dbtype=uint16])
+field(value[dbtype=uint32])
+</pre>
+<h4>string longer than MAX_STRING_SIZE</h4>
+<p>A waveform of type char can be used for a string longer than MAX_STRING_SIZE.
+<br />
+Perhaps he following field options could be provided:
+</p>
+<pre>
+field(value[dbtype=int8])        // For lsi, lso (long string) becomes byte[]
+field(value[dbtype=string])      //works for waveform record type
+field(value[displaytype=string]) //works for all record types
+field(value[dbtype=int8,displaytype=string]) // works for lsi, lso
 </pre>
 <h4>plugin</h4>
 <p>
