@@ -21,7 +21,7 @@
 <div class="head">
 <h1>EPICS pvRequest</h1>
 
-<h2 class="nocount">Working Draft, 09-Aug-2018</h2>
+<h2 class="nocount">Working Draft, 24-Aug-2018</h2>
 <dl>
   <dt>latest version:</dt>
     <dd>
@@ -174,7 +174,7 @@ A pvRequest structure allows a client to select:
       </dd>
       <dt>global and field specific options</dt>
       <dd>
-         The client can pass global or field specific options to the server.
+         The client can pass global and field specific options to the server.
          <br />
          An option is just a <b>name,value</b> pair, where both name and value are a string.
       </dd>
@@ -538,7 +538,7 @@ of <b>value</b>, <b>alarm</b>, <b>timeStamp</b>,
 <b>display</b>, <b>control</b>, and <b>valueAlarm</b> information.
 <br />
 But there are some problems.
-See below for suggested changes.
+Hopefully these will be fixed.
 </p>
 <h3>qsrv</h3>
 <p><b>qsrv</b> is not complient with <b>pvRequest</b>
@@ -584,8 +584,8 @@ epics:nt/NTScalar:1.0
         int highAlarmSeverity 0
         double hysteresis 0
 </pre>
-<h2>Proposed Field Options</h2>
-<p>This section describes a set of proposed field options,
+<h2>pvDatabase: Proposed plugin support</h2>
+<p>This section describes a set of proposed field options for pvDatabase,
 but first a brief description of channel filters is provided.
 The channel filters were the inspiration for many of the proposed field options.
 Next a brief description of an implementation of filters for PVRecords is provided.
@@ -799,112 +799,6 @@ It is used to suppress sending data to a client unless other fields have changed
 <pre>
 [ignore=true]
 </pre>
-<h2>C++ V4: proposed changes to existing code</h2>
-<h3>ca</h3>
-<h4>timeStamp</h4>
-<p>
-The <b>channel access</b> API provides a large number of <b>DBR_...</b>
-methods for passing data from the server to the client.
-If a <b>ca</b> client asks for more than <b>value,alarm,timeStamp</b>,
-then a request is made for <b>DBR_CTRL...</b> data.
-However this type does not include a timeStamp.
-<br />
-Perhaps the following option can be provided:
-</p>
-<pre>
-record[getTimeStamp=true]
-</pre>
-<h4>unsigned integer</h4>
-<p>
-<b>channel access</b> has no support for unsigned integers.
-<br />
-Perhaps the following field options could be provided:
-</p>
-<pre>
-field(value[dbtype=uint8])
-field(value[dbtype=uint16])
-field(value[dbtype=uint32])
-</pre>
-<h4>string longer than MAX_STRING_SIZE</h4>
-<p>A waveform of type char can be used for a string longer than MAX_STRING_SIZE.
-<br />
-Perhaps he following field options could be provided:
-</p>
-<pre>
-field(value[dbtype=int8])        // For lsi, lso (long string) becomes byte[]
-field(value[dbtype=string])      //works for waveform record type
-field(value[displaytype=string]) //works for all record types
-field(value[dbtype=int8,displaytype=string]) // works for lsi, lso
-</pre>
-<h4>plugin</h4>
-<p>
-If a field option like:
-</p>
-<pre>
-field(value[array=2:5])
-</pre>
-is specified then <b>ca</b> could append the following to the channel name:
-<pre>
-.[3:5]
-</pre>
-<h3>qsrv</h3>
-<h4>client field selection</h4>
-<p>
-<b>qsrv</b> should be changed so that it only provides fields the client requests.
-<br />
-Thus instead of the example above the following would happen:
-</p>
-<pre>
-mrk> pvget -p pva -r "value" -i DBRdouble
-DBRdouble
-epics:nt/NTScalar:1.0 
-    double value 0
-mrk>
-</pre>
-<h4>plugin</h4>
-<p>
-If a field option like:
-</p>
-<pre>
-field(value[array=2:5])
-</pre>
-then qsrv should honor the request.
-<h3>pvDatabase</h3>
-<p>The implementation in
-<a
-href="https://github.com/mrkraimer/pvDatabaseCPP">pvDatabaseCPPMRK
-</a>
-should be merged into:
-<a
-href="https://github.com/epics-base/pvDatabaseCPP">pvDatabaseCPP
-</a>
-</p>
-<h2>Java V4: proposed changes to existing code</h2>
-<p>Some things described above may only be valid for the C++ implementations of the V4 modules.
-Java should be updated to match the latest C++.
-Some things that come to mind are:
-</p>
-<dl>
-    <dt>pvData: unsigned integer support</dt>
-      <dd>
-       The latest version of:
-<a
-href="https://github.com/epics-base/epicsCoreJava">epicsCoreJava
-</a>
-       has a package that provides support for unsigned integers.
-       <br/>
-      <b>pvDataJava</b> should use this package.
-      </dd>
-    <dt>pvAccess: ca provider</dt>
-      <dd>
-      Many changes have been made to the <b>ca</b> provider in C++.
-      Similar changes should be made in Java.
-      </dd>
-    <dt>pvDatabase</dt>
-      <dd>
-       If the pvDatabaseCPP plugin support is adapted, then Java should also provide plugin support.
-      </dd>
-</dl>
 
 <h2>Appendix I: Description of the PVStructure created by createRequest</h2>
 <p><b>NOTE:</b> This section is only of interest to someone who is implementing code that
