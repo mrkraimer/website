@@ -21,7 +21,7 @@
 <div class="head">
 <h1>Core Developer FTF 2018.09: Client access to DBRecord data</h1>
 
-<h2 class="nocount">Working Draft, 24-Aug-2018</h2>
+<h2 class="nocount">Working Draft, 27-Aug-2018</h2>
 <dl>
   <dt>editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -98,8 +98,10 @@ the monitor on <b>value,alarm,timeStamp</b>
 </ul>
 <p>
 The following discussion only refers to the C++ implementation.
-However any changes in <b>ca</b> provider or pvDatabase should
-also be make in the Java implementation.
+However any changes in <b>ca</b> provider should also be make in the Java implementation.
+</p>
+<p>
+If anyone finds errors in how existing implementations are described please speak up.
 </p>
 
 
@@ -336,11 +338,11 @@ client and server using the same convention.
 The two ways are:
 </p>
 <dl>
-   <dt>byte array</dt>
+   <dt>int8 array</dt>
     <dd>
-     Normally a waveform record.
-     It has to be configured to hold enough bytes required by how it is used.
-     A client can get and put long strings by converting from and to byte arrays.
+     Normally a waveform record with type <b>DBF_CHAR</b>
+     It has to be configured to hold enough bytes for how it is used.
+     A client can get and put long strings by converting from/to byte arrays.
     </dd>
    <dt>lsi and lso record types</dt>
     <dd>
@@ -369,6 +371,31 @@ value can be any combination of
 Is this a problem?
 <br />
 Is it handled by a client issuing gets and puts to fields <b>ACKS</b> and <b>ACKT</b>?
+</p>
+<h3>bitMask for standard fields</h3>
+<p>
+<b>qsrv</b> always sets the bit for each alarm, display, control, and valueAlarm field it gets from a DBRecord.
+<b>ca</b> only sets bits for alarm fields that have changed.
+It does not properly monitor changes in display, control, or valueAlarm.
+</p>
+<p>Both <b>qsrv</b>  and <b>ca</b> always set the bit for value.
+This seems like the correct semantics since DBRecords already have support for not
+raising monitors if a scalar value field does not change.
+It could be quite expensive to check for changes to array value fields.
+</p>
+<h3>alarm status</h3>
+<p>Both <b>epics-base</b> and <b>pvdata</b> have support code for alarms.
+The definition of <b>status</b> is different between them.
+</p>
+<p>
+<b>ca</b> does not convert from the <b>epics-base</b> version to the <b>pvdata</b>
+version.
+<br />
+<b>qsrv</b> does convert but should <b>epicsAlarmUDF</b> be converted
+to <b>undefinedAlarm</b>?
+</p>
+<p>Also should the <b>pvdata</b> version add support for converting between
+the two different versions?
 </p>
 <h3>DBRecord plugin support</h3>
 <p>Beginning with the 3.15 releases of <b>epics-base</b>
@@ -623,7 +650,7 @@ field(value[dbtype=string])  // For lsi, lso, waveform with catype char[]
 Note that for lsi, lso client must specify <b>VAL$</b>.
 </p>
 <h4>DBR_CTL_... for channelGet</h4>
-<p>If a client create a request that specifies any of display, control, or valueAlarm
+<p>If a client creates a request that specifies any of display, control, or valueAlarm
 then a <b>DBR_CTL_...</b> requests is issued.
 But if the client also requested timeStamp there is a problem because
 <b>DBR_CTL_...</b> does not return an <b>epicsTimeStamp</b>.
