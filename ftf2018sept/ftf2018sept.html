@@ -21,7 +21,7 @@
 <div class="head">
 <h1>Core Developer FTF 2018.09: Client access to DBRecord data</h1>
 
-<h2 class="nocount">Working Draft, 27-Aug-2018</h2>
+<h2 class="nocount">Working Draft, 30-Aug-2018</h2>
 <dl>
   <dt>editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -47,7 +47,9 @@ href="../LICENSE">open source license
 The EPICS core developers will have a Face To Face meeting in Lund Sweden.
 </p>
 <p>
-This document presents some proposed topics.
+This document presents some technical topics that I hope can be discussed.
+</p>
+<p>
 All topics discuss client access to data in a DBRecord.
 </p>
 <p>
@@ -101,7 +103,7 @@ The following discussion only refers to the C++ implementation.
 However any changes in <b>ca</b> provider should also be make in the Java implementation.
 </p>
 <p>
-If anyone finds errors in how existing implementations are described please speak up.
+If anyone finds errors in how existing implementations are described below please speak up.
 </p>
 
 
@@ -130,7 +132,7 @@ If anyone finds errors in how existing implementations are described please spea
     <br />
     For the value field the length is MAX_STRING_SIZE.
     <br />
-    A array of strings is supported but each element is a fixed length character string
+    An array of strings is supported but each element is a fixed length character string
     of size MAX_STRING_SIZE.
     </dd>
 </dl>
@@ -309,17 +311,38 @@ Since these do not match some problems exist.
 </p>
 <h4>int64 and uint64</h4>
 <p><b>channel access</b> does not support 64 bit integers.
-<b>channel access</b> clients may never be able to access any field in a DBRecord that
-is a 64 bit integer.
+Will <b>channel access</b> clients be able to access any field in a DBRecord that
+is a 64 bit integer?
 </p>
+<p>
+Two possibilities come to mind but both have problems:
+</p>
+<dl>
+  <dt>double</dt>
+  <dd>
+   The field type could appear to <b>channel access</b> as a <b>DBR_DOUBLE</b>.
+   This would work for both scalar and array.
+   But once the 64 bit value exceeds the number of bits it will loose some lower order bits.
+   <br />
+   Would this also require record support?
+  </dd>
+  <dt>string</dt>
+  <dd>
+   The field type could appear to <b>channel access</b> as a <b>DBR_STRING</b>.
+   For scalar this can preserve all digits.
+   For an array, the problem of how arrays of <b>DBR_STRING</b> are supported will limit the usefulness.
+   <br />
+   Would this also require record support?
+  </dd>
+</dl>
+
 <h4>unsigned integers</h4>
 <p>Since <b>channel access</b> does not support unsigned integers.
 The following is done:</p>
 <dl>
    <dt>uint8</dt>
      <dd>
-        Signed and unsigned 8 bit integers are both treated the same.
-        The client can not detemine the correct type.
+        The client can not determine if a DBR_CHAR signed or unsigned.
      </dd>
     <dt>uint16</dt>
       <dd>
@@ -332,7 +355,12 @@ The following is done:</p>
 </dl>
 <h4>DBR_STRING</h4>
 <p>
-<b>DBR_STRING</b> fields are all limited to <b>MAX_STRING_SIZE</b>.
+Most <b>DBR_STRING</b> fields are limited to <b>MAX_STRING_SIZE</b>.
+One exception is field <b>NAME</b>.
+But unless something is done a <b>channel access</b> client can only access <b>MAX_STRING_SIZE</b>
+characters.
+</p>
+<p>
 Clients have two ways to get longer strings but each relies on the
 client and server using the same convention.
 The two ways are:
@@ -352,9 +380,7 @@ The two ways are:
     </dd>
 </dl>
 <h2>miscellaneous issues</h2>
-<p>
-The following are not discussed except in this section.
-</p>
+
 <h3>monitor event mask</h3>
 <p>Currently neither <b>ca</b> or <b>qsrv</b> has support for DBE_ARCHIVE.
 What to do?
@@ -364,7 +390,7 @@ Perhaps allow the following field option:
 <pre>
 field(value[DBE=value])
 </pre>
-value can be any combination of
+<b>value</b> can be any combination of
 <b>DBE_VALUE|DBE_ALARM|DBE_ARCHIVE|DBE_PROPERTY</b>
 <h3>alarm acknowledgement</h3>
 <p>
@@ -520,13 +546,13 @@ A pvRequest structure allows a client to select:
         When a client connects to  channel, it receives a <b>Structure</b> that describes the
         <b>PVStructure</b> the channel supports.
         From the <b>Structure</b>, or just by anticipating what the server supports,
-        the client can select the fields it wants to use.
+        the client can select the fields it wants to access.
       </dd>
       <dt>global and field specific options</dt>
       <dd>
          The client can pass global and field specific options to the server.
          <br />
-         An option is just a <b>name,value</b> pair, where both name and value are a string.
+         An option is just a <b>name=value</b> pair, where both name and value are a string.
       </dd>
 </dl>
 <p>The following provides a fuller description of</p>
@@ -535,10 +561,20 @@ href="../pvRequest/pvRequest.html">pvRequest
 </a>
 
 <p>Should a better implementation of CreateRequest be implemented?</p>
-<p>Andrew has the start of a EBNF parser.
+<p>Andrew just wrote a EBNF description of the
+existing request syntax.
+Then he used a parser built into Base and pvData
+that turns JSON into a PVStructure.
+This was just a proof of concept but it did work.
 <br />
-Is he or someone else willing to finish the parser?
+Is he or someone else willing to finish the work and replace the existing implementation
+of CreateRequest.
 </p>
+<p>Also is it possible to define:
+</p>
+<pre>
+optionValue = [A-Za-z_0-9?:|&amp;]+ ;
+</pre>
 <h3>record options</h3>
 <p>At present the following record options are supported:</p>
 <h4>queueSize</h4>
@@ -589,9 +625,7 @@ At the present time no standard field options have been specified.
 </p>
 
 <h2>ca provider</h2>
-<p>
-<b>NOTE:</b>The following assumes that issue #119 for pvAccessCPP has been merged.
-</p>
+
 <p>
 The primary goal for provider <b>ca</b> is to allow a client to use the <b>pvAccess</b>  API
 instead of the <b>channel access</b> API.
@@ -617,19 +651,18 @@ If the implementation can provide additional features then great!
 Another goal is to do more to prevent deadlocks using the <b>channel access</b> API
 </p>
 <p>The following presents some proposed changes.</p>
-<h4>fields other than value</h4>
-<p>
-A client normally access the value field of a DBRecord , i. e. field <b>VAL</b>.
-But some other fields can also be accessed.
-If so then perhaps the following rules should apply:
+
+<h4>monitor event mask</h4>
+<p>Currently <b>ca</b> has no support for a monitor event mask.
+What to do?
+<br />
+Perhaps allow the following field option:
 </p>
-<ul>
-   <li>monitor is not supported.</li>
-   <li>for get and put only a value field appears.
-     <br />
-    alarm, timeStamp, display, control, and valueAlarm are ignored.
-   </li>
-</ul>
+<pre>
+field(value[DBE=value])
+</pre>
+<b>value</b> can be any combination of
+<b>DBE_VALUE|DBE_ALARM|DBE_ARCHIVE|DBE_PROPERTY</b>
 <h4>unsigned integer support</h4>
 <p><b>channel access</b> has no support for unsigned integers.
 Perhaps the following field options could be provided:
@@ -658,6 +691,8 @@ But if the client also requested timeStamp there is a problem because
 <p>A possible solution is to first issue a <b>DBR_CTL_...</b> request
 followed by a <b>DBR_TIME_...</b> request.
 </p>
+<p>But maybe it is best to just document the restriction?
+</p>
 <h4>enum choices and description</h4>
 <p>Currently, if either is needed, a separate DBR request is made when the Structure
 introspection interface is created.
@@ -669,7 +704,7 @@ The separate DBR request  should only be made when the first request is made to 
 from a separate thread. This appears to fix a known <b>channel access</b> deadlock.
 </p>
 <p>
-A separate thread should also be used by channel connect and state change callbacks.
+A separate thread should also be used for channel connect and state change callbacks.
 </p>
 <h4>ca provider and channel access simultaneous</h4>
 <p>Is this possible?
@@ -685,6 +720,7 @@ pvData has complete type support for all dbAccess data types.
 <b>qsrv</b> creates a PVStructure that contains all data that is valid
 for the value field of the record type.
 Get, put, and monitor all use the Structure introspection interface from this PVStructure.
+This means the implementation ignores the set of fields the client specifies in <b>pvRequest</b>.
 </p>
 <p>
 <b>qsrv</b> does not implement createChannelGet or createChannelProcess.
@@ -729,34 +765,38 @@ valueAlarm.lowWarningLimit
 valueAlarm.highWarningLimit
 valueAlarm.highAlarmLimit
 </pre>
-<p>However <b>qsrv</b> should only provide the fields the client requests.
-This means that <b>qsrv</b> must also implement channelGet.
-</p>
 <p>
-The following are some suggested changes to <b>qsrv</b>
+The following are some suggested changes to <b>qsrv</b>:
 </p>
-<h4>Non value fields</h4>
-<p>If the client accesses a field other than <b>VAL</b> then
-only get and put should be supported.
-In addition alarm, timeStamp, display, control, and valueAlarm should not be supported.
+<h4>monitor event mask</h4>
+<p>Currently <b>qsrv</b> does not allow the client to specify a monitor event mask.
+What to do?
+<br />
+Perhaps allow the following field option:
 </p>
+<pre>
+field(value[DBE=value])
+</pre>
+<b>value</b> can be any combination of
+<b>DBE_VALUE|DBE_ALARM|DBE_ARCHIVE|DBE_PROPERTY</b>
+<h4>pvRequest</h4>
+<p><b>qsrv</b> should honor the set of fields the client specifies in the <b>pvRequest</b>
+argument to <b>createChannelGet</b>, <b>createChannelPut</b>, and <b>createMonitor</b>.
+</p>
+
 <h4>channelPut</h4>
 <p>Only value should be supported.
 </p>
-<h4>get and monitor</h4>
-<p>
-Only the the fields that client specifies in pvRequest
-should be in the data for the client.
-</p>
-
 <h2>local provider in pvDatabaseCPP</h2>
-<p>Look at "pvDatabase plugin support" in:</p>
+<p>Look at "pvDatabase plugin support" in:
 <a
 href="../pvRequest/pvRequest.html">pvRequest
 </a>
+</p>
 <p>Should the plugin support be implemented in pvDatabase?
 <br />
-Note that it has it's own version of pvCopy o the one in pvData can be deprecated.
+Note that it has it's own version of <b>pvCopy</b>.
+<b>pvCopy</b> in pvData can be deprecated.
 </p>
 </div>
 </body>
