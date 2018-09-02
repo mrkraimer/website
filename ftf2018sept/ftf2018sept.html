@@ -21,7 +21,7 @@
 <div class="head">
 <h1>Core Developer FTF 2018.09: Client access to DBRecord data</h1>
 
-<h2 class="nocount">Working Draft, 30-Aug-2018</h2>
+<h2 class="nocount">Working Draft, 02-Sept-2018</h2>
 <dl>
   <dt>editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -721,6 +721,11 @@ pvData has complete type support for all dbAccess data types.
 for the value field of the record type.
 Get, put, and monitor all use the Structure introspection interface from this PVStructure.
 This means the implementation ignores the set of fields the client specifies in <b>pvRequest</b>.
+<br />
+This leads to significant memory usage:
+<a
+href="../memoryusage/memoryusage.html">memoryusage
+</a>
 </p>
 <p>
 <b>qsrv</b> does not implement createChannelGet or createChannelProcess.
@@ -784,9 +789,7 @@ field(value[DBE=value])
 argument to <b>createChannelGet</b>, <b>createChannelPut</b>, and <b>createMonitor</b>.
 </p>
 
-<h4>channelPut</h4>
-<p>Only value should be supported.
-</p>
+
 <h2>local provider in pvDatabaseCPP</h2>
 <p>Look at "pvDatabase plugin support" in:
 <a

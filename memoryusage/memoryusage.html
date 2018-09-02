@@ -1,0 +1,204 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>memoryusage</title>
+  <link rel="stylesheet" type="text/css"
+  href="../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../css/epicsv4.css" />
+  <style type="text/css">
+  </style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../css/tocgen.js">
+  </script>
+</head>
+
+<body>
+
+<div class="head">
+<h1>memoryusage</h1>
+
+<h2 class="nocount">Working Draft, 02-Sept-2018</h2>
+<dl>
+  <dt>editors:</dt>
+    <dd>Marty Kraimer</dd>
+</dl>
+
+<p>This product is available via an
+<a
+href="../LICENSE">open source license
+</a>
+</p>
+
+</div>
+
+<div id="toc">
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+
+<div id="contents" class="contents">
+
+<h2>Introduction</h2>
+<p>The following shows some results from a test involving an IOC that has 50000 DBRecords
+and a client that connects to all 50K records and then creates a channelGet, channelPut,
+and monitor for each channel.
+</p>
+<p>The test was originally created to test connecting to many channels
+but can also be used to look at memory consumption.
+The client can be started using either <b>ca</b> or <b>pva</b>.
+If it uses <b>pva</b> then it is using <b>qsrv</b> to connect to the records.
+</p>
+<p>
+The client uses "<b>request=value</b>" for the channelPut and "<b>request=value,alarm,timeStamp</b>" for
+the channelGet and monitor.
+Provider <b>ca</b> honors these choices but <b>qsrv</b> acts as thougth the client specified
+"<b>request=value,alarm,timeStamp,display,control,valueAlarm</b>".
+</p>
+
+<h2>Size of standard fields</h2>
+<p>The following gives some indication of how much memory is allocated for various combinations
+of standard fields:
+</p>
+<pre>
+mrk> bin/linux-x86_64/showsize -r value
+total data bytes 8
+total fields 2
+mrk> bin/linux-x86_64/showsize -r value,alarm
+total data bytes 32
+total fields 9
+mrk> bin/linux-x86_64/showsize -r value,alarm,timeStamp
+total data bytes 56
+total fields 16
+mrk> bin/linux-x86_64/showsize -r value,alarm,timeStamp,display
+total data bytes 96
+total fields 27
+mrk> bin/linux-x86_64/showsize -r value,alarm,timeStamp,display,control
+total data bytes 120
+total fields 34
+mrk> bin/linux-x86_64/showsize -r value,alarm,timeStamp,display,control,valueAlarm
+total data bytes 200
+total fields 55
+</pre>
+<p>Note:</p>
+<ul>
+    <li>For scalar fields the memory allocated for each <b>PVField</b> is greater than the memory for
+the scalar data itself.
+    </li> 
+    <li><b>valueAlarm</b> is the biggest consumer of memory even though most client will not
+want this information.
+    </li>
+    <li>Many client will only be interested in some combination of <b>value,alarm,timeStamp</b>
+    </li>
+</ul>
+<h2>Memory usage ca vs pva</h2>
+<p>The following are results when that database and the client are run on the same laptop.
+Thus the memory consuption is for both client and server.
+</p>
+<p>After rebooting the initial memory usage is:
+</p> 
+<pre>
+initial
+
+MemTotal:        8082284 kB
+MemFree:         5155396 kB
+MemAvailable:    6072064 kB
+Buffers:           95792 kB
+Cached:          1214276 kB
+</pre>
+<p>Next the database is started.
+</p>
+<pre>
+start 50000 record database
+
+MemTotal:        8082284 kB
+MemFree:         4895116 kB
+MemAvailable:    5851928 kB
+Buffers:          101704 kB
+Cached:          1267108 kB
+</pre>
+<p>Next the client is started with provider <b>ca</b>
+</p>
+<pre>
+client with provider ca
+
+MemTotal:        8082284 kB
+MemFree:         4072588 kB
+MemAvailable:    5102808 kB
+Buffers:          106540 kB
+Cached:          1343588 kB
+nchannels 50000 provider ca
+channel 50.0182
+wait 0.340626
+get1 6.44587
+put 5.22007
+get2 3.48156
+mrk> //CLIENT WAS TERMINATED
+MemTotal:        8082284 kB
+MemFree:         4772176 kB
+MemAvailable:    5802396 kB
+Buffers:          106556 kB
+Cached:          1343528 kB
+</pre>
+<p>
+Next the client is started with provider <b>pva</b>
+</p>
+<pre>
+client with provider pva
+
+MemTotal:        8082284 kB
+MemFree:         1204176 kB
+MemAvailable:    2234612 kB
+Buffers:          106604 kB
+Cached:          1343820 kB
+nchannels 50000 provider pva
+channel 0.181652
+wait 30.4453
+get1 16.4011
+put 17.2911
+get2 3.98153
+</pre>
+<p>Note that the difference between memory available with <b>ca</b> and with <b>pva</b>
+is about:
+</p>
+<pre>
+5102808 kB - 2234612 kB = 2.87 gigabytes.
+</pre>
+<h2>Running the test</h2>
+<p>This section provides instructions for how to run the test.</p>
+<h4>The database</h4>
+<p>The database is available at:
+<a
+href="https://github.com/mrkraimer/testDatabaseCPP.git">testDatabaseCPP
+</a>
+</p>
+<p>The database is started as follows:</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/testDatabaseCPP/iocBoot/exampleScale
+mrk> ../../bin/linux-x86_64/exampleDatabase st.cmdNOSCAN 
+...
+epics> dbnr
+Records  Aliases  Record Type
+ 50000        0    calc
+Total 50000 records, 0 aliases
+epics> 
+</pre>
+<h4>The client</h4>
+<p>The client test is available at:
+<a
+href="https://github.com/mrkraimer/testClientCPP.git">testClientCPP
+</a>
+</p>
+<p>The client is started via:</p>
+<pre>
+/home/epicsv4/masterCPP/testClientCPP
+mrk> bin/linux-x86_64/timeManyChannel -p ca
+OR
+mrk> bin/linux-x86_64/timeManyChannel -p pva
+</pre>
+</div>
+</body>
+</html>
