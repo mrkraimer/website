@@ -1,0 +1,1323 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>ca provider</title>
+  <link rel="stylesheet" type="text/css"
+  href="../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../css/epicsv4.css" />
+  <style type="text/css">
+  </style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../css/tocgen.js">
+  </script>
+</head>
+
+<body>
+
+<div class="head">
+<h1>ca provider</h1>
+
+<h2 class="nocount">Working Draft, 22-Sept-2018</h2>
+<dl>
+  <dt>editors:</dt>
+    <dd>Marty Kraimer</dd>
+</dl>
+
+<p>This product is available via an
+<a
+href="../LICENSE">open source license
+</a>
+</p>
+<h2 class="nocount">Status</h2>
+<p>The <b>ca</b> provider is under development in
+<a
+href="https://github.com/mrkraimer/pvAccessCPP">pvAccessCPPMRK
+</a>
+</p>
+<p>It will not be merged into <b>epics-base/pvAccessCPP</b> until all features described in
+this document are implemented.
+</p>
+<p>
+The current status is that, as far as I know,  everything described in this document is implemented except:
+</p>
+<dl>
+  <dt>record options</dt>
+  <dd>
+     event mask has not been implemented.
+  </dd>
+  <dt>field options</dt>
+  <dd>
+    no field options have been implemented.
+  </dd>
+</dl>
+</div>
+
+<div id="toc">
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+
+<div id="contents" class="contents">
+
+<h2>Introduction</h2>
+<h3>Overview</h3>
+<p>
+Since the very beginning of EPICS,
+<b>channel access</b>, both network protocol and API, provided client access to DBRecords.
+With EPICS V4 two new methods are available:
+</p>
+<dl>
+   <dt>ca</dt>
+     <dd>
+      A channel provider that uses the
+      <b>channel access</b> network protocol but uses the pvAccess API,
+     </dd>
+   <dt>qsrv</dt>
+     <dd>
+      A server side channel provider that uses dbAccess to access DBRecord data.
+     The <b>pva</b> network protocol is used for communication.
+     </dd>
+</dl>
+<p>
+Using V4 terminology, data in a PVRecord consists of some combination of:
+</p>
+<pre>
+value
+alarm
+timeStamp
+display
+control
+valueAlarm
+</pre>
+<p>Different types of clients want different combinations of the above.
+</p>
+<ul>
+<li>An archiver wants <b>value,alarm,timeStamp</b>.
+</li>
+<li>
+An alarm handler wants only <b>alarm</b>.
+</li>
+<li>
+A strip tool wants <b>value,timeStamp</b>
+</li>
+<li>
+A display tool may want all,
+but changes in any of <b>display,control,valueAlarm</b> may cause widget reconfiguration.
+Since these rarely happen the display tool may want a monitor on these separate from
+the monitor on <b>value,alarm,timeStamp</b>
+</li>
+</ul>
+
+<p>
+This document describes channel provider <b>ca</b>, which is implemented in <b>pvAccessCPP</b>.
+It uses the <b>channel access</b> network protocol to communicate with a server,
+i. e. the network protocol that has been used since 1990 to communicate with <b>EPICS IOCs</b>.
+But instead of the <b>channel access</b> API, the client uses the <b>pvAccess</b> API.
+</p>
+<p>
+The following discussion only refers to the C++ implementation.
+However any changes in <b>ca</b> provider should also be make in the Java implementation.
+</p>
+
+<p>
+<b>pva</b> is another way to connect to a <b>DBRecord</b>,
+but this only works if the IOC has <b>qsrv</b> installed.
+<b>qsrv</b>, which is provided with
+<a
+href="https://github.com/epics-base/pva2pva">pva2pva
+</a>,
+has full support for communicating with a <b>DBRecord</b>.
+</p>
+<p>
+<b>ca</b> has the advantage that it does require any changes to an existing IOC.
+</p>
+<h3>Overview of Channel Access</h3>
+<p>
+<b>channel access</b>, which is provided with <b>epics-base</b>, defines and implements a protocol
+for client/server network communication.
+</p>
+<p>
+<b>epics-base</b> provides both a client and a server implementation
+This document only discusses the client API.
+<br />
+For details see:
+<a
+href="https://epics.anl.gov/base/R7-0/1-docs/CAref.html">EPICS Channel Access 4.13.1 Reference Manual
+</a>
+</p>
+<p>
+<b>channel access</b> allows a client to get, put, and monitor monitor data from a server.
+The data is defined by various DBD types.
+</p>
+<p>
+The following, in <b>epics-base/include</b>, are the
+main include files that show the <b>channel access</b> API:
+</p>
+<pre>
+cadef.h
+db_access.h
+</pre>
+<p>
+The client requests data via one of the DBR types.
+For example</p>
+<pre>
+DBR_STS_DOUBLE	returns a double status structure (dbr_sts_double)
+where
+struct dbr_sts_double{
+	dbr_short_t	status;	 		/* status of value */
+	dbr_short_t	severity;		/* severity of alarm */
+	dbr_long_t	RISC_pad;		/* RISC alignment */
+	dbr_double_t	value;			/* current value */
+};
+</pre>
+<p>
+The server converts data between the native type of the field being accessed and the DBR type.
+</p>
+
+<h3>Overview of ca provider</h3>
+<p>
+<b>ca</b> is a pvAccess Channel Provider that uses <b>channel access</b> to connect a client to a server.
+</p>
+<p>
+With <b>ca</b>, the client data appears as pvData objects, i. e.
+<b>ca</b> converts the data provided by <b>channel access</b> to/from pvData
+</p>
+<p>
+Thus a pvAccess client can communicate with an existing V3 EPICS IOC without making
+any changes to existing IOCs.
+</p>
+<p>
+For an overview of pvData and pvAccess see:
+<a
+href="https://mrkraimer.github.io/website/developerGuide/developerGuide.html)">EPICS V4 Developer's Guide]
+</a>
+</p>
+<p>
+<b>ca</b> requests data from the server with a DBR type that matches the native type.
+See the next section for more details.
+</p>
+<p>
+All conversion to/from other types must be done by the client.
+</p>
+
+<h2>Client API</h2>
+<h3>Brief Description</h3>
+<p>
+The primary goal of provider <b>ca</b> is to allow a client to use the <b>pvAccess</b>  API
+instead of the <b>channel access</b> API.
+</p>
+<p>The <b>channel access</b> API allows the client to pick any DBR type it wants and
+if the <b>catype</b>, which is the type for the DBRecord, does not match the DBR type the server converts between the types.
+</p>
+<p>With <b>ca</b> the client uses pvData types that match
+the <b>catype</b>.
+Thus all conversions will be done on the client side.
+</p>
+<p>
+Other than having the server perform conversion,
+<b>ca</b> attempts to let the client do everthing the client can now do with the <b>channel access</b> API.
+</p>
+<p>
+<b>ca</b> implements the following pvAccess methods : <b>getField</b>, <b>channelGet</b>, <b>channelPut</b> and <b>monitor</b>.
+</p>
+<p>
+For <b>channelPut</b> the only field that can be accessed is <b>value</b>.
+A client can issue puts with and without a callback from the server.
+The default is no callback. If createChannelPut has the option <b>record[block=true]</b> then a put callback used.
+</p>
+<p>
+All of the other pvAccess methods provide access to fields <b>value</b>, <b>alarm</b> and <b>timeStamp</b>.
+</p>
+<p>
+Depending on the type associated with the <b>value</b> field the following fields may also be available:
+<b>display</b>, <b>control</b> , and <b>valueAlarm</b>.
+</p>
+<p>
+Thus a client can make requests like:
+</p>
+<pre>
+pvget -p ca -r "value,alarm,timeStamp,display,control,valueAlarm" names ...
+</pre>
+<p>
+<b>ca</b> will create a structure that has the fields requested but only for fields that are supported
+by the server.
+</p>
+<ul>
+    <li>For puts only value is supported.</li>
+    <li>For gets and monitors every channel supports value, alarm, and timeStamp.</li>
+    <li>Depending on the <b>catype</b> a channel may support display, control, and valueAlarm.</li>
+    <li>If any of display,control, or valueAlarm are requested and supported
+        then timeStamp is NOT supported.
+    </li>
+</ul>
+<p>
+Lets discuss the various fields.
+</p>
+<h3>value</h3>
+<p>
+This can be a scalar, scalarArray, or an enumerated structure.
+</p>
+<p>
+For a scalar or scalarArray the ScalarType is one of the following:
+<b>pvString</b>, <b>pvByte</b>, <b>pvShort</b>, <b>pvInt</b>, <b>pvFloat</b>, or <b>pvDouble</b>.
+</p>
+<p>
+Note that <b>channel access</b> does not support unsigned integers or 64 bit integers.
+But field request options, described in the next section,
+allow a client to receive data as <b>pvUByte</b>, <b>pvUShort</b>, <b>pvUInt</b>,
+<b>pvLong</b>, or <b>pvULong</b>.
+</p>
+<p>
+A enumerated structure is created if the native type is <b>DBR_ENUM</b>.
+</p>
+<p>
+Some examples are:
+</p>
+<pre>
+pvget -p ca -r value -i DBRlongout
+DBRlongout
+structure 
+    int value 0
+mrk> pvget -p ca -r value -i DBRdoubleout
+DBRdoubleout
+structure 
+    double value 0
+mrk> pvget -p ca -r value -i DBRshortArray
+DBRshortArray
+structure 
+    short[] value []
+mrk> pvget -p ca -r value -i DBRstringArray
+DBRstringArray
+structure 
+    string[] value [aa,bb,cc]
+mrk> pvget -p ca -r value -i DBRmbbin
+DBRmbbin
+epics:nt/NTEnum:1.0 
+    enum_t value
+        int index 1
+        string[] choices [zero,one,two,three,four,five,six,seven,eight,nine,ten,eleven,twelve,thirteen,fourteen,fifteen]
+mrk> 
+</pre>
+
+<h3>alarm,timeStamp,display,control, and valueAlarm</h3>
+<p>
+Each of these is one of the property structures defined in pvData.
+</p>
+<h4>Examples</h4>
+
+<pre>
+mrk> pvget -p ca -r alarm -i DBRdoubleout
+DBRdoubleout
+structure 
+    alarm_t alarm
+        int severity 2
+        int status 3
+        string message HIHI
+
+mrk> pvget -p ca -r timeStamp -i DBRdoubleout
+DBRdoubleout
+structure 
+    time_t timeStamp
+        long secondsPastEpoch 1529923341
+        int nanoseconds 314916189
+        int userTag 0
+mrk> pvget -p ca -r display -i DBRdoubleout
+DBRdoubleout
+structure 
+    display_t display
+        double limitLow -10
+        double limitHigh 10
+        string description 
+        string format F8.2
+        string units volts
+mrk> pvget -p ca -r control -i DBRdoubleout
+DBRdoubleout
+structure 
+    control_t control
+        double limitLow -1e+29
+        double limitHigh 1e+29
+        double minStep 0
+mrk> pvget -p ca -r valueAlarm -i DBRdoubleout
+DBRdoubleout
+structure 
+    valueAlarm_t valueAlarm
+        boolean active false
+        double lowAlarmLimit -8
+        double lowWarningLimit -6
+        double highWarningLimit 6
+        double highAlarmLimit 8
+        int lowAlarmSeverity 0
+        int lowWarningSeverity 0
+        int highWarningSeverity 0
+        int highAlarmSeverity 0
+</pre>
+
+<h2>pvRequest</h2>
+<p>
+Each create method of class <b>Channel</b>, in <b>pvAccess</b>,  has an argument <b>PVStructure pvRequest</b>, i. e. it is an argument for <b>createChannelGet</b>, <b>createChannelPut</b>, etc.
+</p>
+<p>
+<b>pvDataCPP/include/pv/createRequest.h</b> provides a method:
+</p>
+<pre>
+PVStructurePtr createRequest(string const &amp; request);
+</pre>
+Thus given a request string it creates a pvRequest structure.
+This document uses the request string in most examples.
+It is assumed that client code calls the above method to create a pvRequest structure.
+<p>
+A pvRequest structure allows a client to select:
+</p>
+<dl>
+    <dt>an arbitrary set of fields.</dt>
+      <dd>
+        When a client connects to  channel, it receives a <b>Structure</b> that describes the
+        <b>PVStructure</b> the channel supports.
+        From the <b>Structure</b>, or just by anticipating what the server supports,
+        the client can select the fields it wants to access.
+      </dd>
+      <dt>global and field specific options</dt>
+      <dd>
+         The client can pass global and field specific options to the server.
+         <br />
+         An option is just a <b>name=value</b> pair, where both name and value are a string.
+      </dd>
+</dl>
+<p>The following provides a fuller description
+<a
+href="../pvRequest/pvRequest.html">pvRequest
+</a>
+</p>
+
+<p>For <b>ca</b> a valid request string for creating a <b>pvRequest</b> is one of the following:
+</p>
+<dl>
+   <dt>field,...</dt>
+   <dd>
+     Field is any of <b>value</b>, <b>alarm</b>, <b>timeStamp</b>, <b>display</b>.
+     <b>control</b>, and <b>valueAlarm</b>.
+   </dd>
+   <dt>value[options],field,...</dt>
+   <dd>
+      This allows options for the value field.
+   </dd>
+   <dt>record[options]field(value[options],fieldname,...)</dt>
+   <dd>
+     This allows record and value options.
+   </dd>
+</dl>
+
+<h3>record options</h3>
+<p>At present the following record options are supported:</p>
+<h4>queueSize</h4>
+<p>
+This is used to define the queueSize for monitors.
+The default is:
+</p>
+<pre>
+record[queueSize=2]
+</pre>
+<p>
+A larger size can be specified.
+</p>
+<h4>block</h4>
+<p>
+This is used to specify if a process request should
+block until the record completes processing.
+This is only valid for <b>channelPut</b>.
+</p>
+<pre>
+record[block=true]
+</pre>
+<p>If not specified the default is <b>false</b>.
+</p>
+<h4>monitor event mask</h4>
+<p>
+An event mask can be specified for <b>createMonitor</b>.
+</p>
+<pre>
+record[DBE=value]
+</pre>
+<b>value</b> can be any combination of
+<b>DBE_VALUE|DBE_ALARM|DBE_ARCHIVE|DBE_PROPERTY</b>
+
+<h3>field options</h3>
+
+<h4>unsigned integer support</h4>
+<p><b>channel access</b> has no support for unsigned integers.
+The following allows a client to ask that <b>ca</b> ask convert from signed to unsigned.
+</p>
+<dl>
+    <dt>DBF_UCHAR</dt>
+    <dd>
+<pre>
+field(value[dbtype=DBF_UCHAR])
+</pre>
+      Only valid for <b>DBR_CHAR</b>.
+    </dd>
+    <dt>DBF_USHORT</dt>
+    <dd>
+<pre>
+field(value[dbtype=DBF_USHORT])
+</pre>
+      Only valid for <b>DBR_LONG</b>.
+    </dd>
+    <dt>DBF_ULONG</dt>
+    <dd>
+<pre>
+field(value[dbtype=DBF_ULONG])
+</pre>
+      Only valid for <b>DBR_DOUBLE</b>.
+    </dd>
+    <dt>DBF_INT64</dt>
+     <dd>
+<pre>
+field(value[dbtype=DBF_INT64])
+</pre>
+      Only valid for <b>DBR_DOUBLE</b>.
+    </dd>
+    <dt>DBF_UINT64</dt>
+    <dd>
+<pre>
+field(value[dbtype=DBF_UINT64])
+</pre>
+      Only valid for <b>DBR_DOUBLE</b>.
+    </dd>
+</dl>
+<h4>Support for waveform, lsi and lso record types</h4>
+<p>These can be used to access strings longer than MAX_STRING_SIZE.
+</p>
+<pre>
+field(value[pvtype=pvString])
+</pre>
+<b>NOTES:</b>
+<ul>
+   <li>Work for lsi, lso, and waveform record types.</li>
+   <li>for lsi, lso client must specify <b>VAL$</b>.</li>
+</ul>
+
+<h2>Developing applications that use ca</h2>
+<p>
+This section provides guidelines for code developers that use <b>ca</b>  to connect a client to a server.
+</p>
+<p>
+This includes plugins for things like MEDM, EDM, caqtDM, etc.
+But also means any code that use <b>ca</b>: pvget, pvput, pvaClientCPP, exampleCPP/exampleClient, etc.
+</p>
+<h3>Guidelines for using ca</h3>
+<h4>display,control,valueAlarm</h4>
+<p>If any combination of <b>display</b>, <b>control</b>, and <b>valueAlarm</b> are monitored then
+it is suggested that two monitors are created.
+One has a request:
+</p>
+<pre>
+record[DBE=DBE_PROPERTY]field(display,control,valueAlarm)
+</pre>
+The other has a request:
+<pre>
+value,alarm,timeStamp
+</pre>
+<p>The above shows the complete set of fields that can be requested.
+An application can uses a subset if the fields shown.
+</p>
+<h4>alarm handler, archiver, etc</h4>
+<p>An alarm handler might make create a monitor with a request like:
+</p>
+<pre>
+record[DBE=DBE_ALARM]field(alarm)
+</pre>
+<p>An archiver might make create a monitor with a request like:
+</p>
+<pre>
+record[DBE=DBE_ARCHIVE]field(value,alarm,timeStamp)
+</pre>
+<h3>Sample Code</h3>
+<p>
+<a
+href="https://github.com/epics-base/exampleCPP">exampleCPP
+</a>
+Has example client and server code for using pvData and pvAccess.
+</p>
+<p>In particular look at:
+<a
+href="https://github.com/epics-base/exampleCPP/tree/master/exampleClient">exampleClient
+</a>
+for example client code.
+</p>
+<p>
+The examples all use
+<a
+href="https://github.com/epics-base/pvaClientCPP">pvaClientCPP
+</a>
+It has examples:
+</p>
+<dl>
+   <dt>get.cpp</dt>
+     <dd>
+       An example that uses channelGet.
+     </dd>
+   <dt>put.cpp</dt>
+   <dd>
+       An example that uses channelPut.
+     </dd>
+   <dt>monitor.cpp</dt>
+   <dd>
+       An example that creates a monitor.
+     </dd>
+</dl>
+<p>Each example has a create method that accepts the following arguments:
+</p>
+<dl>
+    <dt>channelName</dt>
+      <dd>
+      The name of the channel to access.
+      </dd>
+    <dt>provider</dt>
+      <dd>
+      The name of the provider.
+      EPICS V4 has support for providers <b>ca</b> and <b>pva</b>.
+      </dd>
+    <dt>request</dt>
+      <dd>
+       A request string to pass to createRequest.
+      </dd>
+</dl>
+<p>
+The above examples work with any channel provider.
+The rest of this section is for clients using provider <b>ca</b>.
+</p>
+<h3>CAClientFactory::start</h3>
+<p>
+<b>NOTE: </b>
+If <b>pvaClientCPP</b> is used then it automatically calls <b>CAClientFactory::start</b>.
+</p>
+<p>
+The <b>channel access</b> reference manual describes channel context:
+<a
+href="https://epics.anl.gov/base/R7-0/1-docs/CAref.html#Client2">CA Client Contexts and Application Specific Auxiliary Threads
+</a>
+</p>
+<p>
+A brief summary of channel context is that only the thread that calls CAClientFactory::start() and associated auxillary threads
+can call <b>ca_xxx</b> functions.
+</p>
+<p>
+The public access to <b>ca</b> is:
+</p>
+<pre>
+class epicsShareClass CAClientFactory
+{
+public:
+    static void start();
+    ...
+};
+</pre>
+<p>
+Any code that uses <b>ca</b> must call <b>CAClientFactory::start()</b> before making any pvAccess client requests.
+<b>ca_context_create</b> is called for the thread that calls CAClientFactory::start().
+If the client creates auxillary threads the make pvAccess client requests then the auxillary threads will automatically become
+a <b>ca</b> auxilary thread.
+</p>
+<h3>Client Callback Threads</h3>
+<p>
+<a
+href="https://bugs.launchpad.net/epics-base/7.0/+bug/1751380">Deadlock in ca_clear_subscription()
+</a>
+describes a problem with monitor callbacks.
+A test was created that shows that the same problem can occur with a combination of rapid get, put and monitor events.
+</p>
+<p>
+In order to prevent this problem <b>ca</b> creates the following threads: <b>channelConnectThread</b>,
+<b>getDoneThread</b>, <b>putDoneThread</b>, and <b>monitorEventThread</b>.
+All client callbacks are made via one of these threads.
+For example a call to the requester's <b>monitorEvent</b> method is made from the monitorEventThread.
+</p>
+<h2>Background</h2>
+<p>This section provides background material that helps understand design decisions
+for <b>ca</b>.
+</p>
+<h3>DBD to pvData</h3>
+
+<h4>Type Conversion</h4>
+
+Three type systems are involved in accessing data in a <b>DBRecord</b> and converting it to/from pvData:
+<dl>
+ <dt>DBF</dt>
+  <dd>
+    The type system used for a <b>DBRecord</b>.
+  </dd>
+ <dt>DBR</dt>
+   <dd>
+    The type system used by <b>channel access</b>.
+   </dd>
+  <dt>pvData</dt>
+    <dd>
+     The type system used by pvData/pvAccess.
+    </dd>
+</dl>
+
+The following gives a summary of the conversions between the type systems:
+
+<pre>
+rawtype               DBF          DBR         pvData ScalarType
+
+char[MAX_STRING_SIZE] DBF_STRING   DBR_STRING  pvString
+epicsInt8             DBF_CHAR     DBR_CHAR    pvByte
+epicsUint8            DBF_UCHAR    DBR_CHAR    pvByte
+epicsInt16            DBF_SHORT    DBR_SHORT   pvShort
+epicsUInt16           DBF_USHORT   DBR_LONG    pvInt
+epicsInt32            DBF_LONG     DBR_LONG    pvInt
+epicsUInt32           DBF_ULONG    DBR_DOUBLE  pvDouble
+epicsInt64            DBF_INT64    DBR_DOUBLE  pvDouble
+epicsUInt64           DBF_UINT64   DBR_DOUBLE  pvDouble
+float                 DBF_FLOAT    DBR_FLOAT   pvFloat
+double                DBF_DOUBLE   DBR_DOUBLE  pvDouble
+epicsUInt16           DBF_ENUM     DBR_ENUM    enum structure
+epicsUInt16           DBF_MENU     DBR_ENUM    enum structure
+</pre>
+
+Notes:
+<ul>
+  <li>Both DBF_CHAR and DBF_UCHAR go to DBR_CHAR. This is ambigous.</li>
+  <li>DBF_USHORT promoted to DBR_LONG.</li>
+  <li>DBF_ULONG promoted to DBR_DOUBLE.</li>
+  <li>Both DBF_INT64 and DBF_UINT64 promoted to DBR_DOUBLE.</li>
+  <li>qsrv provides full access to all DBF types, but the IOC must have qsrv installed.</li> 
+</ul>
+<h4>Accessing data in a DBRecord</h4>
+
+An IOC database is a memory resident database of <b>DBRecord</b> instances.
+
+Each <b>DBRecord</b> is an instance of one of an extensible set of record types.
+Each record type has an associated dbd definition which defines a set of fields for
+each record instance.
+
+For example an aoRecord.dbd has the definition:
+
+<pre>
+recordtype(ao) {
+    include "dbCommon.dbd" 
+    field(VAL,DBF_DOUBLE) {
+        ...
+    }
+    field(OVAL,DBF_DOUBLE) {
+        ...
+    }
+    ... many more fields
+</pre>
+
+In addition each record type has a associated set of support code defined in recSup.h
+
+<pre>
+/* record support entry table */
+struct typed_rset {
+    long number; /* number of support routines */
+    long (*report)(void *precord);
+    long (*init)();
+    long (*init_record)(struct dbCommon *precord, int pass);
+    long (*process)(struct dbCommon *precord);
+    long (*special)(struct dbAddr *paddr, int after);
+    long (*get_value)(void); /* DEPRECATED set to NULL */
+    long (*cvt_dbaddr)(struct dbAddr *paddr);
+    long (*get_array_info)(struct dbAddr *paddr, long *no_elements, long *offset);
+    long (*put_array_info)(struct dbAddr *paddr, long nNew);
+    long (*get_units)(struct dbAddr *paddr, char *units);
+    long (*get_precision)(const struct dbAddr *paddr, long *precision);
+    long (*get_enum_str)(const struct dbAddr *paddr, char *pbuffer);
+    long (*get_enum_strs)(const struct dbAddr *paddr, struct dbr_enumStrs *p);
+    long (*put_enum_str)(const struct dbAddr *paddr, const char *pbuffer);
+    long (*get_graphic_double)(struct dbAddr *paddr, struct dbr_grDouble *p);
+    long (*get_control_double)(struct dbAddr *paddr, struct dbr_ctrlDouble *p);
+    long (*get_alarm_double)(struct dbAddr *paddr, struct dbr_alDouble *p);
+};
+</pre>
+
+The methods that support accessing data from the record include:
+
+<pre>
+cvt_dbaddr          Implemented by record types that determine VAL type at record initialization
+*array_info         Implemented by array record types
+get_units           Implemented by numeric record types
+get_precision       Implemented by float and double record types
+*_enum_*            Implemented by enumerated record types
+get_graphic_double  NOTE Always returns limits as double
+get_control_double  NOTE Always returns limits as double 
+get_alarm_double    NOTE Always returns limits as double
+</pre>
+
+Each of these methods is optional, i. e. record support for a particular record type
+only implements methods that make sense for the record type.
+
+For example the enum methods are only implemented by records that have the definition:
+
+<pre>
+...
+    field(VAL,DBF_ENUM) {
+...
+}
+...
+</pre>
+ 
+
+<h4>Channel Access Data</h4>
+
+A client can access any public field of a <b>DBRecord</b>;
+Each <b>DBRecord</b> instance has a record name that is unique within the local area network.
+
+A channel name is a <b>recordname.fieldName</b>.
+
+If the fieldname is not specified then <b>.VAL</b> is assumed and the record support methods shown
+above can also be used to get additional data from the record.
+
+Any field that is accessable by client code must have a vald <b>DBF_</b> type.
+
+A client gets/puts data via a <b>DBR_</b>* request.
+
+The basic DBR types are:
+<pre>
+rawtype               DBR
+
+char[MAX_STRING_SIZE] DBR_STRING
+epicsInt8             DBR_CHAR
+epicsInt16            DBR_SHORT
+epicsInt32            DBR_LONG
+float                 DBF_FLOAT
+double                DBF_DOUBLE
+epicsUInt16           DBR_ENUM
+</pre>
+
+In addition to the DBR basic types the following DBR types provide additional data:
+
+<pre>
+DBR             one of the types above.
+DBR_STATUS_*    adds status and severity to DBR.
+DBR_TIME_*      adds epicsTimeStamp to DBR_STATUS.
+DBR_GR_*        adds display limits to DBR_STATUS. NOTE: no epicsTimeStamp
+DBR_CTRL_       adds control limits to DBR_GR.     NOTE: no epicsTimeStamp
+DBR_CTRL_ENUM   This is a special case.
+</pre>
+
+NOTES:
+<ul>
+   <li>status, severity, and epicsTimeStamp are the same for each DBR type.</li>
+   <li>limits have the same types as the correspondng DBR type.</li>
+   <li>server converts limits from double to the DBR type.</li>
+   <li>GR and CTRL have precision only for DBR_FLOAT and DBR_DOUBLE.</li>
+</ul>
+
+Some examples:
+
+<pre>
+DBR_STS_DOUBLE	returns a double status structure (dbr_sts_double)
+where
+struct dbr_sts_double{
+	dbr_short_t	status;	 		/* status of value */
+	dbr_short_t	severity;		/* severity of alarm */
+	dbr_long_t	RISC_pad;		/* RISC alignment */
+	dbr_double_t	value;			/* current value */
+};
+
+DBR_TIME_DOUBLE	returns a double time structure (dbr_time_double)
+where
+struct dbr_time_double{
+	dbr_short_t	status;	 		/* status of value */
+	dbr_short_t	severity;		/* severity of alarm */
+	epicsTimeStamp	stamp;			/* time stamp */
+	dbr_long_t	RISC_pad;		/* RISC alignment */
+	dbr_double_t	value;			/* current value */
+};
+
+DBR_GR_SHORT	returns a graphic short structure (dbr_gr_short)
+where
+struct dbr_gr_short{
+	dbr_short_t	status;	 		/* status of value */
+	dbr_short_t	severity;		/* severity of alarm */
+	char		units[MAX_UNITS_SIZE];	/* units of value */
+	dbr_short_t	upper_disp_limit;	/* upper limit of graph */
+	dbr_short_t	lower_disp_limit;	/* lower limit of graph */
+	dbr_short_t	upper_alarm_limit;	
+	dbr_short_t	upper_warning_limit;
+	dbr_short_t	lower_warning_limit;
+	dbr_short_t	lower_alarm_limit;
+	dbr_short_t	value;			/* current value */
+};
+
+DBR_GR_DOUBLE	returns a graphic double structure (dbr_gr_double)
+where
+struct dbr_gr_double{
+	dbr_short_t	status;	 		/* status of value */
+	dbr_short_t	severity;		/* severity of alarm */
+	dbr_short_t	precision;		/* number of decimal places */
+	dbr_short_t	RISC_pad0;		/* RISC alignment */
+	char		units[MAX_UNITS_SIZE];	/* units of value */
+	dbr_double_t	upper_disp_limit;	/* upper limit of graph */
+	dbr_double_t	lower_disp_limit;	/* lower limit of graph */
+	dbr_double_t	upper_alarm_limit;	
+	dbr_double_t	upper_warning_limit;
+	dbr_double_t	lower_warning_limit;
+	dbr_double_t	lower_alarm_limit;
+	dbr_double_t	value;			/* current value */
+};
+
+DBR_CTRL_DOUBLE	returns a control double structure (dbr_ctrl_double)
+where
+struct dbr_ctrl_double{
+	dbr_short_t	status;	 		/* status of value */
+	dbr_short_t	severity;		/* severity of alarm */
+	dbr_short_t	precision;		/* number of decimal places */
+	dbr_short_t	RISC_pad0;		/* RISC alignment */
+	char		units[MAX_UNITS_SIZE];	/* units of value */
+	dbr_double_t	upper_disp_limit;	/* upper limit of graph */
+	dbr_double_t	lower_disp_limit;	/* lower limit of graph */
+	dbr_double_t	upper_alarm_limit;	
+	dbr_double_t	upper_warning_limit;
+	dbr_double_t	lower_warning_limit;
+	dbr_double_t	lower_alarm_limit;
+	dbr_double_t	upper_ctrl_limit;	/* upper control limit */
+	dbr_double_t	lower_ctrl_limit;	/* lower control limit */
+	dbr_double_t	value;			/* current value */
+};
+
+
+DBR_CTRL_ENUM	returns a control enum structure (dbr_ctrl_enum)
+where
+struct dbr_ctrl_enum{
+	dbr_short_t	status;	 		/* status of value */
+	dbr_short_t	severity;		/* severity of alarm */
+	dbr_short_t	no_str;			/* number of strings */
+	char	strs[MAX_ENUM_STATES][MAX_ENUM_STRING_SIZE];
+					/* state strings */
+	dbr_enum_t	value;		/* current value */
+};
+</pre>
+
+<h4>PVData for a DBRecord via ca provider</h4>
+<p>
+<b>pvAccessCPP/src/ca</b> has files <b>dbdToPv.h</b> and <b>dbdToPv.cpp</b>.
+This is the code that converts between DBR data and pvData.
+</p>
+<p>
+This code must decide which of the many <b>DBR_</b>* types to use.
+</p>
+<p>
+There is a static method:
+</p>
+<pre>
+static DbdToPvPtr create(
+    CAChannelPtr const &amp; caChannel,
+    epics::pvData::PVStructurePtr const &amp; pvRequest,
+    IOType ioType);  // one of getIO, putIO, and monitorIO
+</pre>
+<p>
+When this is called the first thing is to determine which fields are requested by the client.
+This is from the set <b>value</b>, <b>alarm</b>, <b>timeStamp</b>. <b>display</b>, <b>control</b> , and <b>valueAlarm</b>.
+</p>
+<ul>
+ <li>If the ioType is putIO only <b>value</b> is valid.
+ </li>
+ <li>If the channel type is <b>DBR_ENUM</b> then <b>display</b>, <b>control</b> , and <b>valueAlarm</b> are ignored.
+ </li>
+ <li>If the channel is an array then <b>control</b> , and <b>valueAlarm</b> are ignored.
+ </li>
+ <li>If the channel type is <b>DBR_STRING</b> then <b>display</b>, <b>control</b> , and <b>valueAlarm</b> are ignored.
+ </li>
+ <li>If any of <b>display</b>, <b>control</b> , and <b>valueAlarm</b> are still allowed then <b>timeStamp</b> is ignored,
+because the DBR type selected will not return the timeStamp.
+ </li>
+</ul>
+<p>
+If the channel type is <b>DBR_ENUM</b> a one time <b>ca_array_get_callback(DBR_GR_ENUM...</b> request is issued
+to get the choices for the enumerated value.
+</p>
+<p>
+Depending or which fields are still valid, the  DBR type is obtained via:
+</p>
+<ul>
+  <li>If any of <b>display</b>, <b>control</b> ,or <b>valueAlarm</b> is valid then <b>dbf_type_to_DBR_CTRL(caValueType)</b>.
+   </li>
+  <li>else If <b>alarm</b> or <b>timeStamp</b> is valid then <b>dbf_type_to_DBR_TIME(caValueType)</b> .
+   </li>
+  <li>else <b>dbf_type_to_DBR(caValueType)</b>
+   </li>
+</ul>
+Where <b>caValueType</b> is one of
+<b>DBR_STRING</b>, <b>DBR_SHORT</b>, <b>DBR_FLOAT</b>, <b>DBR_ENUM</b>,
+<b>DBR_CHAR</b>, <b>DBR_LONG</b>, or <b>DBR_DOUBLE</b>.
+
+<h3>DBRecord data</h3>
+<p>Each field of a record, that can be accessed by clients, has one of the following types:</p>
+<dl>
+    <dt>integer</dt>
+    <dd>
+     Signed or unsigned integer of lenth 8, 16, 32, and 64 bits.
+     <br />
+     Array of any <b>integer</b> type.
+    </dd>
+    <dt>float</dt>
+    <dd>
+     IEEE32 or IEEE64 bit floating point.
+     <br />
+     Array of either <b>float</b> type.
+    </dd>
+    <dt>enum</dt>
+    <dd>
+     An unsigned 32 bit integer plus <b>get_enum_strs</b> record support.
+    </dd>
+    <dt>string</dt>
+    <dd>
+    A fixed length character string.
+    <br />
+    For the value field the length is MAX_STRING_SIZE.
+    <br />
+    An array of strings is supported but each element is a fixed length character string
+    of size MAX_STRING_SIZE.
+    </dd>
+</dl>
+<p>
+A client can access the value field of a record and some of other fields.
+The value field can be read and modified.
+What a client can do with other fields depends on the dbd definition for the field.
+</p>
+<p>
+For the value field clients can receive but not modify the following type of information:
+</p>
+<pre>
+DBRstatus    // all in dbCommon; no client support for getting directly
+    epicsUInt16	status    // available to client via other means
+    epicsUInt16	severity  // available to client via other means
+    epicsUInt16	acks      // available to client only via channel.ACKS
+    epicsUInt16	ackt      // available to client only via channel.ACKT
+DBRunits                  // rset get_units
+    char units[DB_UNITS_SIZE]
+DBRprecision              // rset get_precision
+    epicsInt32 precision
+DBRtime                   // in dbCommon; no client support for getting directly
+    epicsTimeStamp time   // available to client via other means
+DBRenumStrs               // rset get_enum_strs
+    epicsUInt32 no_str
+    char strs[DB_MAX_CHOICES][MAX_STRING_SIZE];	/* string values    */
+DBRgrLong                        //NOTE NO rset method
+    epicsInt32  upper_disp_limit
+    epicsInt32  lower_disp_limit
+DBRgrDouble                      // rset get_graphic_double
+     epicsFloat64 upper_disp_limit
+     epicsFloat64 lower_disp_limit
+DBRctrlLong                        //NOTE NO rset method
+     epicsInt32 upper_ctrl_limit
+     epicsInt32 lower_ctrl_limit
+DBRctrlDouble                      // rset get_control_double
+     epicsFloat64 upper_ctrl_limit
+     epicsFloat64 lower_ctrl_limit
+DBRalLong                        //NOTE NO rset method
+     epicsInt32   upper_alarm_limit
+     epicsInt32   upper_warning_limit
+     epicsInt32   lower_warning_limit
+     epicsInt32   lower_alarm_limit
+DBRalDouble                      // rset get_alarm_double
+     epicsFloat64  upper_alarm_limit
+     epicsFloat64  upper_warning_limit
+     epicsFloat64  lower_warning_limit
+     epicsFloat64  lower_alarm_limit
+</pre>
+<p>The following are the <b>rset</b> methods related to client data access:</p>
+<pre>
+    long (*get_array_info)(struct dbAddr *paddr, long *no_elements, long *offset);
+    long (*put_array_info)(struct dbAddr *paddr, long nNew);
+    long (*get_units)(struct dbAddr *paddr, char *units);
+    long (*get_precision)(const struct dbAddr *paddr, long *precision);
+    long (*get_enum_str)(const struct dbAddr *paddr, char *pbuffer);
+    long (*get_enum_strs)(const struct dbAddr *paddr, struct dbr_enumStrs *p);
+    long (*put_enum_str)(const struct dbAddr *paddr, const char *pbuffer);
+    long (*get_graphic_double)(struct dbAddr *paddr, struct dbr_grDouble *p);
+    long (*get_control_double)(struct dbAddr *paddr, struct dbr_ctrlDouble *p);
+    long (*get_alarm_double)(struct dbAddr *paddr, struct dbr_alDouble *p);
+</pre>
+<h4>question about DBRgrLong, DBRctrlLong, and DBRalLong</h4>
+These can not be accessed by client code.
+Are they ever used?
+<h3>channel access API</h3>
+<p>Each field of a channel that can be accessed by a client has a <b>chtype</b>
+which is one of the following types:</p>
+<dl>
+    <dt>integer</dt>
+    <dd>
+     Signed integer of lenth 8, 16, and 32 bits.
+     <br />
+     Array of any <b>integer</b> type.
+    </dd>
+    <dt>float</dt>
+    <dd>
+     IEEE32 or IEEE64 bit floating point.
+     <br />
+     Array of either <b>float</b> type.
+    </dd>
+    <dt>enum</dt>
+    <dd>
+     An unsigned 32 bit integer plus <b>DBR_CTRL_ENUM</b>.
+    </dd>
+    <dt>string</dt>
+    <dd>
+    A fixed length character string.
+    <br />
+    For the value field the length is MAX_STRING_SIZE.
+    <br />
+    A array of strings is supported but each element is a fixed length character string
+    of size MAX_STRING_SIZE.
+    </dd>
+</dl>
+<p>For put <b>channel access</b> only allows the client to access the above types of data.
+</p>
+<p>For get and monitor the client can access the following additional data:</p>
+<pre>
+DBR             one of the types above.
+DBR_STATUS_*    adds status and severity to DBR.
+DBR_TIME_*      adds epicsTimeStamp to DBR_STATUS.
+DBR_GR_*        adds display and alarm limits to DBR_STATUS.
+DBR_CTRL_*      adds control limits to DBR_GR.
+DBR_CTRL_ENUM   Same info as DBRenumStrs from rset get_enum_strs 
+</pre>
+<b>NOTES</b>:
+<ul>
+   <li>
+    For enum field no <b>DBR_GR_</b> or <b>DBR_CTRL_</b>.
+   </li>
+   <li>
+   status, severity, and epicsTimeStamp are the same for each DBR type.
+   </li>
+   <li>
+   limits have the same types as the correspondng DBR type.
+   </li>
+   <li>
+   DBR_GR_ and DBR_CTRL_ do not include epicsTimeStamp.
+   </li>
+   <li>
+     DBR_GR and DBR_CTRL have precision only for DBR_FLOAT and DBR_DOUBLE
+   </li>
+   <li>
+    server converts limits from double to the DBR type.
+   </li>
+</ul>
+<p>In addition <b>channel access</b> defines a monitor event mask:</p>
+<dl>
+   <dt>DBE_VALUE</dt>
+   <dd>
+    Trigger an event when a significant change in the channel's value
+    occurs. Relies on the monitor deadband field under DCT.
+   </dd>
+   <dt>DBE_ARCHIVE (DBE_LOG)</dt>
+   <dd>
+    Trigger an event when an archive significant change in the channel's
+    value occurs. Relies on the archiver monitor deadband field under DCT.
+   </dd>
+   <dt>DBE_ALARM</dt>
+   <dd>
+    Trigger an event when the alarm state changes
+   </dd>
+   <dt>DBE_PROPERTY</dt>
+   <dd>
+    Trigger an event when a property change (control limit, graphical
+    limit, status string, enum string ...) occurs.
+   </dd>
+</dl>
+<p>A few comments about the monitor event mask:</p>
+<dl>
+   <dt>default</dt>
+      <dd>
+       If a mask is not specified the default is DBE_VALUE | DBE_ALARM.
+      </dd>
+   <dt>DBE_VALUE</dt>
+       <dd>
+       This will cause the most events.
+       </dd>
+   <dt>DBE_PROPERTY</dt>
+       <dd>
+       If only this is specified then events are normally rare.
+       </dd>
+</dl>
+<p>
+When <b>caqtDm</b> connects to a channel it creates a monitor specifying
+DBR_CTRL_... and mask DBE_PROPERTY. When the callback for that request occurs,
+It then creates a monitor specifying DBR_STS_... and an empty mask.
+Thus for rare events it asks for a lot and for frequent events it asks only
+for value and alarm status and severity.
+</p>
+<h3>channel access and DBRecord</h3>
+<p>Code in <b>epics-base</b> converts between <b>channel access</b> data
+and the data in a DBRecord.
+Since these do not match some problems exist.
+</p>
+<h4>int64 and uint64</h4>
+<p><b>channel access</b> does not support 64 bit integers.
+Record access makes these fields appear as a double.
+Thus the field appears to <b>channel access</b> as a <b>DBR_DOUBLE</b>.
+This works for both scalar and array.
+But once the 64 bit value exceeds the number of mantissa bits in a double it will loose some lower order bits.
+</p>
+<h4>unsigned integers</h4>
+<p><b>channel access</b> does not support unsigned integers
+</p>
+<dl>
+   <dt>uint8</dt>
+     <dd>
+        The client can not determine if a DBR_CHAR signed or unsigned.
+     </dd>
+    <dt>uint16</dt>
+      <dd>
+        The <b>catype</b> appears as an int32.
+      </dd>
+    <dt>uint32</dt>
+      <dd>
+        The <b>catype</b> appears as a double.
+      </dd>
+</dl>
+<h4>DBR_STRING</h4>
+<p>
+Most <b>DBR_STRING</b> fields are limited to <b>MAX_STRING_SIZE</b>.
+One exception is field <b>NAME</b>.
+But unless something is done a <b>channel access</b> client can only access <b>MAX_STRING_SIZE</b>
+characters.
+</p>
+<p>
+Clients have two ways to get longer strings but each relies on the
+client and server using the same convention.
+The two ways are:
+</p>
+<dl>
+   <dt>int8 array</dt>
+    <dd>
+     Normally a waveform record with type <b>DBF_CHAR</b>
+     It has to be configured to hold enough bytes for how it is used.
+     A client can get and put long strings by converting from/to byte arrays.
+    </dd>
+   <dt>lsi and lso record types</dt>
+    <dd>
+      For these record types the value field has <b>catype</b> DBR_STRING unless the client
+      specifies <b>channelName.VAL$</b>.
+      In this case the <b>catype</b> is a DBR_CHAR array.
+    </dd>
+</dl>
+
+<h2>standard fields</h2>
+<p>This section shows the relationship between pvData standard fields and DBR data.</p>
+<h3>enum</h3>
+<pre>
+enum_t value
+    int index 0
+    string[] 
+</pre>
+<h3>alarm</h3>
+<pre>
+alarm_t alarm
+    int severity
+    int status
+    string message       // not in any DBR types
+</pre>
+<h3>timeStamp</h3>
+<pre>
+time_t timeStamp
+    long secondsPastEpoch   // seconds since 0000 Jan 1, 1970 UTC
+    int nanoseconds
+    int userTag             // not in epicsTimeStamp
+</pre>
+<p>Note that epicsTimeStamp is:</p>
+<pre>
+typedef struct epicsTimeStamp {
+    epicsUInt32    secPastEpoch; /* seconds since 0000 Jan 1, 1990 UTC */
+    epicsUInt32    nsec;         /* nanoseconds within second */
+} epicsTimeStamp;
+</pre>
+
+<h3>control</h3>
+<pre>
+control_t control
+    double limitLow
+    double limitHigh
+    double minStep       // not in any DBR type
+</pre>
+<h3>display</h3>
+<pre>
+display_t display
+    double limitLow
+    double limitHigh
+    string description   // not in any DBR type; field DESC is in dbCommon
+    string format        // DBR types only define precision
+    string units         // provided by DBRunits
+</pre>
+<p>
+<b>format</b> is a problem but what to do?
+<br />
+<b>DBRecord</b> has field <b>PREC</b>.
+</p>
+<h3>valueAlarm</h3>
+<pre>
+valueAlarm_t valueAlarm
+    boolean active           // not in any DBR type
+    double lowAlarmLimit
+    double lowWarningLimit
+    double highWarningLimit
+    double highAlarmLimit
+    int lowAlarmSeverity     // not in any DBR type
+    int lowWarningSeverity   // not in any DBR type
+    int highWarningSeverity  // not in any DBR type
+    int highAlarmSeverity    // not in any DBR type
+    double hysteresis        // not in any DBR type
+                             // recordTypes that support valueAlarm
+                             // should have field HYST
+</pre>
+<p>The above is OK.
+But there is a version for each numeric type.
+<b>control</b> and <b>display</b> only have double for limit fields.
+Also record support only has a method for DBRalDouble.
+</p>
+<p>
+<br />
+<b>ca</b> only uses <b>valueAlarm</b> with limits as double.
+</p>
+
+<h2>miscellaneous issues</h2>
+
+<h3>alarm acknowledgement</h3>
+<p>
+Is this a problem?
+<br />
+Is it handled by a client issuing gets and puts to fields <b>ACKS</b> and <b>ACKT</b>?
+</p>
+<h3>bitMask for standard fields</h3>
+
+<p><b>ca</b> always sets the bit for field <b>value</b> for each get and each monitor event.
+This seems like the correct semantics since DBRecords already have support for not
+raising monitors if a scalar value field does not change by a significant amount.
+It could be quite expensive to check for changes to array value fields.
+</p>
+<h3>alarm status</h3>
+<p>Both <b>epics-base</b> and <b>pvdata</b> have support code for alarms.
+The definition of <b>status</b> is different between them.
+<b>ca</b> converts from the <b>epics-base</b> version to the <b>pvdata</b>
+version.
+</p>
+<h3>DBRecord plugin support</h3>
+<p>Beginning with the 3.15 releases of <b>epics-base</b>
+channel filters are supported.
+</p>
+<p>
+Using the <b>channel access</b> client API, the client requests plugins by appending to the channel name.
+<br />
+An example requesting the array plugin is:
+</p>
+<pre>
+caget test:channel test:channel.[3:5] test:channel.[3:2:-3]
+ test:channel 10 0 1 2 3 4 5 6 7 8 9
+ test:channel.[3:5] 3 3 4 5
+ test:channel.[3:2:-3] 3 3 5 7
+</pre>
+<p>This works using the <b>channel access</b> client API and also for channel providers
+<b>qsrv</b> and <b>ca</b>.
+</p>
+<p>Thus <b>ca</b> does not support any plugin options.</p>
+
+</div>
+</body>
+</html>
