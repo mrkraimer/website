@@ -21,7 +21,7 @@
 <div class="head">
 <h1>ca provider</h1>
 
-<h2 class="nocount">Working Draft, 22-Sept-2018</h2>
+<h2 class="nocount">Working Draft, 24-Sept-2018</h2>
 <dl>
   <dt>editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -77,7 +77,7 @@ With EPICS V4 two new methods are available:
      </dd>
    <dt>qsrv</dt>
      <dd>
-      A server side channel provider that uses dbAccess to access DBRecord data.
+      A server side channel provider that uses dbAccess to access DBRecords.
      The <b>pva</b> network protocol is used for communication.
      </dd>
 </dl>
@@ -192,7 +192,7 @@ any changes to existing IOCs.
 <p>
 For an overview of pvData and pvAccess see:
 <a
-href="https://mrkraimer.github.io/website/developerGuide/developerGuide.html)">EPICS V4 Developer's Guide]
+href="../developerGuide/developerGuide.html">EPICS V4 Developer's Guide
 </a>
 </p>
 <p>
@@ -293,8 +293,8 @@ mrk> pvget -p ca -r value -i DBRstringArray
 DBRstringArray
 structure 
     string[] value [aa,bb,cc]
-mrk> pvget -p ca -r value -i DBRmbbin
-DBRmbbin
+mrk> pvget -p ca -r value -i DBRmbbo01
+DBRmbbo01
 epics:nt/NTEnum:1.0 
     enum_t value
         int index 1
@@ -366,7 +366,7 @@ Each create method of class <b>Channel</b>, in <b>pvAccess</b>,  has an argument
 PVStructurePtr createRequest(string const &amp; request);
 </pre>
 Thus given a request string it creates a pvRequest structure.
-This document uses the request string in most examples.
+In examples, this document uses the request string.
 It is assumed that client code calls the above method to create a pvRequest structure.
 <p>
 A pvRequest structure allows a client to select:
@@ -520,8 +520,8 @@ The other has a request:
 <pre>
 value,alarm,timeStamp
 </pre>
-<p>The above shows the complete set of fields that can be requested.
-An application can uses a subset if the fields shown.
+<p>The above two examples show the complete set of fields that can be requested.
+An application can uses a subset of the fields shown.
 </p>
 <h4>alarm handler, archiver, etc</h4>
 <p>An alarm handler might make create a monitor with a request like:
@@ -1154,7 +1154,7 @@ Since these do not match some problems exist.
 Record access makes these fields appear as a double.
 Thus the field appears to <b>channel access</b> as a <b>DBR_DOUBLE</b>.
 This works for both scalar and array.
-But once the 64 bit value exceeds the number of mantissa bits in a double it will loose some lower order bits.
+But once the 64 bit value exceeds the number of mantissa bits in a double it will loose lower order bits.
 </p>
 <h4>unsigned integers</h4>
 <p><b>channel access</b> does not support unsigned integers
@@ -1176,9 +1176,8 @@ But once the 64 bit value exceeds the number of mantissa bits in a double it wil
 <h4>DBR_STRING</h4>
 <p>
 Most <b>DBR_STRING</b> fields are limited to <b>MAX_STRING_SIZE</b>.
-One exception is field <b>NAME</b>.
-But unless something is done a <b>channel access</b> client can only access <b>MAX_STRING_SIZE</b>
-characters.
+If a field is larger then, unless something is done,
+a <b>channel access</b> client can only access <b>MAX_STRING_SIZE</b> characters.
 </p>
 <p>
 Clients have two ways to get longer strings but each relies on the
