@@ -1,0 +1,214 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>ca provider</title>
+  <link rel="stylesheet" type="text/css"
+  href="../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../css/epicsv4.css" />
+  <style type="text/css">
+  </style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../css/tocgen.js">
+  </script>
+</head>
+
+<body>
+
+<div class="head">
+<h1>testDatabase</h1>
+
+<h2 class="nocount">21-November-2018</h2>
+<dl>
+  <dt>editors:</dt>
+    <dd>Marty Kraimer</dd>
+</dl>
+
+<p>This product is available via an
+<a
+href="../LICENSE">open source license
+</a>
+</p>
+
+</div>
+
+<div id="toc">
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+
+<div id="contents" class="contents">
+
+<h2>Introduction</h2>
+<p><b>testDatabaseCPP</b> is available at: 
+<a
+href="https://github.com/mrkraimer/testDatabaseCPP">testDatabaseCPP
+</a>
+</p>
+<h2>DBRecordTypes</h2>
+<p>
+xxx
+</p>
+<p>To run the test start the database via:</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/testDatabaseCPP/iocBoot/DBRecordTypes
+mrk> ../../bin/linux-x86_64/recordTypes st.cmd
+</pre>
+<p>Then run the client:</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/testDatabaseCPP
+mrk> bin/linux-x86_64/DBRrecordTypesClient -p pva
+mrk> diff temp.txt pva.txt
+</pre>
+<p>
+The only differences should be timeStamp differences. i. e. differences in
+<b>secondsPastEpoch</b> and <b>nanoseconds</b>.
+</p>
+<p>
+Then run:
+</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/testDatabaseCPP
+mrk> bin/linux-x86_64/DBRrecordTypesClient -p ca
+mrk> diff temp.txt ca.txt
+</pre>
+<p>There should be no differences.
+</p>
+
+<h2>caLink</h2>
+<p>
+xxx
+</p>
+<p>To run the test start the database via:</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/testDatabaseCPP/iocBoot/caLink
+mrk> ../../bin/linux-x86_64/caLink st.cmd 
+</pre>
+<p>
+In another window issue the command:
+</p>
+<pre>
+mrk> pvget -m DBRinLink DBRdouble DBRoutLink PVRGetLink PVRMonitorLink PVRPutLink
+</pre>
+<p>
+In yet another window issue the commands:
+</p>
+<pre>
+mrk> pvput DBRoutLink 1
+mrk> pvput PVRPutLink 2
+</pre>
+<p>In the monitor window you will see:
+</p>
+<pre>
+mrk> pvget -m DBRinLink DBRdouble DBRoutLink PVRGetLink PVRMonitorLink PVRPutLink
+DBRinLink      &lt;undefined&gt;             0 INVALID DRIVER UDF 
+DBRdouble      &lt;undefined&gt;              0 INVALID DRIVER UDF 
+DBRoutLink     &lt;undefined&gt;              0 INVALID DRIVER UDF 
+PVRGetLink     2018-11-21 09:48:43.495  0 INVALID CLIENT disconnected 
+PVRMonitorLink 2018-11-21 09:48:43.496  0 INVALID UNDEFINED UDF 
+PVRPutLink     2018-11-21 09:48:43.495  0 INVALID disconnected 
+DBRoutLink     2018-11-21 09:49:11.688  1 
+DBRdouble      2018-11-21 09:49:11.688  1 
+PVRMonitorLink 2018-11-21 09:49:11.689  1 
+DBRdouble      2018-11-21 09:49:17.701  2 
+PVRPutLink     2018-11-21 09:49:17.701  2 
+PVRMonitorLink 2018-11-21 09:49:17.701  2 
+</pre>
+<h2>fastcalc</h2>
+<p>
+xxx
+</p>
+<p>To run the test start the database via:</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/testDatabaseCPP/iocBoot/fastcalc
+mrk> ../../bin/linux-x86_64/recordTypes st.fast1
+</pre>
+<p>
+Then you can run any of the following:
+</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/testDatabaseCPP
+mrk> bin/linux-x86_64/monitorrate -help
+ -h -p provider -r request - d debug channelNames 
+default
+-p pva -r value,alarm,timeStamp -d false PVRdouble
+mrk> bin/linux-x86_64/monitormerate -help
+Usage: bin/linux-x86_64/monitormerate [-p &lt;provider>] [-w &lt;timeout>] [-r &lt;request>] [-R] &lt;pvname> ...
+mrk> bin/linux-x86_64/getputmonitorrate -help
+ -h -p provider -r request - d debug -s sleepTime -o showGetPut channelNames 
+default
+-p pva -r value,alarm,timeStamp -d false -s 0 -o false -b true PVRdouble
+mrk> bin/linux-x86_64/monitor -help
+ -h -p provider -r request - d debug -v printValue -s 0.0 channelNames 
+default
+-p pva -r value,alarm,timeStamp -d false -v true -v 0 PVRdouble
+mrk> bin/linux-x86_64/monitorme -help
+Usage: bin/linux-x86_64/monitorme [-p &lt;provider>] [-w &lt;timeout>] [-r &lt;request>]  [-v &lt;printValue>]  [-R] &lt;pvname> ...
+mrk> 
+</pre>
+<p>For example:
+</p>
+<pre>
+mrk> bin/linux-x86_64/monitorrate -p ca FAST1
+mrk> bin/linux-x86_64/monitorrate -p ca FAST1
+provider ca channelName PVRdouble request value,alarm,timeStamp debug false
+_____monitorrate starting__
+
+total events/second 43163
+
+total events/second 43653.1
+
+total events/second 42939.7
+</pre>
+<p>A report is given every time enter is pressed.</p>
+<h2>manyChannels</h2>
+<p>
+xxx
+</p>
+<p>To run the test start the database via:</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/testDatabaseCPP/iocBoot/manyChannels
+mrk> ../../bin/linux-x86_64/recordTypes st.cmd
+</pre>
+<p>
+Then you can run any of the following:
+</p>
+<pre>
+mrk> bin/linux-x86_64/timeManyChannel -help
+-p provider -n nchannels  
+default
+-p pva -n 50000
+mrk> bin/linux-x86_64/timeManyChannelGet -help
+-p provider -n nchannels  
+default
+-p pva -n 50000
+mrk> bin/linux-x86_64/timeManyChannelPut -help
+-p provider -n nchannels  
+default
+-p pva -n 50000
+mrk> bin/linux-x86_64/timeManyChannelMonitor -help
+-p provider -n nchannels  
+default
+-p pva -n 50000
+mrk> bin/linux-x86_64/timeManyChannelGPM -help
+-p provider -n nchannels  
+default
+</pre>
+<p>
+For example:
+</p>
+<pre>
+mrk> bin/linux-x86_64/timeManyChannel -p pva
+</pre>
+</div>
+</body>
+</html>
