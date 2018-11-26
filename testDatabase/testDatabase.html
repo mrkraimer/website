@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
-  <title>ca provider</title>
+  <title>testDatabase</title>
   <link rel="stylesheet" type="text/css"
   href="../css/base.css" />
   <link rel="stylesheet" type="text/css"
@@ -21,7 +21,7 @@
 <div class="head">
 <h1>testDatabase</h1>
 
-<h2 class="nocount">21-November-2018</h2>
+<h2 class="nocount">26-November-2018</h2>
 <dl>
   <dt>editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -42,15 +42,84 @@ href="../LICENSE">open source license
 <div id="contents" class="contents">
 
 <h2>Introduction</h2>
+<p>This contains database and client code to test some esoteric features for providers <b>pva</b> and <b>ca</b> connecting to <b>DBRecord</b>s in
+an EPICS IOC.
+</p>
+<p>
+At present there are no regression tests.
+</p>
 <p><b>testDatabaseCPP</b> is available at: 
 <a
 href="https://github.com/mrkraimer/testDatabaseCPP">testDatabaseCPP
 </a>
 </p>
 <h2>DBRecordTypes</h2>
+<h3>Reason for the test</h3>
 <p>
-xxx
+<b>DBRecordTypes</b> provides a test of client code that accesses
+<b>DBRecord</b>s in an ioc database.
+The test database has record types for every <b>DBF</b> type supported for
+<b>DBRecord</b>s
+<br />
+For waveform records, i. e. array records <b>epics-base</b> has support for
+all the types. For scalar records support is available as follows:
 </p>
+<pre>
+DBF_CHAR      //implemented by this test
+DBF_SHORT     //implemented by this test
+DBF_LONG      //implemented by epics-base
+DBF_INT64     //implemented by this test
+DBF_FLOAT     //implemented by epics-base
+DBF_DOUBLE    //implemented by epics-base
+DBF_STRING    //implemented by epics-base
+DBF_UCHAR     //implemented by this test
+DBF_USHORT    //implemented by this test
+DBF_ULONG     //implemented by this test
+DBF_UINT64    //implemented by this test
+</pre>
+<p>
+In addition the test provides tests for a record named
+<b>DBRlongstring</b>. This is a record that can be accessed by a client
+as either a <b>DBF_STRING</b> or as a <b>DBF_CHAR</b> array that is 
+actually an array of ascii characters that the client can convert
+to a string.
+If the client just specifies the channel name then a <b>DBF_STRING</b>
+is the type seen by the client and is subject to the MAX_STRING_SIZE
+if the client is using the <b>channel access</b> network protocal.
+If the client appends <b>VAL$</b> to the channel name then an array
+of ascii characters is returned.
+</p>
+<h3>Issues found by the tests</h3>
+<p>The following issues are all related to client provider <b>pva</b>
+connecting to a <b>DBRecord</b> via  the server side provider <b>qsrv</b>.
+</p>
+<h4>DBF_INT64 and DBF_UINT64</h4>
+<p>Both of the following fail to connect:</p>
+<pre>
+mrk> pvget -p pva DBRint64
+Timeout
+DBRint64 
+mrk> pvget -p pva DBRuint64
+Timeout
+DBRuint64
+</pre>
+<h4>lso record type</h4>
+<p>Consider the following:</p>
+<pre>
+mrk> pvput -p ca -r value[pvtype=pvString] DBRlongstring.VAL$ abc
+Old :  
+New : abc 
+mrk> pvget -p ca -r value[pvtype=pvString] DBRlongstring.VAL$
+DBRlongstring.VAL$ abc 
+mrk> pvget -p pva DBRlongstring.VAL$
+DBRlongstring.VAL$ 2018-11-26 08:15:52.895  [97,98,99,0]
+mrk> pvget -p pva DBRlongstring
+DBRlongstring 2018-11-26 08:15:52.895  abc 
+</pre>
+<p>I maintain that provider <b>pva</b> should return the value as a string when
+<b>VAL$</b> is appended to the channel name.
+</p>
+<h3>Running the test</h3>
 <p>To run the test start the database via:</p>
 <pre>
 mrk> pwd
@@ -81,9 +150,15 @@ mrk> diff temp.txt ca.txt
 </p>
 
 <h2>caLink</h2>
+<h3>Reason for the test</h3>
 <p>
-xxx
+This test demonstrates that the <b>ca</b> provider and be used
+in the same address space as as the <b>channel access</b> API.
+The test database has <b>DBRecord</b>s with <b>CP</b> links and
+<b>PVRecord</b>s that use the <b>ca</b> provider to link to
+<b>DBRecord</b>s 
 </p>
+<h3>Running the test</h3>
 <p>To run the test start the database via:</p>
 <pre>
 mrk> pwd
@@ -121,9 +196,37 @@ PVRPutLink     2018-11-21 09:49:17.701  2
 PVRMonitorLink 2018-11-21 09:49:17.701  2 
 </pre>
 <h2>fastcalc</h2>
+<h3>Reason for the test</h3>
 <p>
-xxx
+This is a test for accessing a record defined as:</p>
+<pre>
+record(calc, "$(name)") {
+    field(INPA, "$(name).VAL CP")
+    field(CALC,  "(A&lt;B)?(A+C):D")
+    field(INPB, "09999999")
+    field(INPC, "1")
+    field(INPD, "0")
+    ...
+}
+</pre>
+<p>This record has a channel access link to itself.
+Each time it processes a request to process itself is issued.
+Thus it processes at the maximum rate possible.
 </p>
+<p>The propose of the test is to see if a client using channel provider
+<b>pva</b> or <b>ca</b> can properly handle connections to the channel.
+The reason for the test is that pvAccessCPP has an example that failed on the
+following:</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/pvAccessCPP/examples
+mrk> O.linux-x86_64/monitorme -p ca FAST1
+</pre>
+<p>It was not possible to stop the test with <b>ctl/c</b>.
+Now it is.
+In addition other tests were created to measure rates and to test get and put.
+</p>
+<h3>Running the test</h3>
 <p>To run the test start the database via:</p>
 <pre>
 mrk> pwd
@@ -170,9 +273,12 @@ total events/second 42939.7
 </pre>
 <p>A report is given every time enter is pressed.</p>
 <h2>manyChannels</h2>
+<h3>Reason for the test</h3>
 <p>
-xxx
+Test providers <b>pva</b> and <b>ca</b> connecting to many channels.
+The test database consists of 50,000 records.
 </p>
+<h3>Running the test</h3>
 <p>To run the test start the database via:</p>
 <pre>
 mrk> pwd
