@@ -36,7 +36,7 @@
 <h1>EPICS V4 Developer's Guide</h1>
 <!-- Maturity: Working Draft or Request for Comments, or Recommendation, and date.  -->
 
-<h2 class="nocount">EPICS V7 Working Draft, 2018.04.13</h2>
+<h2 class="nocount">EPICS V7 Working Draft, 2018.11.26</h2>
 <p>
 <b>NOTE: This is the working version of the developerGuide.</b>
 <br />
@@ -59,7 +59,11 @@ EPICS V4 release versions are:
 which is a set of related products:<br />
 <a href="http://epics-pvdata.sourceforge.net/relatedDocumentsV4.html">relatedDocumentsV4.html</a>
 </p>
-
+<p>
+<b>NOTE:</b>
+The source-forge web site has not been updated for a long time.
+It is badly out of date.
+</p>
 </div>
 
 
@@ -73,7 +77,7 @@ which is a set of related products:<br />
 This document briefly describes a set of application programming interfaces (APIs)
 for PVA.</p>
 <p>
-These core APIs provide a toolkit for creating applications that access and/or provide sources of structured data. This document is intended for EPICS PVAs software developers who want to implement applications via the core APIs.
+These core APIs provide a toolkit for creating applications that access and/or provide sources of structured data. This document is intended for EPICS software developers who want to implement applications via the core APIs.
 </p>
 <h3>EPICS PVA resources and website</h3>
 <p>This document is a tutorial rather then a detailed reference manual.
@@ -99,11 +103,11 @@ The current release of EPICS 7 includes the following PVA modules:
       </dd>
    <dt>normativeTypes</dt>
       <dd>
-        A set of standard pvData structures.
+        A set of standard <b>pvData</b> structures.
       </dd>
    <dt>pvAccess</dt>
       <dd>
-       Support for connecting a client and server and for transporting pvData between client and server.
+       Support for connecting a client to servers and for transporting <b>pvData</b> between client and server.
       </dd>
    <dt>pvaClient</dt>
       <dd>
@@ -113,15 +117,15 @@ The current release of EPICS 7 includes the following PVA modules:
       </dd>
    <dt>pvDatabase</dt>
       <dd>
-       A memory resident database of PVRecords and a pvAccess channel provider for accessing the PVRecords.
+       A memory resident database of PVRecords and a channel provider for accessing the PVRecords.
       </dd>
    <dt>pva2pva</dt>
       <dd>
-       This consists of two components: 1) A PVA gateway, and 2) qsrv.
+       This consists of two components: 1) A gateway, and 2) <b>qsrv</b>.
        This document only discusses qsrv.
        <br />
        <b>qsrv</b>
-       is a PVA channel provider for EPICS DBRecords.
+       is a channel provider for EPICS DBRecords.
       </dd>
 </dl>
 <p>In addition the following, although not part of the current EPICS 7 release,
@@ -134,7 +138,7 @@ are based on PVA:
        </dd>
     <dt>pvaPy</dt>
        <dd>
-       Python wrapper for pvData and pvAccess.
+       Python wrapper for <b>pvData</b> and pvAccess.
        This is not described in this docmument.
        </dd>
 </dl>
@@ -146,7 +150,7 @@ Each has a single github repository.
 <p>
 The other components are implemented in both C++ and Java,
 with each language having it's own github repository.
-For example pvData has the repositories
+For example <b>pvData</b> has the repositories
 <a href="https://github.com/epics-base/pvDataJava">pvDataJava</a>
 and
 <a href="https://github.com/epics-base/pvDataCPP">pvDataCPP</a>
@@ -157,15 +161,16 @@ and
 <dl>
    <dt>EPICS 7</dt>
      <dd>
-      This is a combination of <b>epics base</b> and what was previously called EPICS V4,
+      This is a combination of <b>epics-base</b> and what was previously called EPICS V4,
        but is now called <b>PVA</b>.
        <br />
-       <b>epics base</b> is what has existed since about 1990.
+       <b>epics-base</b> is what has existed since about 1990.
          It has had many releases: The oldest set of releases are the 3.11 series
-         and the newest is the 3.16 series.
-         <b>epics base</b> is also refered to as <b>EPICS V3</b>.<br />
-         <b>epics base</b> supports data as a flat structure.
-       <br />
+         and the newest is the base-7 series.
+         <b>epics-base</b> is also refered to as <b>EPICS V3</b>.
+         It provides support for <b>DBRecord</b>s.
+         <br />
+         <b>DBRecord</b>s support data as a flat structure.
        <b>PVA</b> adds structured data and works along side <b>EPICS V3</b>.
        It's main components are:
        <dl>
@@ -177,13 +182,13 @@ and
            </dd>
          <dt>pvAccess</dt>
             <dd>Network support and API for transfering data between clients and servers.
-             All data is handled as pvData objects.
+             All data is handled as <b>pvData</b> objects.
            </dd>
        </dl>
      </dd>
    <dt>API - Application Programming Interface </dt>
      <dd>
-      The pvData API is how a client accesses the type system
+      The <b>pvData</b> API is how a client accesses the type system
       and data objects for each type.
       In Java this consists mainly of Java interfaces.
       In C++ this is via C++ classes.
@@ -327,7 +332,7 @@ pvAccessJava
 </p>
 <p>
 A client written in either Java or C++ can communicate with a server written in either Java or C++.
-All communication between client and server is done via the methods provided by pvAccess and by pvData objects.
+All communication between client and server is done via the methods provided by pvAccess and by <b>pvData</b> objects.
 </p>
 <p>
 pvAccess provides:</p>
@@ -337,11 +342,11 @@ pvAccess provides:</p>
        Starting with EPICS 7, a separate registry exists for client and server.
      </dd>
    <dt>channelProvider</dt>
-     <dd>Code that provides access to a pvData data source.
+     <dd>Code that provides access to a <b>pvData</b> data source.
       It creates channels.<br />
        A channel:
        <ul>
-          <li>Provides access to a pvData structure.</li>
+          <li>Provides access to a <b>pvData</b> structure.</li>
           <li>Has an associated channelName.</li>
        </ul>
      </dd>
@@ -349,7 +354,7 @@ pvAccess provides:</p>
       <dd>Methods for each of the following:
         <dl>
            <dt>getField</dt>
-              <dd>Get the pvData introspection information.</dd>
+              <dd>Get the <b>pvData</b> introspection information.</dd>
            <dt>channelGet</dt>
               <dd>Get data.</dd>
            <dt>channelPut</dt>
@@ -357,7 +362,7 @@ pvAccess provides:</p>
            <dt>channelPutGet</dt>
                <dd>Put data, let server process, and then get result.</dd>
            <dt>monitor</dt>
-               <dd>Monitor pvData changes.</dd>
+               <dd>Monitor <b>pvData</b> changes.</dd>
            <dt>channelArray</dt>
                <dd>get/put subArray data.</dd>
            <dt>channelRPC</dt>
@@ -368,10 +373,10 @@ pvAccess provides:</p>
 </dl>
 <p>
 channelPutGet and channelRPC provide the equivalent of a Remote Procedure Call.
-The client passes a pvData object to the server.
-This pvData object is the argument for the RPC.
+The client passes a <b>pvData</b> object to the server.
+This <b>pvData</b> object is the argument for the RPC.
 The server uses this to decide what to do
-and sends a pvData object back to the client, which is the RPC result.
+and sends a <b>pvData</b> object back to the client, which is the RPC result.
 </p>
 <h3>Overview: pvaClient</h3>
 <p>Detailed Documentation is available at:
@@ -407,24 +412,21 @@ pvDatabaseJava
 </p>
 <p>A framework for implementing a network accessible database of smart memory resident
 records. Network access is via pvAccess. The data in each record is a top level PVStructure as defined by
-pvData. A complete implementation of ChannelProvider is provided for accessing the records.
+pvData. A complete implementation of ChannelProvider,
+named <b>local</b>, is provided for accessing the records.
 The framework can be extended in order to create record instances that implement services.
 The minimum that an extension must provide is a top level PVStructure, a record name, and a process method.
+The record name is the channel name for provider <b>local</b>.
 </p>
 
 <h3>Overview: pva2pva</h3>
-<p>Detailed Documentation is available at:
-<a href="
-http://epics-pvdata.sourceforge.net/docbuild/pva2pva/tip/documentation/html/index.html">
-pva2pva
-</a>
-</p>
+
 <p><b>qsrv</b> (a major component of pva2pva) is a channel provider for accessing DBRecords in an IOC.
 qsrv allows clients to get, put and monitor V3 PVs (fields of EPICS DB records) via pvAccess, translating
 the value and its meta data (graphics limits, alarm status, timestamp) to or from V4 Normative Type (NT)
 pvData structures (NTScalar, NTScalarArray, and NTEnum).</p>
 <h3>Overview: pvaPy</h3>
-<p>A Python wrapper for pvData and pvAccess.
+<p>A Python wrapper for <b>pvData</b> and pvAccess.
 This is not discussed in this document.
 </p>
 <h3>Overview: channelProvider</h3>
@@ -498,7 +500,7 @@ before it can be used by a client.
    <dt>local</dt>
       <dd>This is implemented by pvDatabase</dd>
    <dt>qsrv</dt>
-      <dd>This is a provider that directly accesses V3 DBRecord.</dd>
+      <dd>This is a provider that directly accesses <b>DBRecord</b>s.</dd>
    <dt>pipelineService</dt>
       <dd>
         
@@ -508,14 +510,10 @@ before it can be used by a client.
 <h4>Client Provider Choices</h4>
 <p>At present a client that is not running as part of a V3 IOC or a pvDatabase
 has two choices for channelProvider: <b>pva</b> and <b>ca</b>.
-A client running as part of a V3 IOC that is also
-using pvDatabase has all of the following choices:
-<b>pva</b>, <b>ca</b>, <b>local</b>, and <b>pvSrv</b>.
-Note that if a client directly connects to either <b>local</b> or <b>pvSrv</b>
-no network communication is involved.
+A client running as part of a V3 IOC also has the same choices.
 </p>
 <p>
-And since <b>channelProviderRegistry</b> allows any arbitrary number of providers
+Since <b>channelProviderRegistry</b> allows an arbitrary number of providers,
 additional providers can be developed for either the client or remote side of <b>pva</b>.
 </p>
 <h2>pvlist, pvget, pvput, pvinfo, and eget</h2>
@@ -533,7 +531,7 @@ export PATH=$PATH:${EPICSV7}/pvAccessCPP/bin/${EPICS_HOST_ARCH}
 <h3>pvlist</h3>
 <p>The options are:</p>
 <pre>
-mrk&gt; pvlist -help
+mrk> pvlist -help
 
 Usage: pvlist [options] [server address or GUID starting with '0x']...
 
@@ -555,7 +553,7 @@ examples:
 For example:</p>
 <pre>
 pvlist
-GUID 0x7F06B2560000000047B97D25, version 1: tcp@[192.168.124.1:45345, 10.0.0.37:45345]
+GUID 0xC50BFC5B000000003E347E33 version 1: tcp@[10.0.0.111:5075, 192.168.124.1:5075]
 </pre>
 <p>This only shows one line because only the exampleDatabase server is running.
 In an operational system the output could be quite extensive.</p>
@@ -564,11 +562,11 @@ Once the location of a server is known the list of channel names can be shown by
 the GUID or tcp address.
 Thus either:</p>
 <pre>
-pvlist 0x7F06B2560000000047B97D25
+pvlist 0xC50BFC5B000000003E347E33
 </pre>
 or
 <pre>
-pvlist 10.0.0.37:45345
+pvlist 10.0.0.111:5075
 </pre>
 produces:
 <pre>
@@ -581,69 +579,61 @@ DBRdouble00
 <p>pvget provides functionality similar to caget.
 For example:</p>
 <pre>
-mrk&gt; caget DBRdouble01
+mrk> caget DBRdouble01
 DBRdouble01                    0
 </pre>
 <p>The options are:</p>
 <pre>
-mrk&gt; pvget -help
+mrk> pvget -help
 
-Usage: pvget [options] PVname...
+Usage: pvget [options] &lt;PV name&gt;...
 
 options:
   -h: Help: Print this message
   -V: Print version and exit
-  -r &lt;pv request&gt;:   Request, specifies what fields to return and options, default is 'field(value)'
-  -w &lt;sec&gt;:          Wait time, specifies timeout, default is 3 seconds for get, inf. for monitor
-  -t:                Terse mode - print only value, without names
-  -i:                Do not format standard types (enum_t, time_t, ...)
-  -m:                Monitor mode
+  -r &lt;pv request&gt;:   Request, specifies what fields to return and options, default is ''
+  -w &lt;sec&gt;:          Wait time, specifies timeout, default is 5.000000 second(s)
   -p &lt;provider&gt;:     Set default provider name, default is 'pva'
-  -v:                Show entire structure
+  -M &lt;raw|nt|json&gt;:  Output mode.  default is 'nt'
+  -v:                Show entire structure (implies Raw mode)
   -q:                Quiet mode, print only error messages
   -d:                Enable debug output
-  -F &lt;ofs&gt;:          Use &lt;ofs&gt; as an alternate output field separator
-  -f &lt;input file&gt;:   Use &lt;input file&gt; as an input that provides a list PV name(s) to be read, use '-' for stdin
- enum format:
-  -n: Force enum interpretation of values as numbers (default is enum string)
-
+ deprecated options:
+  -q, -t, -i, -n, -F: ignored
+  -f &lt;input file&gt;:   errors
+ Output details:
+  -m -v:             Monitor in Raw mode.  Print only fields marked as changed.
+  -m -vv:            Monitor in Raw mode.  Highlight fields marked as changed, show all valid fields.
+  -m -vvv:           Monitor in Raw mode.  Highlight fields marked as changed, show all fields.
+  -vv:               Get in Raw mode.  Highlight valid fields, show all fields.
 
 example: pvget double01
 </pre>
 <p>Some examples are:</p>
 <pre>
-mrk&gt; pvget PVRdouble
+mrk> pvget PVRdouble
 PVRdouble                      5
-mrk&gt; pvget PVRdoubleArray
+mrk> pvget PVRdoubleArray
 PVRdoubleArray 5 1 2 3 4 5
-mrk&gt; pvget PVRenum01
+mrk> pvget PVRenum01
 PVRenum01                         zero
-mrk&gt; pvget -i PVRenum01
-enum01
-epics:nt/NTEnum:1.0 
-    enum_t value
-        int index 0
-        string[] choices [zero,one,two,three]
-
-
-mrk&gt; pvget -i -r "value,alarm,timeStamp" enum01
-PVRenum01
-epics:nt/NTEnum:1.0 
-    enum_t value
-        int index 0
-        string[] choices [zero,one,two,three]
-    alarm_t alarm
-        int severity 3
+mrk> pvget -v PVRenum
+PVRenum epics:nt/NTEnum:1.0 
+    enum_t value (1) one
+        int index 1
+        string[] choices ["zero", "one"]
+    alarm_t alarm 
+        int severity 0
         int status 0
-        string message UDF
-    time_t timeStamp
-        long secondsPastEpoch 631152000
-        int nanoseconds 0
+        string message 
+    time_t timeStamp 2018-11-26 10:19:40.278  
+        long secondsPastEpoch 1543245580
+        int nanoseconds 277571561
         int userTag 0
 </pre>
 <p>Multiple channels can be accessed witn a single command. For example:</p>
 <pre>
-mrk&gt; pvget PVRdouble01 PVRdouble02
+mrk> pvget PVRdouble01 PVRdouble02
 PVRdouble01                       0
 PVRdouble02                       0
 </pre>
@@ -653,9 +643,9 @@ It is also possible to use ca, i. e. the channel access server that comes with i
 Thus it can access a V3 IOC even if the IOC has no V4 support.
 </p>
 <pre>
-mrk&gt; pvget -p ca DBRdouble01
+mrk> pvget -p ca DBRdouble01
 DBRdouble01                       0
-mrk&gt; pvget -p ca -r "value,alarm,timeStamp" DBRdouble01
+mrk> pvget -p ca -r "value,alarm,timeStamp" DBRdouble01
 DBRdouble01
 epics:nt/NTScalar:1.0 
     double value 0
@@ -664,7 +654,7 @@ epics:nt/NTScalar:1.0
 </pre>
 <p>pvget can also monitor, i. e. it has functionality similer to camonitor.</p>
 <pre>
-mrk&gt; pvget -m -r "value,alarm,timeStamp" PVRdouble02
+mrk> pvget -m -r "value,alarm,timeStamp" PVRdouble02
 PVRdouble02
 epics:nt/NTScalar:1.0 
     double value 0
@@ -683,71 +673,27 @@ epics:nt/NTScalar:1.0
 <p>pvput provides functionality similar to caput.
 For example:</p>
 <pre>
-mrk&gt; caput DBRdouble01 1.0
+mrk> caput DBRdouble01 1.0
 Old : DBRdouble01                       0
 New : DBRdouble01                       1
-mrk&gt; pvput DBRdouble01 2.0
+mrk> pvput DBRdouble01 2.0
 Old : DBRdouble01                       1
 New : DBRdouble01                       2
 </pre>
-<p>The options are:</p>
+<p>To see all options enter:</p>
 <pre>
-mrk&gt; pvput -help
-Usage: pvput [options] &lt;PV name&gt; &lt;value&gt;
-       pvput [options] &lt;PV name&gt; &lt;size/ignored&gt; &lt;value&gt; [&lt;value&gt; ...]
-       pvput [options] &lt;PV name&gt; &lt;field&gt;=&lt;value&gt; ...
-       pvput [options] &lt;PV name&gt; &lt;json_array&gt;
-       pvput [options] &lt;PV name&gt; &lt;json_map&gt;
-
-
-options:
-  -h: Help: Print this message
-  -v: Print version and exit
-  -r &lt;pv request&gt;:   Request, specifies what fields to return and options, default is 'field(value)'
-  -w &lt;sec&gt;:          Wait time, specifies timeout, default is 3.000000 second(s)
-  -t:                Terse mode - print only successfully written value, without names
-  -p &lt;provider&gt;:     Set default provider name, default is 'pva'
-  -v:                Show entire structure
-  -q:                Quiet mode, print only error messages
-  -d:                Enable debug output
-  -F &lt;ofs&gt;:          Use &lt;ofs&gt; as an alternate output field separator
-  -f &lt;input file&gt;:   Use &lt;input file&gt; as an input that provides a list PV name(s) to be read, use '-' for stdin
- enum format:
-  default: Auto - try value as enum string, then as index number
-  -n: Force enum interpretation of values as numbers
-  -s: Force enum interpretation of values as strings
-
- JSON support is present
-
-Examples:
-
-  pvput double01 1.234       # shorthand
-  pvput double01 value=1.234
-
-  pvput arr:pv X 1.0 2.0  # shorthand  (X is arbitrary and ignored)
-  pvput arr:pv "[1.0, 2.0]"            # shorthand
-  pvput arr:pv value="[1.0, 2.0]"
-
-Field values may be given with JSON syntax.
-
-Complete structure
-
-  pvput double01 '{"value":1.234}'
-
-Sub-structure(s)
-
-  pvput group:pv some='{"value":1.234}' other='{"value":"a string"}'
-
+mrk> pvput -help
+...
 </pre>
 <p>Here are some examples:</p>
 <pre>
-mrk&gt; pvput PVRdouble 5
+mrk> pvput PVRdouble 5
 Old : PVRdouble                      0
 New : PVRdouble                      5
-mrk&gt; pvput PVRdoubleArray 5 1 2 3 4 5
+mrk> pvput PVRdoubleArray 5 1 2 3 4 5
 Old : PVRdoubleArray 0
 New : PVRdoubleArray 5 1 2 3 4 5
-mrk&gt; pvput -r "field(scalar)" PVRBigRecord scalar.boolean='{"value":true}' scalar.byte='{"value":9}'
+mrk> pvput -r "field(scalar)" PVRBigRecord scalar.boolean='{"value":true}' scalar.byte='{"value":9}'
 Old : 
 structure 
     structure scalar
@@ -801,54 +747,11 @@ Example: pvinfo double01
 <p>eget provides many of the same features but in addition supports
 channelRPC and understands some of the normative types.
 </p>
-<p>The options are:</p>
+<p>To see all the options enter:</p>
 <pre>
-mrk&gt; eget -help
-
-Usage: eget [options] [&lt;PV name&gt;... | -s &lt;service name&gt;]
-
-
-options:
-  -h: Help: Print this message
-  -V: Print version and exit
-  -s &lt;service name&gt;:   Service API compliant based RPC service name (accepts NTURI request argument)
-  -a &lt;service arg&gt;:    Service argument in 'name[=value]' or 'name value' form
-  -r &lt;pv request&gt;:     Get request string, specifies what fields to return and options, default is 'field(value)'
-  -w &lt;sec&gt;:            Wait time, specifies timeout, default is 3.000000 second(s)
-  -z:                  Pure pvAccess RPC based service (send NTURI.query as request argument)
-  -N:                  Do not format NT types, dump structure instead
-  -i:                  Do not format standard types (enum_t, time_t, ...)
-  -t:                  Terse mode
-  -T:                  Transpose vector, table, matrix
-  -m:                  Monitor mode
-  -x:                  Use column-major order to decode matrix
-  -p &lt;provider&gt;:       Set default provider name, default is 'pva'
-  -q:                  Quiet mode, print only error messages
-  -d:                  Enable debug output
-  -F &lt;ofs&gt;:            Use &lt;ofs&gt; as an alternate output field separator
-  -f &lt;input file&gt;:     Use &lt;input file&gt; as an input that provides a list PV name(s) to be read, use '-' for stdin
-  -c:                  Wait for clean shutdown and report used instance count (for expert users)
- enum format:
-  -n: Force enum interpretation of values as numbers (default is enum string)
-
-
-examples:
-
-#! Get the value of the PV corr:li32:53:bdes
-&gt; eget corr:li32:53:bdes
-
-#! Get the table of all correctors from the rdb service
-&gt; eget -s rdbService -a entity=swissfel:devicenames
-
-#! Get the archive history of quad45:bdes;history between 2 times, from the archive service
-&gt; eget -s archiveService -a entity=quad45:bdes;history -a starttime=2012-02-12T10:04:56 -a endtime=2012-02-01T10:04:56
-
-#! Get polynomials for bunch of quads using a stdin to give a list of PV names
-&gt; eget -s names -a pattern=QUAD:LTU1:8%:POLYCOEF | eget -f -
-
+mrk> eget -help
+...
 </pre>
-
-
 
 <h2>example code</h2>
 <p>
@@ -901,34 +804,34 @@ All the V4 PVRecords have the prefix <b>PVR</b> and all the V3 DBRecords have th
 <p>
 In linux <b>exampleCPP/database</b> can be started as follows:</p>
 <pre>
-mrk&gt; pwd
+mrk> pwd
 /home/epicsv4/master/exampleCPP/database/iocBoot/exampleDatabase
-mrk&gt; ../../bin/linux-x86_64/exampleDatabase st.cmd
+mrk> ../../bin/linux-x86_64/exampleDatabase st.cmd
 </pre>
 <p>The example database has both V3 IOC records and V4 PVRecords.
 In addition <b>qsrv</b> is running. Thus all V3 records are available via either <b>ca</b> or <b>pva</b>.
 The PVRecords are only available via <b>pva</b>.
 Examples of using ca and pva command line tools are:</p>
 <pre>
-mrk&gt; pvlist 
+mrk> pvlist 
 GUID 0x7F06B2560000000047B97D25, version 1: tcp@[10.0.0.37:45345, 192.168.124.1:45345]
-mrk&gt; pvlist 0x7F06B2560000000047B97D25
+mrk> pvlist 0x7F06B2560000000047B97D25
 DBRao01
 DBRdouble00
 .... many more records
-mrk&gt; pvget PVRlong
+mrk> pvget PVRlong
 PVRlong                        0
-mrk&gt; caget PVRlong
+mrk> caget PVRlong
 Channel connect timed out: 'PVRlong' not found.
-mrk&gt; caget DBRdouble01
+mrk> caget DBRdouble01
 DBRdouble01                       0
-mrk&gt; pvget DBRdouble01
+mrk> pvget DBRdouble01
 DBRdouble01                       0
-mrk&gt; caget PVRushort01
+mrk> caget PVRushort01
 Channel connect timed out: 'PVRushort01' not found.
-mrk&gt; pvget PVRushort01
+mrk> pvget PVRushort01
 PVRushort01                       0
-mrk&gt; 
+mrk> 
 </pre>
 <p>The examples in <b>exampleCPP/exampleClient</b> and <b>exampleJava/exampleClient</b> can now be run.
 For example:</p>
@@ -942,7 +845,7 @@ examplePvaClientMultiDouble  getNoBlock           putUnion
 examplePvaClientNTMulti      helloWorldPutGet
 examplePvaClientProcess      helloWorldRPC
 mrk> 
-mrk&gt; bin/linux-x86_64/examplePvaClientGet
+mrk> bin/linux-x86_64/examplePvaClientGet
 _____examplePvaClientGet starting_______
 __exampleDouble__
 short way
@@ -956,15 +859,21 @@ as double 0
 <h2>pvaClient Tutorial</h2>
 <h3>Some Basic Concepts</h3>
 <h4>Special Field Structures</h4>
-<p>The following provide PVA definitions for EPICS V3 DBD
-data other than just scalar and scalar array data associated with a value field:
-<br />
+<p><b>EPICS V3 DBD</b> defines data related to the <b>VAL</b> field of a <b>DBRecord</b>
+</p>
+<p>
+The following provide <b>pvData</b> definitions for this data:
 <b>alarm</b>, <b>timeStamp</b>, <b>enum</b>, <b>display</b>, <b>control</b>, and <b>alarmLimit</b>.
-<br />
-Each is a structure that also has an associated structure id name.
+</p>
+<p>
+Each is a structure that also has an associated <b>structure id</b> name.
 For example <b>alarm_t</b> is the structure id name for an alarm structure.
-For the tutorial <b>alarm</b>, <b>timeStamp</b>, and <b>enum</b> are briefly discussed
-A later section provides more details about these and the other special fields.
+For the tutorial <b>alarm</b>, <b>timeStamp</b>, and <b>enum</b> are briefly discussed.
+Below, in section "Special Fields", there is a fuller description of these and the other definitions.
+Also see:
+<a
+href="../pvRequest/pvRequest.html">pvRequest
+</a>
 </p>
 <dl>
    <dt>alarm</dt>
@@ -976,7 +885,7 @@ alarm_t alarm
     string message 
 </pre>
      <p>
-     pvData provides code associated with a alarm structure.
+     <b>pvData</b> provides code associated with a alarm structure.
      This code restricts severity to be one of:
      </p>
 <pre>
@@ -996,7 +905,7 @@ time_t timeStamp
     int userTag
 </pre>
      <p>
-     pvData provides code associated with a timeStamp structure.
+     <b>pvData</b> provides code associated with a timeStamp structure.
       This code provides support that makes the timeStamp
       UTC (Universial Time Coordinated) compliant.
      </p>
@@ -1009,7 +918,7 @@ enum_t value
     string[] choices
 </pre>
      <p>
-     pvData provides code associated with an enum structure.
+     <b>pvData</b> provides code associated with an enum structure.
      This forces the index to select an element of the choices.
      </p>
    </dd>
@@ -1018,14 +927,22 @@ enum_t value
 <p>Each of the PVChannel create methods has a PVStructure argument named <b>pvRequest</b>.
 This structure allows the client to 1) select a subset of the fields in the top level structure
 from the server, 2) provide record options, and 3) provide field specific options.
+<br />
+See:
+<a
+href="../pvRequest/pvRequest.html">pvRequest
+</a>
+for a full description.
 </p>
 <p>
 <b>pvAccess</b> provides a method <b>createRequest</b> that, given a string,
 creates a <b>pvRequest</b> structure.
-A later section provides more details but for this tutorial lets just give a simple example:
+</p>
+<p>
+For this tutorial lets just give a simple example:
 </p>
 <pre>
-"field(value, alarm, timeStamp):
+"field(value, alarm, timeStamp)"
 or just
 "value, alarm, timeStamp"
 </pre>
@@ -1074,7 +991,7 @@ exampleCPP/exampleLink or exampleJava/exampleLink show how to start and destroy 
 providers.
     </dd>
     <dt>pav2pva</dt>
-     <dd>This provides support for starting a remote pva server and provider qsrv as part of an IOC.
+     <dd>This provides support for starting a remote <b>pva</b> server and provider <b>qsrv</b> as part of an IOC.
      </dd>
 </dl>
 <p>pvAccessJava and pvAccessCPP implement the following providers:</p>
@@ -1092,10 +1009,10 @@ providers.
       </dd>
 </dl>
 <p>Providers can be provided for other data sources.
-A provider must implement ChannelProvider and Channel.
+A provider must implement <b>ChannelProvider</b> and <b>Channel</b>.
 pvAccess supports an arbitrary number of providers.
-On the server side of remote pvAccess providers must be implemented,
-because it calls the providers to implement the CHannel methods.
+On the server side of remote <b>pva</b> providers must be implemented,
+because <b>pva</b> calls the providers to implement the <b>Channel</b> methods.
 </p>
 <p>
 At present C++ provides two server side providers:
@@ -1143,27 +1060,27 @@ PVEnumerated
      >pvField</span> It returns (false,true) if
       pvField (is not, is) an enumerated structure.</dd>
   <dt>detach</dt>
-    <dd>Detaches from the pvData structure.</dd>
+    <dd>Detaches from the <b>pvData</b> structure.</dd>
   <dt>isAttached</dt>
     <dd>Is there an attachment to an enumerated structure?</dd>
   <dt>setIndex</dt>
-    <dd>Set the index field in the pvData structure. An exception is thrown if
-      not attached to a pvData structure. </dd>
+    <dd>Set the index field in the <b>pvData</b> structure. An exception is thrown if
+      not attached to a <b>pvData</b> structure. </dd>
   <dt>getIndex</dt>
-    <dd>Get the index field in the pvData structure. </dd>
+    <dd>Get the index field in the <b>pvData</b> structure. </dd>
   <dt>getChoice</dt>
     <dd>Get the String value corresponding to the current index field in the
-      pvData structure. An exception is thrown if not attached to a pvData
+      <b>pvData</b> structure. An exception is thrown if not attached to a pvData
       structure. </dd>
   <dt>choicesMutable</dt>
     <dd>Can the choices be changed? Note that this is often true. An exception
-      is thrown if not attached to a pvData structure. </dd>
+      is thrown if not attached to a <b>pvData</b> structure. </dd>
   <dt>getChoices</dt>
     <dd>Get the array of choices. An exception is thrown if not attached to a
-      pvData structure. </dd>
+      <b>pvData</b> structure. </dd>
   <dt>getNumberChoices</dt>
     <dd>Get the number of choices. An exception is thrown if not attached to a
-      pvData structure. </dd>
+      <b>pvData</b> structure. </dd>
   <dt>setChoices</dt>
     <dd>Change the choices. An exception is thrown if not attached to a pvData
       structure. </dd>
@@ -1256,20 +1173,20 @@ PVAlarm
   <dt>attach</dt>
     <dd>Attempts to attach to <span
      >pvField</span> It returns (false,true) if
-      it found an appropriate pvData structure. It looks first a pvField itself
-      and if is not an appropriate pvData structure but the field name is value
+      it found an appropriate <b>pvData</b> structure. It looks first a pvField itself
+      and if is not an appropriate <b>pvData</b> structure but the field name is value
       it looks to see if the parent structure has an appropriate sub
     structure.</dd>
   <dt>detach</dt>
-    <dd>Detaches from the pvData structure.</dd>
+    <dd>Detaches from the <b>pvData</b> structure.</dd>
   <dt>isAttached</dt>
     <dd>Is there an attachment to an alarm structure?</dd>
   <dt>get</dt>
-    <dd>Copies data from the pvData structure to an Alarm. An exception is
-      thrown if not attached to a pvData structure. </dd>
+    <dd>Copies data from the <b>pvData</b> structure to an Alarm. An exception is
+      thrown if not attached to a <b>pvData</b> structure. </dd>
   <dt>set</dt>
-    <dd>Copies data from Alarm to the pvData structure. An exception is thrown
-      if not attached to a pvData structure. </dd>
+    <dd>Copies data from Alarm to the <b>pvData</b> structure. An exception is thrown
+      if not attached to a <b>pvData</b> structure. </dd>
 </dl>
 
 
@@ -1369,18 +1286,18 @@ where
     <dd>Attempts to attach to <span
      >pvField</span> It returns (false,true) if a
       timeStamp structure is found. It looks first at pvField itself and if is
-      not an appropriate pvData structure but the field name is value it looks
+      not an appropriate <b>pvData</b> structure but the field name is value it looks
       up the parent structure tree.</dd>
   <dt>detach</dt>
-    <dd>Detach from the pvData structure.</dd>
+    <dd>Detach from the <b>pvData</b> structure.</dd>
   <dt>isAttached</dt>
     <dd>Is there an attachment to a timeStamp structure?</dd>
   <dt>get</dt>
-    <dd>Copies data from the pvData structure to a TimeStamp. An exception is
-      thrown if not attached to a pvData structure. </dd>
+    <dd>Copies data from the <b>pvData</b> structure to a TimeStamp. An exception is
+      thrown if not attached to a <b>pvData</b> structure. </dd>
   <dt>set</dt>
-    <dd>Copies data from TimeStamp to the pvData structure. An exception is
-      thrown if not attached to a pvData structure. </dd>
+    <dd>Copies data from TimeStamp to the <b>pvData</b> structure. An exception is
+      thrown if not attached to a <b>pvData</b> structure. </dd>
 </dl>
 
 <h3>display</h3>
@@ -1446,20 +1363,20 @@ PVDisplay
   <dt>attach</dt>
     <dd>Attempts to attach to <span
      >pvField</span> It returns (false,true) if
-      it found an appropriate pvData structure. It looks first a pvField itself
-      and if is not an appropriate pvData structure but the field name is value
+      it found an appropriate <b>pvData</b> structure. It looks first a pvField itself
+      and if is not an appropriate <b>pvData</b> structure but the field name is value
       it looks to see if the parent structure has an appropriate sub
     structure.</dd>
   <dt>detach</dt>
-    <dd>Detaches from the pvData structure.</dd>
+    <dd>Detaches from the <b>pvData</b> structure.</dd>
   <dt>isAttached</dt>
     <dd>Is there an attachment to a display structure?</dd>
   <dt>get</dt>
-    <dd>Copies data from the pvData structure to a Display. An exception is
-      thrown if not attached to a pvData structure.</dd>
+    <dd>Copies data from the <b>pvData</b> structure to a Display. An exception is
+      thrown if not attached to a <b>pvData</b> structure.</dd>
   <dt>set</dt>
-    <dd>Copies data from Display to the pvData structure. An exception is
-      thrown if not attached to a pvData structure. </dd>
+    <dd>Copies data from Display to the <b>pvData</b> structure. An exception is
+      thrown if not attached to a <b>pvData</b> structure. </dd>
   <dt>create</dt>
     <dd>Create a PVDisplay instance. Attach must be called before get or set
       can be called.</dd>
@@ -1508,21 +1425,21 @@ PVControl
   <dt>attach</dt>
     <dd>
       Attempts to attach to <span>pvField</span> It returns (false,true) if
-      it found an appropriate pvData structure. It looks first a pvField itself
-      and if is not an appropriate pvData structure but the field name is value
+      it found an appropriate <b>pvData</b> structure. It looks first a pvField itself
+      and if is not an appropriate <b>pvData</b> structure but the field name is value
       it looks to see if the parent structure has an appropriate sub
     structure.
      </dd>
   <dt>detach</dt>
-    <dd>Detaches from the pvData structure.</dd>
+    <dd>Detaches from the <b>pvData</b> structure.</dd>
   <dt>isAttached</dt>
     <dd>Is there an attachment to a control structure?</dd>
   <dt>get</dt>
-    <dd>Copies data from the pvData structure to a Control. An exception is
-      thrown if not attached to a pvData structure. </dd>
+    <dd>Copies data from the <b>pvData</b> structure to a Control. An exception is
+      thrown if not attached to a <b>pvData</b> structure. </dd>
   <dt>set</dt>
-    <dd>Copies data from Control to the pvData structure. An exception is
-      thrown if not attached to a pvData structure. </dd>
+    <dd>Copies data from Control to the <b>pvData</b> structure. An exception is
+      thrown if not attached to a <b>pvData</b> structure. </dd>
   <dt>create</dt>
     <dd>Create a PVControl instance. Attach must be called before get or set
       can be called.</dd>
@@ -1614,7 +1531,7 @@ valueAlarm_t
 </p>
 <h2>pvRequest and pvCopy</h2>
 <h3>Oveview</h3>
-<p>Both pvDataJava and pvDataCPP implement the following:</p>
+<p>Both pvDataJava and pvAccessCPP implement the following:</p>
 <dl>
    <dt>CreateRequest</dt>
       <dd>
@@ -1820,7 +1737,7 @@ structure
 </pre>
 Then the following selects a subset of the fields:
 <pre>
-mrk&gt; pvget -r "field(alarm{severity,message},timeStamp.secondsPastEpoch,power)" -i powerSupply
+mrk> pvget -r "field(alarm{severity,message},timeStamp.secondsPastEpoch,power)" -i powerSupply
 powerSupply
 structure 
     structure alarm
