@@ -1,0 +1,837 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>bloscCodec</title>
+  <link rel="stylesheet" type="text/css"
+  href="../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../css/epicsv4.css" />
+  <style type="text/css">
+  </style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../css/tocgen.js">
+  </script>
+</head>
+
+<body>
+
+<div class="head">
+<h1>bloscCodec</h1>
+
+<h2 class="nocount">2019.01.30</h2>
+<dl>
+  <dt>editors:</dt>
+    <dd>Marty Kraimer</dd>
+</dl>
+
+<p>This product is available via an
+<a
+href="../LICENSE">open source license
+</a>
+</p>
+
+</div>
+
+<div id="toc">
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+
+<div id="contents" class="contents">
+
+<h2>Preface</h2>
+<h3>Background</h3>
+<p>In 2018 
+<a href="https://github.com/areaDetector">areaDetector</a>
+added support for compressing and decompressing arrays,
+mostly for images.
+Marty Kraimer did a small part of the work related to ImageJ.
+This is what lead to developing <b>bloscCodec</b>
+</p>
+<p>
+Both the <b>areaDetector</b> and <b>bloscCodec</b>
+use 
+<a href="https://github.com/Blosc">blosc</a>
+In particular
+<a href="https://github.com/Blosc/c-blosc">c-blosc</a>
+to do the actual compresson and decompresson.
+</p>
+
+<h3>Current Status</h3>
+<dl>
+   <dt>Existing Features</dt>
+     <dd>
+        All examples described in this document work.
+     <dd>
+   <dt>array types</dt>
+      <dd>
+        Only numeric scalar arrays are supported.
+        This means signed and unsigned 8, 16, 32, 64 bit integers,
+        as well as float, and double.
+     </dd>
+    <dt>byte order</dt>
+     <dd>
+     The present implementation does not support byte order.
+     Thus, except for signed and unsigned 8 bit integers,
+     compression and decompression must be done on CPUs that have 
+     the same byte order.
+     </dd>
+</dl>
+<h3>Future Plans</h3>
+<p>Except for fixing the byte order problem,
+nothing else is currently planned.
+</p>
+<p>
+The idea is to wait and see if anyone is interested in the <b>bloscCodec</b>
+service and prvides feedback about what is missing.
+If anyone is interested please provide feedback.
+</p>
+<h2>Introduction</h2>
+<p>
+<b>NOTE:</b>
+In this document <b>blosc</b> refers to the code that comes with
+<a href="https://github.com/Blosc">blosc</a>.
+and <b>bloscCodec</b> refers to the code described in this document.
+</p>
+<p>
+<b>bloscCodec</b> is a facility for compressing and decompressing numeric scalar arrays
+, i. e. a <b>PVScalarArray</b>,
+which is described in:
+<a href="https://github.com/epics-base/pvDataCPP">pvDataCPP</a>
+</p>
+<p>
+The following components of <b>bloscCodec</b> are described below:
+</p>
+<dl>
+   <dt>bloscCodec</dt>
+    <dd>
+     Code that calls <b>blosc</b> for a scalar array as defined by
+<a href="https://github.com/epics-base/pvDataCPP">pvDataCPP</a>.
+    </dd>
+   <dt>bloscCodecRecord</dt>
+   <dd>
+A PVRecord as defined by:
+<a href="https://github.com/epics-base/pvDatabaseCPP">pvDatabaseCPP</a>
+    <br />
+    It provides code for calling <b>blosc</b> for scalar arrays from either
+    <b>DBrecord</b>s or <b>PVRecprd</b>s.
+    <br />
+    It can both compress and decompress.
+   </dd>
+   <dt>exampleClient</dt>
+     <dd>
+     Examples for client code. See below for a description of each example.
+     </dd>
+</dl>
+<h2>building</h2>
+<p>For now the only source for <b>bloscCodec</b> is
+<a href="https://github.com/mrkraimer/bloscCodecCPP">bloscCodecCPP</a>.
+</p>
+<p>
+<b>bloscCodec</b> requires the following epics cmponents:
+</p>
+<pre>
+pvDataCPP
+normativeTypesCPP
+pvAccessCPP
+pva2pva
+pvDatabaseCPP
+pvaClientCPP
+</pre>
+<p>
+These components can be cloned from the master  branches in
+<a href="https://github.com/epics-base">epics-base</a>.
+<br />
+They can also be obtained via a recent EPICS7 release from the EPICS web site
+<a href="https://epics-controls.org/">epics-controls</a>
+</p>
+<p>
+Then in the directory where you built the epics components:
+</p>
+<pre>
+git clone https://github.com/mrkraimer/bloscCodecCPP.git
+</pre>
+Then just issue:
+<pre>
+cd bloscCodecCPP
+make
+</pre>
+
+
+<h2>Preparation for running examples</h2>
+<h4>start ioc</h4>
+In a window:
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/bloscCodecCPP/iocBoot/bloscCodecIoc
+mrk> ../../bin/linux-x86_64/bloscCodecIoc st.cmd
+... LOTS OF OUTPUT
+epics>
+</pre>
+To see all  all PVRecords enter:
+<pre>
+epics> pvdbl
+PVRdoubleArray
+PVRfloatArray
+PVRint16Array
+PVRint32Array
+PVRint64Array
+PVRint8Array
+PVRuint16Array
+PVRuint32Array
+PVRuint64Array
+PVRuint8Array
+bloscCodecRecord
+</pre>
+To see all DBRecords enter:
+<pre>
+epics> dbl
+DBRint8Array
+DBRint16Array
+DBRint32Array
+DBRint64Array
+DBRuint8Array
+DBRuint16Array
+DBRuint32Array
+DBRuint64Array
+DBRfloatArray
+DBRdoubleArray
+epics> 
+</pre>
+<h4>monitor bloscCodecRecord</h4>
+<p>
+In order to better understand the client examples it helps to monitor the 
+bloscCodecRecord in the ioc that was just started.
+</p>
+<p>
+In another window:
+</p>
+<pre>
+mrk> pvget -m -r "" -v bloscCodecRecord
+</pre>
+You will see:
+<pre>
+bloscCodecRecord structure 
+    ubyte[] value []
+    alarm_t alarm MINOR CLIENT PVRubyteArray is idle 
+        int severity 1
+        int status 7
+        string message PVRubyteArray is idle
+    time_t timeStamp &lt;undefined&gt;              
+        long secondsPastEpoch 0
+        int nanoseconds 0
+        int userTag 0
+    string channelName PVRubyteArray
+    string codecName blosc
+    int elementScalarType 0
+    enum_t command (0) idle
+        int index 0
+        string[] choices ["idle", "get", "put", "startMonitor", "stopMonitor", ""]
+    structure bloscArgs
+        int compressedSize 0
+        int decompressedSize 0
+        int level 3
+        enum_t compressor (0) blosclz
+            int index 0
+            string[] choices ["blosclz", "lz4", "lz4hc", "snappy", "zlib", "zstd"]
+        enum_t shuffle (0) NOSHUFFLE
+            int index 0
+            string[] choices ["NOSHUFFLE", "SHUFFLE", "BITSHUFFLE"]
+        int threads 1
+
+</pre>
+<h4>monitor scalar array records</h4>
+<p>You can monitor one or more of the scalar array records
+</p>
+<pre>
+mrk> pvget -m PVRdoubleArray DBRdoubleArray
+PVRdoubleArray <undefined>              []
+DBRdoubleArray <undefined>              INVALID DRIVER UDF []
+</pre>
+<h2>Sample examples</h2>
+<p>This section describes how to run some of the example client code and
+the resulting output.
+</p>
+<h4>start IOC</h4>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/bloscCodecCPP/iocBoot/bloscCodecIoc
+mrk> ../../bin/linux-x86_64/bloscCodecIoc st.cmd
+</pre>
+<h4>monitor bloscCodecRecord</h4> 
+<pre>
+mrk> pvget -m -r "" -v bloscCodecRecord
+</pre>
+<h4>startMonitor</h4>
+<p>The following issues a command to <b>bloscCodecRecord</b>
+to start monitoring <b>DBRdoubleArray</b>:
+</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/bloscCodecCPP
+mrk> bin/linux-x86_64/clientMonitorCodec
+_____clientMonitorCodec starting__
+channelStateChange is Connected false
+channelStateChange is Connected true
+enter one of: startMonitor stopMonitor exit
+startMonitor
+enter channelName
+DBRdoubleArray
+do You want to modify any bloscArgs? answer y or n
+n
+startMonitor success
+enter one of: startMonitor stopMonitor exit
+exit
+</pre>
+<h4>Run clientDecompressCodec</h4>
+<p>This is a client that monitors <b>bloscCodecRecord</b>.
+When <b>bloscCodecRecord</b> compresses, the client gets the 
+compressed data and decompresses.
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/bloscCodecCPP
+mrk> bin/linux-x86_64/clientDecompressCodec 
+_____clientMonitorCodec starting__
+channelStateChange is Connected false
+channelStateChange is Connected true
+enter one of: start stop exit
+start
+enter channelName
+DBRdoubleArray
+enter one of: start stop exit
+monitorConnect DBRdoubleArray status Status [type=OK]
+</pre>
+<p>Leave this running</p>
+<h4>Make change to DBRdoubleArray</h4>
+<p>execute the following:
+</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/bloscCodecCPP
+mrk> bin/linux-x86_64/clientPutArray 
+_____clienPutArray starting__
+enter put or exit or return
+put
+channelName
+DBRdoubleArray
+number elements
+100
+first element
+1
+number of times to repeat same number
+10
+max element value
+100
+enter put or exit or return
+exit
+</pre>
+<h4>output</h4>
+On the window whare <b>bloscCodecRecord</b> is being monitored:
+<pre>
+bloscCodecRecord structure 
+    alarm_t alarm 
+        int severity 0
+        string message startMonitor success
+    time_t timeStamp 2019-01-30 09:50:38.165  
+        long secondsPastEpoch 1548859838
+        int nanoseconds 165344378
+    string channelName DBRdoubleArray
+    enum_t command (3) startMonitor
+        int index 3
+    structure bloscArgs
+        int level 3
+        enum_t compressor (0) blosclz
+            int index 0
+        enum_t shuffle (0) NOSHUFFLE
+            int index 0
+        int threads 1
+bloscCodecRecord structure 
+    ubyte[] value [2,1,0,1,32,3,0,0,32,3,0,0,157,0,0,0,20,0,0,0,133,
+                   0,0,0,33,0,0,64,0,1,240,63,224,77,7,1,0,64,32,3,64,
+                  0,0,64,96,5,224,64,7,1,8,64,32,75,32,0,1,8,64,64,5,
+                  224,65,7,1,16,64,32,76,32,0,1,16,64,64,5,224,65,
+                  7,1,20,64,32,76,32,0,1,20,64,64,5,224,65,7,1,24,64,32,
+                  76,32,0,1,24,64,64,5,224,65,7,1,28,64,32,76,32,0,
+                  1,28,64,64,5,224,65,7,1,32,64,32,76,32,0,1,32,64,64,5,
+                  224,65,7,1,34,64,32,76,32,0,1,34,64,64,5,224,65,7,1,36,64]
+    alarm_t alarm 
+        string message compress success
+    time_t timeStamp 2019-01-30 09:50:38.167  
+        int nanoseconds 166709190
+    string channelName DBRdoubleArray
+    int elementScalarType 10
+    enum_t command (1) get
+        int index 1
+    structure bloscArgs
+        int compressedSize 157
+        int decompressedSize 800
+        int level 3
+        enum_t compressor (0) blosclz
+            int index 0
+        enum_t shuffle (0) NOSHUFFLE
+            int index 0
+        int threads 1
+</pre>
+<p>
+On the window where <b>clientDecompressCodec</b> was started:
+</p>
+<pre>
+result success data
+[1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,
+3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,
+5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,
+7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,
+9,9,9,9,9,9,9,9,9,9,9,10]
+</pre>
+<h2>bloscCodec</h2>
+<p>This code is a wrapper for 
+<a href="https://github.com/Blosc/c-blosc">c-blosc</a>
+It provides a structure for the blosc arguments code to call the <b>c-blosc</b>
+code.
+</p>
+<h3>bloscCodec structure</h3>
+<p>This is a structure for the arguments that can be passed to <b>c-blosc</b>.
+The descriptions below are taked from the header files provided by  <b>c-blosc</b>.
+For a fuller explaination look at the header files in:
+</p>
+<pre>
+bloscCodecCPP/bloscCodecSrc/c-blosc/blosc
+</pre>
+<p>
+A pvStructure for the data is:
+</p>
+<pre>
+structure 
+    int compressedSize 0
+    int decompressedSize 0
+    int level 3
+    enum_t compressor
+        int index 0
+        string[] choices ["blosclz", "lz4", "lz4hc", "snappy", "zlib", "zstd"]
+    enum_t shuffle
+        int index 0
+        string[] choices ["NOSHUFFLE", "SHUFFLE", "BITSHUFFLE"]
+    int threads 1
+</pre>
+where:
+<dl>
+   <dt>compressedSize</dt>
+   <dd>
+     This is always set by blosc.
+   </dd>
+   <dt>decompressedSize</dt>
+   <dd>
+     This must always be set by code that calls <b>blosc</b>.
+     An actual client that uses a <b>pvScalarArray</b> to call <b>bloscCodec</b>
+     methods also never needs to set this field since <b>bloscCodec</b>
+     computes it while compressing.
+   </dd>
+   <dt>level</dt>
+   <dd>
+    The desired compresson level and must be a number
+    between 0 (no compresson) and 9 (maximum compresson).
+   </dd>
+   <dt>compressor</dt>
+   <dd>
+      The name of one of the compressors shipped with <b>blosc</b>
+      See <b>blosc</b> for more details.
+      Note that <b>blosclz</b> is supplied by <b>blosc</b> itself
+      and the other compressors are packaged with <b>blosc</b>.
+   </dd>
+   <dt>shuffle</dt>
+   <dd>
+    Specifies whether the shuffle compresson filters
+  should be applied or not.  BLOSC_NOSHUFFLE means not applying it,
+  BLOSC_SHUFFLE means applying it at a byte level and BLOSC_BITSHUFFLE
+  at a bit level (slower but may achieve better entropy alignment).
+   </dd>
+   <dt>threads</dt>
+   <dd>
+     Number of threads used by <b>blosc</b>.
+   </dd>
+</dl>
+<h3>bloscCodec methods</h3>
+<pre>
+class BloscCodec
+{
+    static BloscCodecPtr create();
+    static epics::pvData::StructureConstPtr getCodecStructure();
+    bool compressBlosc(
+        const epics::pvData::PVUByteArrayPtr &amp; pvDest,
+        const epics::pvData::PVScalarArrayPtr &amp; pvSource,
+        const epics::pvData::PVStructurePtr &amp; pvBloscArgs);
+    bool compressBlosc(
+        const epics::pvData::PVUByteArrayPtr &amp; pvDest,
+        const void * decompressAddr, size_t decompressSize,
+        const epics::pvData::PVStructurePtr &amp; pvBloscArgs);
+    bool decompressBlosc(
+        const epics::pvData::PVUByteArrayPtr &amp; pvSource,
+        const epics::pvData::PVScalarArrayPtr &amp; pvDest,
+        const epics::pvData::PVStructurePtr &amp; pvBloscArgs);
+   bool decompressBlosc(
+        const epics::pvData::PVUByteArrayPtr &amp; pvSource,
+        void * decompressAddr, size_t decompressSize,
+        const epics::pvData::PVStructurePtr &amp; pvBloscArgs);
+    std::string getMessage();
+
+    void initCodecStructure(const epics::pvData::PVStructurePtr &amp; pvStructure);
+};
+</pre>
+where
+<dl>
+   <dt>create</dt>
+      <dd>
+      Create and instance of <b>BloscCodec</b>.
+      </dd>
+   <dt>getCodecStructure</dt>
+      <dd>
+      Get an introspection interface for a <b>bloscCodec structure</b> 
+      </dd>
+   <dt>compressBlosc</dt>
+      <dd>
+      Compress a scalar array.
+      The compressed array is in <b>pvDest</b> and <b>compressedSize</b> is set.
+      <br />
+      There are two methods.
+      The first has the argument <b>pvSource</b>
+      This is the method that will be called by most clients.
+      <br />
+      The second method, which has arguments <b>decompressAddr</b>
+      and <b>decompressSize</b>,
+      is used by <b>bloscCodecRecord</b> for accessing a <b>DBRecord</b>.
+      </dd>
+   <dt>decompressBlosc</dt>
+      <dd>
+      Decompress a scalar array.
+      The compressed array is in <b>pvSource</b>.
+      <br />
+      There are two methods.
+      The first has the argument <b>pvDest</b>
+      This is the method that will be called by most clients.
+      <br />
+      The second method, which has arguments <b>decompressAddr</b>
+      and <b>decompressSize</b>,
+      is used by <b>bloscCodecRecord</b> for accessing a <b>DBRecord</b>.
+      </dd>
+   <dt>getMessage</dt>
+      <dd>
+      If <b></b> or <b></b> returns false then <b>getMessage</b> returns a reason.
+      </dd>
+   <dt>initCodecStructure</dt>
+      <dd>
+       This initializes a pvStructure created with the introspection
+        interaface returned by <b>getCodecStructure</b>.
+      </dd>
+</dl>
+<h2>bloscCodecRecord</h2>
+<p>This is a PVRecord that compresses/decompresses data in a scalar array that resides
+in another record in the same IOC. The record can be either a PVRecord or a DBRecord.
+</p>
+<h3>bloscCodecRecord data</h3>
+<pre>
+bloscCodecRecord structure 
+    ubyte[] value []
+    alarm_t alarm MINOR CLIENT  is idle 
+        int severity 1
+        int status 7
+        string message  is idle
+    time_t timeStamp &lt;undefined&gt;              
+        long secondsPastEpoch 0
+        int nanoseconds 0
+        int userTag 0
+    string channelName 
+    int elementScalarType 0
+    enum_t command (0) idle
+        int index 0
+        string[] choices ["idle", "get", "put", "startMonitor", "stopMonitor"]
+    structure bloscArgs
+        int compressedSize 0
+        int decompressedSize 0
+        int level 3
+        enum_t compressor (0) blosclz
+            int index 0
+            string[] choices ["blosclz", "lz4", "lz4hc", "snappy", "zlib", "zstd"]
+        enum_t shuffle (0) NOSHUFFLE
+            int index 0
+            string[] choices ["NOSHUFFLE", "SHUFFLE", "BITSHUFFLE"]
+        int threads 1
+</pre>
+where:
+<dl>
+   <dt>value</dt>
+   <dd>
+    The array that holds the compressed data.
+   </dd>
+   <dt>alarm</dt>
+   <dd>
+    Shows the result of <b>bloscCodecRecord</b> processing.
+   </dd>
+   <dt>timeStamp</dt>
+   <dd>
+   The time when the <b>bloscCodecRecord</b> process was called.
+   </dd>
+   <dt>channelName</dt>
+   <dd>
+    The name of the record to compress or decompress.
+    It must name a <b>PVRecord</b> or <b>DBRecord</b> in the same IOC that
+    has the <b>bloscCodecRecord</b>.
+   </dd>
+   <dt>elementScalarType</dt>
+   <dd>
+    Set by <b>bloscCodecRecord</b> when it compresses.
+   </dd>
+   <dt>command</dt>
+   <dd>
+    Described in the next section.
+   </dd>
+   <dt>bloscArgs</dt>
+   <dd>
+    The arguments for <b>blosc</b>.
+   </dd>
+</dl>
+<h3>bloscCodecRecord processing</h3>
+<dl>
+  <dt>idle</dt>
+  <dd>
+   This can be used to set other fields in the <b>bloscCodecRecord</b>
+   without causing compresson or decompresson.
+  </dd>
+  <dt>get</dt>
+  <dd>
+   This is a request to compress <b>channelName</b>.
+  </dd>
+  <dt>put</dt>
+  <dd>
+   This is a request to decompress <b>value</b> into  <b>channelName</b>.
+  </dd>
+  <dt>startMonitor</dt>
+  <dd>
+   Start monitoring <b>channelName</b>
+   Each time an event occurrs a <b>get</b> command is issued.
+   All arguments passed to get are the same as when <b>startMonitor</b>
+   was called.
+   <br />
+   Only one monitor at a time is suported.
+   An error is returned via <b>alarm</b> if a monitor is already active.
+  </dd>
+  <dt>stopMonitor</dt>
+  <dd>
+    Stop monitoring.
+  </dd>
+</dl>
+<h2>exampleClient</h2>
+<h3>clientMonitorCodec</h3>
+<p>This client asks a <b>bloscCodecRecord</b> to start or stop
+monitoring, i.e. , it issues commands get and put to a <b>bloscCodecRecord</b>.
+</p>
+<p>The help option is:
+</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/bloscCodecCPP
+mrk> bin/linux-x86_64/clientMonitorCodec -help
+ -h -c codecChannelName - d debug  
+default
+-c bloscCodecRecord -d false
+</pre>
+<p>When it is started it issues the followimg prompt:
+</p>
+<pre>
+mrk> bin/linux-x86_64/clientMonitorCodec 
+_____clientMonitorCodec starting__
+channelStateChange is Connected false
+channelStateChange is Connected true
+enter one of: startMonitor stopMonitor exit
+</pre>
+
+
+<p>A simple example of startMonitor is:
+</p>
+<pre>
+startMonitor
+enter channelName
+PVRdoubleArray
+do You want to modify any bloscArgs? answer y or n
+n
+startMonitor success
+enter one of: startMonitor stopMonitor exit
+</pre>
+<p>The monitor is stopped as follows:
+</p>
+<pre>
+stopMonitor
+stopMonitor success
+enter one of: startMonitor stopMonitor exit
+</pre>
+<p>startMonitor also allows the client to specify compresson options.
+For example:
+</p>
+<pre>
+startMonitor
+enter channelName
+PVRdoubleArray
+do You want to modify any bloscArgs? answer y or n
+y
+level is 3 do you want to change it?
+y
+enter level
+4
+compressor is blosclz do you want to change?
+y
+0=blosclz,1=lz4,2=lz4hc,3=snappy,4=zlib,5=zstd
+1
+shuffle is NOSHUFFLE do you want to change?
+y
+0=NOSHUFFLE,1=SHUFFLE,2=BITSHUFFLE
+1
+threads is 1 do you want to change it?
+y
+enter threads
+3
+startMonitor success
+enter one of: startMonitor stopMonitor exit
+</pre>
+<h3>clientDecompressCodec</h3>
+<p>This is a client that monitors a <b>bloscCodecRecord</b>.
+When a monitor event occurs it looks to see if the channelName from the record
+is the same as the client specified when start was issued.
+If not the same it just ignores the event.
+If the names are the samem it creates a PVScalar array and decompresss from the
+value field of the <b>bloscCodecRecord</b>.
+</p>
+<p>
+It is used as follows:
+</p>
+<pre>
+mrk> bin/linux-x86_64/clientDecompressCodec -help
+ -h -c codecChannelName - d debug  
+default
+-c bloscCodecRecord -d false
+mrk> bin/linux-x86_64/clientDecompressCodec 
+_____clientMonitorCodec starting__
+channelStateChange is Connected false
+channelStateChange is Connected true
+enter one of: start stop exit
+</pre>
+<p>when start is issued you will see output like:
+</p>
+<pre>
+enter one of: start stop exit
+start
+enter channelName
+PVRdoubleArray
+enter one of: start stop exit
+monitorConnect PVRdoubleArray status Status [type=OK]
+result success data
+[1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,10]
+
+</pre>
+<p>
+Note that <b>clientMonitorCodec</b> can be run to start monitoring
+and <b>clientPutArray</b> can be used to put values to <b>channelName</b>
+</p>
+<h3>clientGetputCodec.</h3>
+<p>This is a client that asks a <b>bloscCodecRecord</b> to compress and decompress.
+</p>
+<p>It is used as follows:
+</p>
+<pre>
+mrk> bin/linux-x86_64/clientGetputCodec -help
+ -h -c codecChannelName - d debug  
+default
+-c bloscCodecRecord -d false
+mrk> bin/linux-x86_64/clientGetputCodec 
+_____clietGetPutCodec starting__
+channelStateChange isConnected false
+channelStateChange isConnected true
+enter one of: compress decompress exit
+</pre>
+<p>
+When compress is entered the client is asked for the same arguments
+as the <b>startMonitor</b> command of
+<b>clientMonitorCodec</b> .
+</p>
+<pre>
+enter one of: compress decompress exit
+compress
+enter channelName
+PVRdoubleArray
+do You want to modify any bloscArgs? answer y or n
+n
+compress success
+enter one of: compress decompress exit
+</pre>
+<p>
+A <b>pvaClientPutGet</b> request is issued to the <b>bloscCodecRecord</b>
+The put part of the request specicies the <b>bloscCodec</b> arguments and command
+<b>get</b>, which means compress.
+The get part of the putGet requests all the fields required to issue a decompress
+request.
+</p>
+<p>A example decompress request is:
+</p>
+<pre>
+enter one of: compress decompress exit
+decompress
+decompress success
+enter one of: compress decompress exit
+</pre> 
+<h3>clientPutArray</h3>
+<p>This is client code the issues a <b>pvaClientPut</b> the the value field
+that is a numeric scalar array. The record can be either a <b>PVRecord</b>
+or a <b>DBRecord</b>.
+It is used to generate arrays that has redundent elements.
+This allows testing how much compresson the various <b>blosc</b> methods
+preform.
+</p>
+<p>
+For example:
+</p>
+<pre>
+mrk> bin/linux-x86_64/clientPutArray 
+_____clienPutArray starting__
+enter put or exit or return
+put
+channelName
+PVRdoubleArray
+number elements
+100
+first element
+1
+number of times to repeat same number
+10
+max element value
+100
+enter put or exit or return
+</pre>
+Produces the following:
+<pre>
+mrk> pvget PVRdoubleArray
+PVRdoubleArray 2019-01-29 10:58:37.118
+[1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,
+4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,
+7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,10]
+</pre>
+<h3>clientCodec</h3>
+<p>This shows the default <b>bloscArgs</b>
+</p>
+<pre>
+mrk> bin/linux-x86_64/clientCodec 
+pvStructure
+structure 
+    int compressedSize 0
+    int decompressedSize 0
+    int level 3
+    enum_t compressor
+        int index 0
+        string[] choices ["blosclz", "lz4", "lz4hc", "snappy", "zlib", "zstd"]
+    enum_t shuffle
+        int index 0
+        string[] choices ["NOSHUFFLE", "SHUFFLE", "BITSHUFFLE"]
+    int threads 1
+</pre>
+</div>
+</body>
+</html>
