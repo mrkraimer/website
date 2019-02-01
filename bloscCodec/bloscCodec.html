@@ -21,7 +21,7 @@
 <div class="head">
 <h1>bloscCodec</h1>
 
-<h2 class="nocount">2019.01.30</h2>
+<h2 class="nocount">2019.02.01</h2>
 <dl>
   <dt>editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -48,7 +48,7 @@ href="../LICENSE">open source license
 added support for compressing and decompressing arrays,
 mostly for images.
 Marty Kraimer did a small part of the work related to ImageJ.
-This is what lead to developing <b>bloscCodec</b>
+This was the motivation for creating <b>bloscCodec</b>
 </p>
 <p>
 Both the <b>areaDetector</b> and <b>bloscCodec</b>
@@ -64,11 +64,11 @@ to do the actual compresson and decompresson.
    <dt>Existing Features</dt>
      <dd>
         All examples described in this document work.
-     <dd>
+     </dd>
    <dt>array types</dt>
       <dd>
         Only numeric scalar arrays are supported.
-        This means signed and unsigned 8, 16, 32, 64 bit integers,
+        This means signed and unsigned integers of length 8, 16, 32, and 64 bits,
         as well as float, and double.
      </dd>
     <dt>byte order</dt>
@@ -85,7 +85,7 @@ nothing else is currently planned.
 </p>
 <p>
 The idea is to wait and see if anyone is interested in the <b>bloscCodec</b>
-service and prvides feedback about what is missing.
+service and provides feedback about what is missing.
 If anyone is interested please provide feedback.
 </p>
 <h2>Introduction</h2>
@@ -96,7 +96,7 @@ In this document <b>blosc</b> refers to the code that comes with
 and <b>bloscCodec</b> refers to the code described in this document.
 </p>
 <p>
-<b>bloscCodec</b> is a facility for compressing and decompressing numeric scalar arrays
+<b>bloscCodec</b> is a facility for compressing and decompressing scalar arrays
 , i. e. a <b>PVScalarArray</b>,
 which is described in:
 <a href="https://github.com/epics-base/pvDataCPP">pvDataCPP</a>
@@ -115,19 +115,49 @@ The following components of <b>bloscCodec</b> are described below:
 A PVRecord as defined by:
 <a href="https://github.com/epics-base/pvDatabaseCPP">pvDatabaseCPP</a>
     <br />
-    It provides code for calling <b>blosc</b> for scalar arrays from either
-    <b>DBrecord</b>s or <b>PVRecprd</b>s.
+    It provides code for calling <b>blosc</b> for a scalar array from either a
+    <b>DBrecord</b> or a <b>PVRecord</b>.
     <br />
     It can both compress and decompress.
    </dd>
    <dt>exampleClient</dt>
      <dd>
-     Examples for client code. See below for a description of each example.
+     Examples for client code.
+     The most important are:
+      <dl>
+        <dt>clientMonitorCodec</dt>
+         <dd>
+         This asks a <b>bloscCodecRecord</b> to start or stop monitoring
+         a <b>PVRecord</b> or <b>DBRecord</b>.
+         </dd>
+        <dt>clientDecompressCodec</dt>
+         <dd>
+          This shows how a client can decompress an array it gets from
+          a <b>bloscCodecRecord</b>.
+         </dd>
+        <dt>clientGetputCodec</dt>
+         <dd>
+          This is client code that asks a <b>bloscCodecRecord</b>
+          to compress or decompress.
+         </dd>
+      </dl>
      </dd>
 </dl>
 <h2>building</h2>
-<p>For now the only source for <b>bloscCodec</b> is
-<a href="https://github.com/mrkraimer/bloscCodecCPP">bloscCodecCPP</a>.
+<p>Clone the code:
+</p>
+<pre>
+git clone https://github.com/mrkraimer/bloscCodecCPP.git
+</pre>
+Then just do the following:
+<pre>
+cd bloscCodecCPP
+cp ExampleRELEASE.local configure/RELEASE.local
+edit file configure/RELEASE.local
+make
+</pre>
+<p>
+In <b>configure/RELEASE.local</b> change the locations of <b>EPICS4_DIR</b> and <b>EPICS_BASE</b>.
 </p>
 <p>
 <b>bloscCodec</b> requires the following epics cmponents:
@@ -141,25 +171,13 @@ pvDatabaseCPP
 pvaClientCPP
 </pre>
 <p>
-These components can be cloned from the master  branches in
-<a href="https://github.com/epics-base">epics-base</a>.
-<br />
-They can also be obtained via a recent EPICS7 release from the EPICS web site
+All are provided with  a recent EPICS 7 release from the EPICS web site
 <a href="https://epics-controls.org/">epics-controls</a>
 </p>
 <p>
-Then in the directory where you built the epics components:
+These could also be  cloned from the master  branches in
+<a href="https://github.com/epics-base">epics-base</a>.
 </p>
-<pre>
-git clone https://github.com/mrkraimer/bloscCodecCPP.git
-</pre>
-Then just issue:
-<pre>
-cd bloscCodecCPP
-make
-</pre>
-
-
 <h2>Preparation for running examples</h2>
 <h4>start ioc</h4>
 In a window:
@@ -170,7 +188,7 @@ mrk> ../../bin/linux-x86_64/bloscCodecIoc st.cmd
 ... LOTS OF OUTPUT
 epics>
 </pre>
-To see all  all PVRecords enter:
+To see all PVRecords enter:
 <pre>
 epics> pvdbl
 PVRdoubleArray
@@ -203,7 +221,7 @@ epics>
 <h4>monitor bloscCodecRecord</h4>
 <p>
 In order to better understand the client examples it helps to monitor the 
-bloscCodecRecord in the ioc that was just started.
+bloscCodecRecord.
 </p>
 <p>
 In another window:
@@ -215,20 +233,19 @@ You will see:
 <pre>
 bloscCodecRecord structure 
     ubyte[] value []
-    alarm_t alarm MINOR CLIENT PVRubyteArray is idle 
+    alarm_t alarm MINOR CLIENT  is idle 
         int severity 1
         int status 7
-        string message PVRubyteArray is idle
+        string message  is idle
     time_t timeStamp &lt;undefined&gt;              
         long secondsPastEpoch 0
         int nanoseconds 0
         int userTag 0
-    string channelName PVRubyteArray
-    string codecName blosc
+    string channelName 
     int elementScalarType 0
     enum_t command (0) idle
         int index 0
-        string[] choices ["idle", "get", "put", "startMonitor", "stopMonitor", ""]
+        string[] choices ["idle", "get", "put", "startMonitor", "stopMonitor"]
     structure bloscArgs
         int compressedSize 0
         int decompressedSize 0
@@ -240,15 +257,15 @@ bloscCodecRecord structure
             int index 0
             string[] choices ["NOSHUFFLE", "SHUFFLE", "BITSHUFFLE"]
         int threads 1
-
 </pre>
 <h4>monitor scalar array records</h4>
-<p>You can monitor one or more of the scalar array records
+<p>You can monitor one or more of the scalar array records.
+For example:
 </p>
 <pre>
 mrk> pvget -m PVRdoubleArray DBRdoubleArray
-PVRdoubleArray <undefined>              []
-DBRdoubleArray <undefined>              INVALID DRIVER UDF []
+PVRdoubleArray &lt;undefined&gt;              []
+DBRdoubleArray &lt;undefined&gt;              INVALID DRIVER UDF []
 </pre>
 <h2>Sample examples</h2>
 <p>This section describes how to run some of the example client code and
@@ -282,13 +299,12 @@ DBRdoubleArray
 do You want to modify any bloscArgs? answer y or n
 n
 startMonitor success
-enter one of: startMonitor stopMonitor exit
-exit
 </pre>
 <h4>Run clientDecompressCodec</h4>
 <p>This is a client that monitors <b>bloscCodecRecord</b>.
 When <b>bloscCodecRecord</b> compresses, the client gets the 
 compressed data and decompresses.
+</p>
 <pre>
 mrk> pwd
 /home/epicsv4/masterCPP/bloscCodecCPP
@@ -300,8 +316,6 @@ enter one of: start stop exit
 start
 enter channelName
 DBRdoubleArray
-enter one of: start stop exit
-monitorConnect DBRdoubleArray status Status [type=OK]
 </pre>
 <p>Leave this running</p>
 <h4>Make change to DBRdoubleArray</h4>
@@ -324,8 +338,6 @@ number of times to repeat same number
 10
 max element value
 100
-enter put or exit or return
-exit
 </pre>
 <h4>output</h4>
 On the window whare <b>bloscCodecRecord</b> is being monitored:
@@ -386,14 +398,15 @@ result success data
 9,9,9,9,9,9,9,9,9,9,9,10]
 </pre>
 <h2>bloscCodec</h2>
-<p>This code is a wrapper for 
+<p>This is a wrapper for 
 <a href="https://github.com/Blosc/c-blosc">c-blosc</a>
-It provides a structure for the blosc arguments code to call the <b>c-blosc</b>
+It provides a <b>PVStructure</b> 
+and methods to call the <b>c-blosc</b>
 code.
 </p>
 <h3>bloscCodec structure</h3>
 <p>This is a structure for the arguments that can be passed to <b>c-blosc</b>.
-The descriptions below are taked from the header files provided by  <b>c-blosc</b>.
+The descriptions below are taken from the header files provided by  <b>c-blosc</b>.
 For a fuller explaination look at the header files in:
 </p>
 <pre>
@@ -424,8 +437,8 @@ where:
    <dt>decompressedSize</dt>
    <dd>
      This must always be set by code that calls <b>blosc</b>.
-     An actual client that uses a <b>pvScalarArray</b> to call <b>bloscCodec</b>
-     methods also never needs to set this field since <b>bloscCodec</b>
+     Code that uses a <b>pvScalarArray</b> to call <b>bloscCodec</b>
+     never needs to set this field since <b>bloscCodec</b>
      computes it while compressing.
    </dd>
    <dt>level</dt>
@@ -517,7 +530,8 @@ where
       </dd>
    <dt>getMessage</dt>
       <dd>
-      If <b></b> or <b></b> returns false then <b>getMessage</b> returns a reason.
+      If <b>compressBlosc</b> or <b>decompressBlosc</b> returns false
+      then <b>getMessage</b> returns a reason.
       </dd>
    <dt>initCodecStructure</dt>
       <dd>
@@ -526,8 +540,9 @@ where
       </dd>
 </dl>
 <h2>bloscCodecRecord</h2>
-<p>This is a PVRecord that compresses/decompresses data in a scalar array that resides
-in another record in the same IOC. The record can be either a PVRecord or a DBRecord.
+<p>This is a <b>PVRecord</b> that compresses/decompresses data in a scalar array that resides
+in another record in the same IOC. The record can be either
+a <b>PVRecord</b> or a <b>DBRecord</b>.
 </p>
 <h3>bloscCodecRecord data</h3>
 <pre>
@@ -570,7 +585,7 @@ where:
    </dd>
    <dt>timeStamp</dt>
    <dd>
-   The time when the <b>bloscCodecRecord</b> process was called.
+   The time when <b>bloscCodecRecord::process</b> was called.
    </dd>
    <dt>channelName</dt>
    <dd>
@@ -601,6 +616,7 @@ where:
   <dt>get</dt>
   <dd>
    This is a request to compress <b>channelName</b>.
+   The compressed array is in <b>value</b>.
   </dd>
   <dt>put</dt>
   <dd>
@@ -665,7 +681,7 @@ stopMonitor
 stopMonitor success
 enter one of: startMonitor stopMonitor exit
 </pre>
-<p>startMonitor also allows the client to specify compresson options.
+<p>startMonitor also allows the client to specify <b>blosc</b> options.
 For example:
 </p>
 <pre>
@@ -698,7 +714,7 @@ enter one of: startMonitor stopMonitor exit
 When a monitor event occurs it looks to see if the channelName from the record
 is the same as the client specified when start was issued.
 If not the same it just ignores the event.
-If the names are the samem it creates a PVScalar array and decompresss from the
+If the names are the same it creates a <b>PVScalarArray</b> and decompresss from the
 value field of the <b>bloscCodecRecord</b>.
 </p>
 <p>
@@ -725,8 +741,11 @@ PVRdoubleArray
 enter one of: start stop exit
 monitorConnect PVRdoubleArray status Status [type=OK]
 result success data
-[1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,10]
-
+[1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,
+3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,
+5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,
+7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,
+9,9,9,9,9,9,9,9,9,9,9,10]
 </pre>
 <p>
 Note that <b>clientMonitorCodec</b> can be run to start monitoring
@@ -779,8 +798,7 @@ decompress success
 enter one of: compress decompress exit
 </pre> 
 <h3>clientPutArray</h3>
-<p>This is client code the issues a <b>pvaClientPut</b> the the value field
-that is a numeric scalar array. The record can be either a <b>PVRecord</b>
+<p>This is client the uses <b>pvaClientPut</b> to put to a scalar array field. The record can be either a <b>PVRecord</b>
 or a <b>DBRecord</b>.
 It is used to generate arrays that has redundent elements.
 This allows testing how much compresson the various <b>blosc</b> methods
