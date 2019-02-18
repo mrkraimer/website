@@ -1,0 +1,364 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>epicsHistory</title>
+  <link rel="stylesheet" type="text/css"
+  href="../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../css/epicsv4.css" />
+  <style type="text/css">
+  </style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../css/tocgen.js">
+  </script>
+</head>
+
+<body>
+
+<div class="head">
+<h1>epicsHistory</h1>
+
+<h2 class="nocount">2019.02.16</h2>
+<dl>
+  <dt>editors:</dt>
+    <dd>Marty Kraimer
+     <br />
+       Bob Dalesio
+     <br />
+      ????
+    </dd>
+</dl>
+
+<p>This product is available via an
+<a
+href="../LICENSE">open source license
+</a>
+</p>
+
+</div>
+
+<div id="toc">
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+
+<div id="contents" class="contents">
+<h2>Acknowledgements</h2>
+<p>Should be long list</p>
+
+<h2>EPICS Overview</h2>
+<p>
+EPICS is toolkit for creating a client/server network based distributed control system.
+</p>
+<p>The toolkit consists of three parts:</p>
+<dl>
+   <dt>IOC</dt>
+     <dd>
+      The server side of an EPICS based control system
+      consists of an arbitrary number of IOCs( Input Output Controller).
+      An IOC provides a database of smart memory resident records.
+      Each record has a record name that is unique within the local area
+      network.
+      Each record has support code including a method named process.
+      There is support code for a set of standard record types.
+      For example record type <b>ai</b> is designed for analog input data.
+      A record can be connected to hardware or can just be <b>soft</b>.
+     </dd>
+   <dt>OPI</dt>
+     <dd>
+      The client side of an EPICS control system is an arbitary number
+      OPIs(OPerator Interface).
+     An OPI contains a set of display, control, and, data acqisition
+     programs that communicate with one or more IOCs.
+     </dd>
+   <dt>network</dt>
+     <dd>
+       The software that connects an OPI to IOCS.
+       The API allows a client to read, write, and monitor IOC records
+       The code uses TCP/UDP protocols for network communication.
+     </dd>
+</dl>
+<h2>GTACS</h2>
+<p>
+<b>BOB</b> please provide a brief history of GTACS until 1989
+</p>
+<p>This section provides a brief description of GTACS as of 1989.
+</p>
+<h3>IOC</h3>
+<p>
+The basic model of what an IOC should do and how to do it was developed by Bob Dalesio at LANL/GTA. The principle ideas for Channel Access were developed by Jeff Hill at LANL/GTA. Bob and Jeff also were the principle implementers of the original IOC software. This software (called GTACS) was developed over a period of several years with feedback from LANL/GTA users. Without their ideas EPICS would not exist.
+</p>
+<p>
+<b>BOB</b> who else should be acknowleged?
+</p>
+<h4>memory resident database</h4>
+<p>An IOC database is a collection of memory resident records.
+Each record is one of several record types.
+Each record type has an associated set of code,
+which is invoked when a record is accessed and/or processed.
+A record has a record name that is unique within the local area network.
+A record has a number of fields.
+Each field has a name that is up to four characters in length.
+The most important field is a field named <b>VAL</b>.
+This field has one of the following types:
+</p>
+<pre>
+DBF_CHAR     8 bit integer - often an ascii character.
+DBF_SHORT    16 bit signed integer
+DBF_LONG     32 bit signed integer
+DBF_FLOAT    32 bit IEEE floating point
+DBF_DOUBLE   64 bit IEEE floating point
+DBF_STRING   ascii string up to 40 characters in length
+DBF_ENUM     a integer that is a index to a set of choices
+NOTE: An array of each of the above types is also supported.
+</pre>
+<p>
+A record also has a number of other fields.
+which provide record properties:
+</p>
+<dl>
+   <dt>alarm</dt>
+    <dd>
+   alarm status and severity
+    </dd>
+   <dt>timeStamp</dt>
+    <dd>
+    time when a record is processed
+    </dd>
+   <dt>display</dt>
+    <dd>
+     display limits for numeric fields.
+    </dd>
+   <dt>control</dt>
+    <dd>
+     control limits for numeric output records.
+    </dd>
+</dl>
+<p>Each record type has an associated set of fields.
+Some fields, like timeStamp and alarm, are common to all record types.
+A record type always has a <b>VAL</b> field with a type defined by the record
+type.
+Some of the record types are:
+</p>
+<pre>
+ai        analog input - DBF_FLOAT
+ao        analog output - DBF_FLOAT
+bi        binary input - DBF_ENUM with two choices
+bo        binary output - DBF_ENUM with two choices
+mbbbi     multi bit binary input - DBF_ENUM with up to 16 choices
+mbbbo     multi bit binary output - DBF_ENUM with up to 16 choices
+li        long input -DBF_LONG
+lo        long output -DBF_LONG
+calc      DBF_FLOAT with attached code to perform calculations.
+sub       DBF_FLOAT with attached code.
+waveform  array of any of the DBF types.
+</pre>
+<p>Each record type has an associated set of code, which includes
+a method named process, which implements the record type specific
+semantics. For input records, the support code sets field <b>VAL</b>.
+For output records the support code does something with <b>VAL</b>.
+</p>
+<p>A number of threads are available to support record processing.
+Each calls the record support process method. 
+A number of periodic scan threads are available.
+Interrupt scan threads are also available.
+Client code can also request that a record be processed.
+</p>
+<h4>operating system</h4>
+<p>The operating system is vxWorks,
+which is a real time OS provided by wind river systems (WRS).
+WRS provides the development environment for compiling
+and loading vxWorks programs.
+As of 1989, this must be done on a sun workstation.
+Both the sun workstation and the target vxWorks IOC must have
+a motorola 68k CPU.
+The sun workstation compiler is used to generate the code for
+the target vxWorks system.
+WRS provides the code to load and start the IOC code.
+</p>
+<h4>hardware platform</h4>
+<p>The hardware platform is a VME crate.
+The crate has a slot for the 68K CPU and slots for VME modules
+that connect to hardware.
+GTACS has support code for a variety of VME modules.
+Amoung these are:
+</p>
+<dl>
+   <dt>analog</dt>
+     <dd>
+     analog input and output modules.
+     Supported via ai and ao records.
+     </dd>
+   <dt>digital</dt>
+     <dd>
+      digital IO modules.
+      Supported via bi, bo, mbbi, mbbo records.
+     </dd>
+   <dt>allen bradley PLC5 scanner</dt>
+     <dd>
+      Provides accesss to PLC5 I/O modules.
+      A mixture of analog, digital, and other IO.
+      GTACS provides code that , via additional threads,
+      gets and or puts data to the PLC5 scanner.
+      When a record is processed the record for input records gets the saved
+      scanner data.
+      For output records the data from the record is saved for the
+      code that puts data to the PLC5 scanner.
+     </dd>
+   <dt>gpib</dt>
+     <dd>
+       This is a module that communicated with device connected
+      to a GPIB bus.
+      <br />
+      <b>NOTE:</b>Many gpib devices can be slow to respond.
+       This can cause a scan task to delay when a record is connected
+       to a gpib device.
+     </dd>
+</dl>
+
+<h4>sequencer</h4>
+<b>TBD</b>
+<h4>??? what else should be described for IOC?</h4>
+<h3>OPI</h3>
+<h4>Display Manager</h4>
+<p>
+The Display Manager ran on a  VAX workstations
+running the code from Peter Clouts group.
+<b>BOB</b> What was the name of this code.
+</p>
+<p>By 1989 Mike Thouts group was already developimg EDD/DM.
+</p>
+<h4>??? what else should be described for OPI?</h4>
+<h3>OPI</h3>
+<h3>channel access</h3>
+<b>TBD</b>
+<p>Will briefly describe DBR types and channel access API.
+</p>
+<h2>Beginning of Collaboration</h2>
+<p>
+APS became an official DOE project on Oct 1 1989.
+Marty Knott was the APS Accelerator Controls Group Leader
+and had involved with APS during conceptual design.
+He had heard about GTACS and had meet Mike Thout.
+</p>
+<p>
+Marty Kraimer transfered from the Electronics division at ANL to APS
+on OCT 1.
+The Electronics division was a service organization
+so Marty Knott already was able to use Electronics personnel
+for APS related projects.
+Marty Knott arranged for Marty Kraimer to got to LANL for six weeks during
+the summer of 1989.
+The mission was to learn about GTACS.
+</p>
+<p>
+Marty Kraimer was assigned to implement an IOC for
+a magnet measurement test stand.
+This was a great way to learn GTACS since it involved all parts of GTACS
+from connecting to hardware to OPI displays.
+</p>
+<p>
+On Oct 1 1989, when Marty Kraimer transfered to APS, he started studying
+the GTACS code.
+He spent most of October and November studying the code.
+He concentrated mostly on the IOC code.
+He spent some time looking at the networking code.
+He ignored the OPI code. 
+</p>
+<p>
+Marty had been involved with data acquisition and control more than ten years.,
+and thus had lots of ideas about what the APS control system software should be.
+He soon learned that GTACS was different than what he was thinking, <b>but</b> much better.
+The idea of smart records of various record types is really powerful.
+He had "bought" in to the GTACS model. 
+</p>
+<p>In December, Mike Thout, Bob Dalesio, and ??,
+came to APS to meet with people from Marty Knott's group to discusss
+collobration.
+There was agreement on the IOC and network code, but not the GUI.
+At this time LANL was actively developing EDD/DM and someone at
+APS was starting development of MEDM.
+The end result was that we agreed that the APS control system would be
+based on GTACS and that our two control groups would collobrate
+on future development of the IOC and networking sofware.
+</p>
+<h2>Collobration History</h2>
+<h3>five year agreement</h3>
+<b>TBD</b>
+<h3>LBL - Steve Lewis</h3>
+<b>TBD</b>
+<h3>DESY</h3>
+<b>TBD</b>
+<h3>Other early collaborators???</h3>
+<b>TBD</b>
+<h3>???</h3>
+<h2>Network History</h2>
+<h3>channel access</h3>
+<b>TBD</b>
+<h3>access security</h3>
+<b>TBD</b>
+<h3>channel access gateway</h3>
+<b>TBD</b>
+<h3>channel access server library</h3>
+<b>TBD</b>
+<h3>pv access</h3>
+<b>TBD</b>
+<h4>pvData</h4>
+<h4>pvAccess</h4>
+<h4>caProvider</h4>
+<h4>pva2pva: qsrv and pva gateway</h4>
+<h4>pvaclient</h4>
+<h2>IOC History</h2>
+<h3>memory resident database</h3>
+<p>
+During 1990 and 1991, ANL/APS undertook a major revision of the IOC software with the major goal being to provide easily extendible record and device support. Marty Kraimer (ANL/APS) was primarily responsible for designing the data structures needed to support extendible record and device support and for making the changes needed to the IOC resident software. Bob Zieman (ANL/APS) designed and implemented the UNIX build tools and IOC modules necessary to support the new facilities. Frank Lenkszus (ANL/APS) made extensive changes to
+DCT (Database Configuration Tool) to support the new facilities. Janet Anderson developed methods to systematically test various features of the IOC software and is the principal implementer of changes to record support.
+</p>
+<p>
+During 1993 and 1994, Matt Needes at LANL implemented and supplied the description of fast database links and the database debugging tools.
+</p>
+<p>
+During 1993 and 1994 Jim Kowalkowski at ANL/APS developed GDCT and also developed the ASCII database instance format now used as the standard format. At that time he also created the functionality of the dbLoadRecords and dbLoadTemplate commands.
+</p>
+<p>
+The build utility method resulted in the generation of binary files that were loaded into IOCs. As new IOC architectures started being supported this caused problems. During 1995, after learning from an abandoned effort referred to as EpicsRX, the build utilities and a binary file(default.dctsdr) were replaced by all ASCII files. The new method provides architecture independence and a more ﬂexible environment for conﬁguring record types and device and driver support. This principle implementer was Marty Kraimer with many ideas contributed by John Winans and Jeff Hill. Bob Dalesio made sure that we did not go too far, i.e. 1) make it difficult to upgrade existing applications and 2) lose performance.
+</p>
+<p>
+In early 1996 Bob Dalesio tackled the problem of allowing runtime link modification. This turned into a cooperative development effort between Bob and Marty Kraimer. This required new code for database to Channel Access links, a new library for lock sets, and a cleaner interface for accessing database links.
+</p>
+<h3>sequencer</h3>
+<b>TBD</b>
+<h3>operating system independence</h3>
+<p>
+In early 1999 the port of iocCore to non vxWorks operating systems was started. The principle developers were Marty Kraimer, Jeff Hill, and Janet Anderson. William Lupton converted the sequencer as well as helping with the posix threads implementation of osiSem and osiThread. Eric Norum provided the port to RTEMS and also contributed the shell that is used on non vxWorks environments. Ralph Lange provided the port to HPUX.
+Andrew Johnson was also involved and had recently started work at APS.
+</p>
+<p>
+Many other people have been involved with EPICS development, including new record, device, and driver support modules.
+There was a strong Collaboration between Accelerator controls and Beamline controls
+to develop these modules. Tim Mooney and Mark Rivers deserve special mention. 
+</p>
+
+<h2>Device and Driver Support</h2>
+<b>TBD</b>
+<h3>Overview</h3>
+
+<h3>1990-1999</h3>
+<h3>synappps</h3>
+<h3>asynDriver</h3>
+<h3>areaDetector</h3>
+asynDriver to areaDetector
+<h3>2010-2019</h3>
+<h2>OPI History</h2>
+<b>TBD</b>
+<h3>EDD/DM MEDM EDM</h3>
+<h3>Alarm Tools</h3>
+<h3>Strip Tool</h3>
+<h3>CSS</h3>
+<h3>Archiver</h3>
+<h3>???</h3>
+</div>
+</body>
+</html>
