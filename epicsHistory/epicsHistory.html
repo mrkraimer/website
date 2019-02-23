@@ -21,7 +21,7 @@
 <div class="head">
 <h1>epicsHistory</h1>
 
-<h2 class="nocount">2019.02.16</h2>
+<h2 class="nocount">2019.02.23</h2>
 <dl>
   <dt>editors:</dt>
     <dd>Marty Kraimer
@@ -46,7 +46,9 @@ href="../LICENSE">open source license
 
 <div id="contents" class="contents">
 <h2>Acknowledgements</h2>
-<p>Should be long list</p>
+<p>
+<b>TBD</b>
+Should be long list</p>
 
 <h2>EPICS Overview</h2>
 <p>
@@ -68,10 +70,9 @@ EPICS is toolkit for creating a client/server network based distributed control 
      </dd>
    <dt>OPI</dt>
      <dd>
-      The client side of an EPICS control system is an arbitary number
-      OPIs(OPerator Interface).
-     An OPI contains a set of display, control, and, data acqisition
-     programs that communicate with one or more IOCs.
+      The client side of an EPICS control system is an arbitary number of
+      OPI (OPerator Interface) programs.
+     Some examples are  display, control, and, data acqisition.
      </dd>
    <dt>network</dt>
      <dd>
@@ -82,13 +83,20 @@ EPICS is toolkit for creating a client/server network based distributed control 
 </dl>
 <h2>GTACS</h2>
 <p>
-<b>BOB</b> please provide a brief history of GTACS until 1989
+<b>BOB</b> please history of GTACS until 1989.
 </p>
 <p>This section provides a brief description of GTACS as of 1989.
 </p>
 <h3>IOC</h3>
 <p>
-The basic model of what an IOC should do and how to do it was developed by Bob Dalesio at LANL/GTA. The principle ideas for Channel Access were developed by Jeff Hill at LANL/GTA. Bob and Jeff also were the principle implementers of the original IOC software. This software (called GTACS) was developed over a period of several years with feedback from LANL/GTA users. Without their ideas EPICS would not exist.
+The basic model of what an IOC should do and how to do it was developed by Bob Dalesio.
+The principle ideas for Channel Access were developed by Jeff Hill.
+Without their ideas EPICS would not exist.
+</p>
+<p>
+GTACS was developed over a period of several years with feedback from LANL/GTA users. 
+The primary implementers included
+Bob Dalesio, Jeff Hill, Deb Kerstiens, Andy Kozubal, and Matt Needes.
 </p>
 <p>
 <b>BOB</b> who else should be acknowleged?
@@ -111,11 +119,11 @@ DBF_LONG     32 bit signed integer
 DBF_FLOAT    32 bit IEEE floating point
 DBF_DOUBLE   64 bit IEEE floating point
 DBF_STRING   ascii string up to 40 characters in length
-DBF_ENUM     a integer that is a index to a set of choices
 NOTE: An array of each of the above types is also supported.
+DBF_ENUM     an integer that is a index to a set of choices
 </pre>
 <p>
-A record also has a number of other fields.
+A record also has a number of other fields
 which provide record properties:
 </p>
 <dl>
@@ -136,7 +144,9 @@ which provide record properties:
      control limits for numeric output records.
     </dd>
 </dl>
-<p>Each record type has an associated set of fields.
+<p>Other fields provide options for record scanning and for linking to other records.
+</p>
+<p>Each record type has a fixed set of fields.
 Some fields, like timeStamp and alarm, are common to all record types.
 A record type always has a <b>VAL</b> field with a type defined by the record
 type.
@@ -149,11 +159,11 @@ bi        binary input - DBF_ENUM with two choices
 bo        binary output - DBF_ENUM with two choices
 mbbbi     multi bit binary input - DBF_ENUM with up to 16 choices
 mbbbo     multi bit binary output - DBF_ENUM with up to 16 choices
-li        long input -DBF_LONG
+li        long input - DBF_LONG
 lo        long output -DBF_LONG
-calc      DBF_FLOAT with attached code to perform calculations.
-sub       DBF_FLOAT with attached code.
-waveform  array of any of the DBF types.
+calc      calculation - DBF_FLOAT with attached code to perform calculations.
+sub       subroutine - DBF_FLOAT with attached code.
+waveform  array - any DBF type.
 </pre>
 <p>Each record type has an associated set of code, which includes
 a method named process, which implements the record type specific
@@ -171,7 +181,7 @@ Client code can also request that a record be processed.
 which is a real time OS provided by wind river systems (WRS).
 WRS provides the development environment for compiling
 and loading vxWorks programs.
-As of 1989, this must be done on a sun workstation.
+As of 1989, this was done on a sun workstation.
 Both the sun workstation and the target vxWorks IOC must have
 a motorola 68k CPU.
 The sun workstation compiler is used to generate the code for
@@ -201,7 +211,7 @@ Amoung these are:
       Provides accesss to PLC5 I/O modules.
       A mixture of analog, digital, and other IO.
       GTACS provides code that , via additional threads,
-      gets and or puts data to the PLC5 scanner.
+      gets and puts data to the PLC5 scanner.
       When a record is processed the record for input records gets the saved
       scanner data.
       For output records the data from the record is saved for the
@@ -209,47 +219,87 @@ Amoung these are:
      </dd>
    <dt>gpib</dt>
      <dd>
-       This is a module that communicated with device connected
-      to a GPIB bus.
-      <br />
-      <b>NOTE:</b>Many gpib devices can be slow to respond.
-       This can cause a scan task to delay when a record is connected
-       to a gpib device.
+       This is a module that communicates with devices connected to a GPIB bus.
      </dd>
 </dl>
-
-<h4>sequencer</h4>
-<b>TBD</b>
-<h4>??? what else should be described for IOC?</h4>
+<h4>DCT - database configuration tool</h4>
+<p>
+DCT is a tool for creating IOC databases.
+The input is a set of ascii files that describe record types,
+device support, record instances, etc.
+DCT creates a set of C structure definitions which are compiled on a sun workstation.
+The resulting code is loaded into an IOC during initialization.
+</p>
+<h4>SNL - State Notation Language and Sequencer</h4>
+<p>A later section in this document provides a description of the SNL.</p>
+<h4>BOB what else should be described for IOC?</h4>
 <h3>OPI</h3>
 <h4>Display Manager</h4>
 <p>
 The Display Manager ran on a  VAX workstations
 running the code from Peter Clouts group.
+</p>
+<p>
 <b>BOB</b> What was the name of this code.
 </p>
-<p>By 1989 Mike Thouts group was already developimg EDD/DM.
+<p>By 1989 Mike Thuots group was already developimg EDD/DM.
 </p>
-<h4>??? what else should be described for OPI?</h4>
-<h3>OPI</h3>
+<h4>BOB what else should be described for the GTACS OPI code?</h4>
 <h3>channel access</h3>
-<b>TBD</b>
-<p>Will briefly describe DBR types and channel access API.
+<h4>primitive data types</h4>
+<p>
+The primitive types supported are:
+</p>
+<pre>
+DBR_STRING    char[MAX_STRING_SIZE]   // MAX_STRING_SIZE=40
+DBR_CHAR      epicsInt8
+DBR_SHORT     epicsInt16
+DBR_LONG      epicsInt32
+DBR_FLOAT     epicsFloat32
+DBR_DOUBLE    epicsFloat64
+DBR_ENUM      epicsUInt16 // SEE DBR_GR_ENUM below
+</pre>
+<p>
+Except for DBR_ENUM, an array of each type is also supported.
+</p> 
+<h4>auxilary data</h4>
+<p>Every primitive type has the following auxilary data</p>
+<pre>
+DBR_TIME timeStamp
+DBR_STS  alarm status and severity.
+</pre> 
+<p>numeric data also has the following auxilary data</p>
+<pre>
+DBR_GR     display limits, units, precision
+DBR_CTRL   control limits
+</pre>
+<p>DBR_ENUM also has:</p>
+<pre>
+DBR_GR_ENUM choices associated with DBR_ENUM.
+</pre>
+<h4>API</h4>
+<p>
+Given a <b>channelName</b> methods are provided to connect to a channel.
+When connecting to data in an IOC, the channelName is the same as
+the recordName.
+</p>
+<p>Methods are provided to get, put, and monitor a channel.
 </p>
 <h2>Beginning of Collaboration</h2>
 <p>
 APS became an official DOE project on Oct 1 1989.
-Marty Knott was the APS Accelerator Controls Group Leader
-and had involved with APS during conceptual design.
+Starting with APS conceptual design,
+Marty Knott was the Accelerator Controls Group Leader.
 He had heard about GTACS and had meet Mike Thout.
 </p>
 <p>
 Marty Kraimer transfered from the Electronics division at ANL to APS
 on OCT 1.
-The Electronics division was a service organization
-so Marty Knott already was able to use Electronics personnel
+The Electronics division was a service organization.
+Thus, even before APS was an official DOE project,
+Marty Knott was able to use Electronics personnel
 for APS related projects.
-Marty Knott arranged for Marty Kraimer to got to LANL for six weeks during
+Marty Knott arranged for Marty Kraimer to go to LANL for six weeks during
 the summer of 1989.
 The mission was to learn about GTACS.
 </p>
@@ -263,38 +313,68 @@ from connecting to hardware to OPI displays.
 On Oct 1 1989, when Marty Kraimer transfered to APS, he started studying
 the GTACS code.
 He spent most of October and November studying the code.
-He concentrated mostly on the IOC code.
-He spent some time looking at the networking code.
-He ignored the OPI code. 
+He concentrated mostly on the IOC code,
+spent some time looking at the networking code,
+and ignored the OPI code. 
 </p>
 <p>
-Marty had been involved with data acquisition and control more than ten years.,
+Marty had been involved with data acquisition and control more than ten years,
 and thus had lots of ideas about what the APS control system software should be.
 He soon learned that GTACS was different than what he was thinking, <b>but</b> much better.
 The idea of smart records of various record types is really powerful.
 He had "bought" in to the GTACS model. 
 </p>
-<p>In December, Mike Thout, Bob Dalesio, and ??,
+<p>In December, Mike Thout, Bob Dalesio, and ???,
 came to APS to meet with people from Marty Knott's group to discusss
 collobration.
 There was agreement on the IOC and network code, but not the GUI.
 At this time LANL was actively developing EDD/DM and someone at
 APS was starting development of MEDM.
-The end result was that we agreed that the APS control system would be
-based on GTACS and that our two control groups would collobrate
+The end result was to agree that the APS control system would be
+based on GTACS and that the two control groups would collaborate
 on future development of the IOC and networking sofware.
 </p>
-<h2>Collobration History</h2>
+<h2>Collaboration History</h2>
+<p>
+<b>NOTE:</b>
+Who should write this section?
+Can Bob lead the effort?
+</p>
 <h3>five year agreement</h3>
 <b>TBD</b>
-<h3>LBL - Steve Lewis</h3>
+<h3>sites</h3>
 <b>TBD</b>
-<h3>DESY</h3>
-<b>TBD</b>
-<h3>Other early collaborators???</h3>
-<b>TBD</b>
-<h3>???</h3>
+<p>Following is just lists some possible sites.</p>
+<p>Bob mentions:
+</p>
+<pre>
+Matthias Clausen (DESY Cryo)
+Karen White (JLab) - also Chip Watson
+Bob Gunion?(LBL - for Steve Lewis)
+Steve Hartman (Duke)
+Ron Chesnut (SLAC/PEPII)
+Dave Gurd (SSC)
+Rolf Keitel (TRIUMF)
+Noboru Yamamoto (KEK)
+Ge Lei (IHEP)
+Jean Francois Gournay and Francoise Gournad (Saclay)
+William Lupton (Keck Telescope)
+Nick Reed (CFHT)
+</pre>
+<p>
+Some others:
+</p>
+<pre>
+BESSY - Who was in charge of controls?
+???
+</pre>
+
 <h2>Network History</h2>
+<p>
+<b>TBD</b>
+Who should write this section?
+Maybe Jeff Hill?
+</p>
 <h3>channel access</h3>
 <b>TBD</b>
 <h3>access security</h3>
@@ -303,18 +383,108 @@ on future development of the IOC and networking sofware.
 <b>TBD</b>
 <h3>channel access server library</h3>
 <b>TBD</b>
-<h3>pv access</h3>
-<b>TBD</b>
-<h4>pvData</h4>
-<h4>pvAccess</h4>
-<h4>caProvider</h4>
-<h4>pva2pva: qsrv and pva gateway</h4>
-<h4>pvaclient</h4>
-<h2>IOC History</h2>
-<h3>memory resident database</h3>
+
+<h2>IOC history</h2>
+<h3>epics-base R3.11 and R3.12</h3>
 <p>
-During 1990 and 1991, ANL/APS undertook a major revision of the IOC software with the major goal being to provide easily extendible record and device support. Marty Kraimer (ANL/APS) was primarily responsible for designing the data structures needed to support extendible record and device support and for making the changes needed to the IOC resident software. Bob Zieman (ANL/APS) designed and implemented the UNIX build tools and IOC modules necessary to support the new facilities. Frank Lenkszus (ANL/APS) made extensive changes to
-DCT (Database Configuration Tool) to support the new facilities. Janet Anderson developed methods to systematically test various features of the IOC software and is the principal implementer of changes to record support.
+The last release of R3.11 was in May 1994.
+The last release of R3.12 was in Nov 1995.
+</p>
+<p>During this time the principle epics core developers were:
+</p>
+<pre>
+LANL/GTA
+   Bob Dalesio, Jeff Hill, Deb Kerstiens, Matt Needes, Andy Kozubal
+ANL/APS
+   Janet Anderson, Mark Anderson, Ben-chin Cha, Marty Kraimer,
+   Nick Karonis, Jim Kowalkowski, John Winans, Bob Zieman
+</pre>
+<h4>unbundle code from epics-base</h4>
+<p>GTACS releases included all code involved with IOCs
+and some client code.
+Support for more and more hardware devices were needed.
+In order to allow a more orderly development environment,
+major parts of what was in GTACS were made separate projects.
+What remained was called <b>epics-base</b> and included:
+</p>
+<dl>
+  <dt>database</dt>
+    <dd>
+    All code related to the memory resident database.
+    </dd>
+  <dt>channel access</dt>
+    <dd>
+     Both client and server code.
+    </dd>
+  <dt>tools</dt>
+    <dd>
+     Tools for building databases, loading and starting an IOC,
+     IOC shell commands, etc.
+    </dd>
+</dl>
+<p>
+The following was moved to separate projects:
+</p>
+<dl>
+   <dt>hardware support</dt>
+     <dd>All device and driver support became available via separate
+     products.
+     See below for history.
+     </dd> 
+   <dt>sequencer</dt>
+     <dd>
+     See below for history.
+     </dd>
+   <dt>OPI</dt>
+     <dd>
+     <b>epics-base</b> includes no OPI code.
+    </dd>
+</dl>
+<h4>memory resident database</h4>
+<p>
+During 1990 and 1991, ANL/APS undertook a major revision of the IOC software. with the major goal being to provide easily extendible record and device support.
+The main new features were:
+</p>
+<dl>
+  <dt>unsigned integer types</dt>
+    <dd>Support for unsigned 16 and 32 bit integers was added</dd>
+  <dt>asynchronous record processing</dt>
+    <dd>
+     With GTACS a call to process a record did not return until
+     processing was completed.
+    This caused problem with I/O that takes time,
+    e. g. communication via a serial link.
+    <br />
+    With asynchronous processing, when process is called,
+    record support can start the I/O operation and return immediately.
+    When the I/O operation completes, record support can request
+    that the record complete record processing. 
+    </dd>
+  <dt>rset - record support entry table</dt>
+    <dd>
+     Code for a record type must implement the methods
+     defined in rset. 
+    </dd>
+  <dt>dset - device support entry table</dt>
+    <dd>
+     Code for a hardware device must implement the methods
+     defined in dset. 
+    </dd>
+  <dt>drvet - driver support entry table</dt>
+    <dd>
+    A driver is support for something that provides access to
+    external devices, e. g. serial, gpib, etc.
+    </dd>
+
+</dl>
+<p>The combination of rset, dset, and drvet is called
+extensible record and device support.
+This allows the creation of new record types and new hardware
+support without requiring changes to epics-base.
+</p>
+<p>
+Marty Kraimer (ANL/APS) was primarily responsible for designing the data structures needed to support extendible record and device support and for making the changes needed to the IOC resident software. Bob Zieman (ANL/APS) designed and implemented the UNIX build tools and IOC modules necessary to support the new facilities. Frank Lenkszus (ANL/APS) made extensive changes to
+DCT (Database Configuration Tool) to support the new facilities. Janet Anderson developed methods to systematically test various features of the IOC software and was the principal implementer of changes to record support.
 </p>
 <p>
 During 1993 and 1994, Matt Needes at LANL implemented and supplied the description of fast database links and the database debugging tools.
@@ -322,43 +492,564 @@ During 1993 and 1994, Matt Needes at LANL implemented and supplied the descripti
 <p>
 During 1993 and 1994 Jim Kowalkowski at ANL/APS developed GDCT and also developed the ASCII database instance format now used as the standard format. At that time he also created the functionality of the dbLoadRecords and dbLoadTemplate commands.
 </p>
+
+<h3>epics-base R3.13</h3>
+<p>The first release of R3.13 was in Nov 1996.
+The last release was in April 2004.
+</p>
+<h4>DBD - Database definition</h4>
+<p>A major change was to replace the ascii database definition files
+with the DBD definition that is still in use at present.
+</p>
 <p>
-The build utility method resulted in the generation of binary files that were loaded into IOCs. As new IOC architectures started being supported this caused problems. During 1995, after learning from an abandoned effort referred to as EpicsRX, the build utilities and a binary file(default.dctsdr) were replaced by all ASCII files. The new method provides architecture independence and a more ﬂexible environment for conﬁguring record types and device and driver support. This principle implementer was Marty Kraimer with many ideas contributed by John Winans and Jeff Hill. Bob Dalesio made sure that we did not go too far, i.e. 1) make it difficult to upgrade existing applications and 2) lose performance.
+The build utility method resulted in the generation of binary files that were loaded into IOCs. As new IOC architectures started being supported this caused problems. During 1995, after learning from an abandoned effort referred to as EpicsRX, the build utilities and a binary file(default.dctsdr) were replaced by all ASCII files. The new method provided a better environment for configuring record types and device and driver support.
+</p>
+<p>
+The principle implementer was Marty Kraimer with many ideas contributed by John Winans and Jeff Hill. Bob Dalesio made sure that we did not go too far, i.e. 1) make it difficult to upgrade existing applications and 2) lose performance.
 </p>
 <p>
 In early 1996 Bob Dalesio tackled the problem of allowing runtime link modification. This turned into a cooperative development effort between Bob and Marty Kraimer. This required new code for database to Channel Access links, a new library for lock sets, and a cleaner interface for accessing database links.
 </p>
-<h3>sequencer</h3>
-<b>TBD</b>
-<h3>operating system independence</h3>
+
+<h3>epics-base R3.14</h3>
+<h4>operating system independence</h4>
 <p>
 In early 1999 the port of iocCore to non vxWorks operating systems was started. The principle developers were Marty Kraimer, Jeff Hill, and Janet Anderson. William Lupton converted the sequencer as well as helping with the posix threads implementation of osiSem and osiThread. Eric Norum provided the port to RTEMS and also contributed the shell that is used on non vxWorks environments. Ralph Lange provided the port to HPUX.
-Andrew Johnson was also involved and had recently started work at APS.
+Andrew Johnson was already contributing to
+EPICS development. In January 1999 he started working at APS
+and became a major contributer to epics-base development.
 </p>
 <p>
-Many other people have been involved with EPICS development, including new record, device, and driver support modules.
+Many other people were involved with EPICS development, including new record, device, and driver support modules.
 There was a strong Collaboration between Accelerator controls and Beamline controls
-to develop these modules. Tim Mooney and Mark Rivers deserve special mention. 
+to develop support modules. See below for more details.
 </p>
-
+<h4>R3.14 after 2006</h4>
+<p>
+<b>TBD</b>
+Can Andrew provide a summary?</p>
+<h3>epics-base R3.15 to EPICS 7</h3>
+<p>
+<b>TBD</b>
+Can Andrew, Ralph, and Michael provide summary?</p>
+<h2>SNL - State Notation Language and Sequencer</h2>
+<p>
+<b>TBD</b> Can Benjamin Franksen provide input?</p>
+<p>
+Must mention Andy Kozubal then Andrew Lupton. Now Ben Franksen and Freddie Akeroyd.
+</p>
 <h2>Device and Driver Support</h2>
-<b>TBD</b>
+<p>
+<b>NOTE:</b> Much of the EPICS device/driver support is available at:
+<a href="https://github.com/epics-modules">epics-modules
+</a>
+</p>
 <h3>Overview</h3>
+<p>GTACS had support for several VME modules including:
+</p>
+<dl>
+  <dt>analog</dt>
+  <dd>
+    Device support for ai and ao records.
+  </dd>
+  <dt>digital</dt>
+  <dd>
+   Device support for bi, bo, mbbi, and mbbo records.
+  </dd>
+  <dt>GPIB</dt>
+  <dd>
+    IEEE 488 was created as HP-IB (Hewlett-Packard Interface Bus) and is
+    commonly called GPIB (General Purpose Interface Bus).    
+    <br />
+    Device support was provided for ai, ao, bi, bo, mbbi, and mbbo records.
+  </dd>
+  <dt>allenBradley</dt>
+  <dd>
+    Allen Bradley supplied a system called allenBradley PLC5,
+    which was used for industrial control system.
+    Include was a varity of hardware interfaces.
+    Some examples are analog, digital, and motor control.
+    <br />
+    Allen Bradley also providered a VME scanner module,
+    which could communicate with other PLC5 modules.
+    <br />
+    Device support was provided for ai, ao, bi, bo, mbbi, and mbbo records.
+    There was also support for motors.
+    <b>TBD</b> Is this true?
+  </dd>
+</dl>
+<p>Today EPICS has support for a wide variety
+of devices, operating systems, and hardware communication protocols.
+</p>
+<p>Some catagories of communication are:</p>
+<dl>
+   <dt>platforms and busses</dt>
+      <dd>
+      VME, PCI, ATCA, etc.
+      </dd>
+   <dt>industrial control systems</dt>
+      <dd>
+       GTACS supported allenBradley PLC5.
+       Now there is support for a wide variety of systems
+       in use in Europe, America, and Asia.
+      </dd>
+   <dt>serial</dt>
+    <dd>
+     RS-232, ..., USB.
+    </dd>
+    <dt>GPIB/VXI11</dt>
+    <dd>
+     VXI11 is a succesor to GPIB.
+    </dd>
+   <dt>low latency between IOCs</dt>
+    <dd>
+     This is support for communication between IOCs where the latency
+     requirements can not be achieved via TCP/UDP/IP communication.
+     Two major requirements are:
+     <dl>
+        <dt>event</dt>
+          <dd>
+         An Event Generator (EG)/ Event Receiver (ER) system was developed in
+        the early 1990s at APS by Frank Lenksus.
+        It was based on a system in use at FERMI Lab.
+        <br />
+        With this system an IOC with an EG can declare an event.
+        Each IOC with an ER can receive the event.
+        The goal is to minimize the delay between when the event is generated
+        and received.
+        <br />
+        EG/ER support based on the APS model is provided by microResearch,
+        which is based in Finland. This support has evolved over the years
+        as faster hardware became available and as EG/ER modules
+        were available on platforms in addition to VME.
+        <br />
+        For details see <a href="https://github.com/epics-modules/mrfioc2">mrfioc</a>
+          </dd>
+        <dt>reflective memory</dt>
+          <dd>
+           The requirement is that an IOC can write to the reflective memory
+           and other IOCs will see the new values in their reflective memory
+           with a minimum delay.
+           <br />
+           In the early 1990s support for a system was developed at APS by Frank Lenksus.
+          </dd>
+      </dl>
+  
+    </dd>
+</dl>
+<p>Some catagories of devices are:</p>
+<dl>
+   <dt>analog</dt>
+     <dd>
+     Support exists for a large varity of  analog input and output devices.
+     </dd>
+   <dt>digital</dt>
+     <dd>
+     Support exists for a large varity of digital I/O devices.
+     </dd>
+   <dt>motor</dt>
+     <dd>
+      A lot of effort has been spent on motor control: 
+      <a href="https://github.com/epics-modules/motor">motor
+</a>
+     </dd>
+   <dt>detectors</dt>
+    <dd>
+    For beam lines a major requirement is collecting data from detectors,
+    e. g. cameras.
+    This has been a very active development area.
+    See <b>areaDetector</b> below.
+    </dd>
+</dl>
 
-<h3>1990-1999</h3>
+<h3>APS - early 1990s</h3>
+<p>The following were involved with developing hardware support for EPICS:
+</p>
+<dl>
+  <dt>ASDC - Accelelerator Systems Division Controls Group</dt>
+    <dd>
+     EPICS software development was coordinated by Marty Kraimer.
+    </dd>
+  <dt>BCDA - Beamline Controls and Data Acquistion</dt>
+    <dd>This was a group in an APS that was responsible for developing
+     software for APS beamines.
+     EPICS software development was coordinated by Tim Mooney.
+    </dd>
+  <dt>CARS - University of Chicago APS Beamlines</dt>
+    <dd>
+     APS has many beamlines. Some are managed by APS itself.
+     Some are managed by other organizations.
+     The University of Chicago was responsible for three sectors (6 beamlines total).
+     Mark Rivers was responsible for controls (and much more).
+     Mark is a staff member at UofC, but was works full time on beamline development.
+    </dd>
+</dl>
+<p>EPICS software developers from the above worked closely together on the
+device and driver support.
+The interaction was informal but worked very well.
+</p>
 <h3>synappps</h3>
-<h3>asynDriver</h3>
-<h3>areaDetector</h3>
-asynDriver to areaDetector
-<h3>2010-2019</h3>
-<h2>OPI History</h2>
+<p>
 <b>TBD</b>
+Can Tim mooney provide description?
+</p>
+<p>
+<a href="https://github.com/epics-modules">epics-modules</a>
+is a collection of support code for EPICS.
+All modules that mention BCDA are synapps modules.
+</p>
+<p>Starting in the early 1990s BCDA developed and maintained a set of
+beamlines support code named <b>synappps</b>.
+</p>
+<p>
+<b>TBD</b> Provide a list of group members in 1990s.</p>
+<p>
+synapps is composed of many separate packages, each with has it's own repository:
+</p>
+<ul>
+   <li>Each can follow it's own development path</li>
+   <li>Applications only have to build the packages required.</li>
+</ul>
+<p>synapps provides many record types not supplied with epics-base.
+Some examples are motor, scan, and wait.
+</p>
+<p>
+Synapps also supplies device and driver support for many hardware modules.
+Originally device support was implemented via the DSET
+inteface.
+Today most of the support is via asynDriver, which is described below.
+</p>
+<h3>asynDriver</h3>
+<p>
+<a href="https://github.com/epics-modules/asyn">asynDriver
+</a>
+is a framework for interfacing to hardware.
+</p>
+<p>As more and more different hardware devices and busses were supported,
+more and more device support was implemented via the DEST interface.
+</p>
+<p>
+This caused problems:
+</p>
+<dl>
+   <dt>interface to records</dt>
+     <dd>
+      Support for a new device means that the DSET interface must also
+      be implemented for each record type that can use the device.
+      For example a digital device requires support for record types
+      bi, bo, mbbi, mbbo, li, and lo.
+     </dd>
+   <dt>locking and threading issues</dt>
+     <dd>
+      When multiple records can access the same device then locking and threading
+      issues must be handled.
+      For example a digital device can be shared by a set of bi, bo, mbbi,
+      and mbbo records. Each accesses a single or multiple bits of the digital device.
+     </dd>
+   <dt>multiple frame works were appearing</dt>
+     <dd>
+      The same device can be available via multiple methods.
+      For example an IP (Industry Pack) module might accessed via
+      VME, compactPCI, VXI, etc.
+     </dd>
+</dl>
+<p>By the mid 1990s, multiple frameworks started appearing to solve these problems.
+Then, after working with and on more then one framework, Marty Kraimer
+came up with the idea of asynDriver.
+The goal was to generalize a framework named MPF (Message Passing Facility).
+The initial target was support for Industry Pack.
+IP had modules for analog, digital, gpib, etc.
+Support for these devices required asynchronous record support.
+So the name asynDriver was chosen.
+</p>
+<p>
+Both APS and beamlines were starting to use MPF.
+When Marty presented the idea of asynDriver there was some reluctance to switch from
+MPF to asynDriver.
+But Mark Rivers quickly bought into the asynDriver concept.
+Most of the original implementation was done by Marty and Mark.
+Marty implemented the framework and Mark wrote much of the code than
+talked to hardware.
+</p>
+<p>
+asynDriver is a general purpose facility for interfacing device specific code to low level drivers.
+</p>
+<p>
+A primary target for asynDriver is EPICS IOC device support but, other than using libCom, much of it is independent of EPICS.
+</p>
+<p>
+Although the initial target was asynchronous devices,
+Mark realized that, with a minor change to the API,
+it could also be used for synchronous devices.
+But it was too late to change the name.
+</p>
+  <p>
+    asynDriver has the following key concepts:</p>
+  <ul>
+    <li>Device support communicates with drivers via interfaces
+      <p>
+        Drivers take care of the details of how to communicate with a device and implement
+        interfaces for use by device support. Interfaces are defined for both message and
+        register based devices. In the past when support was written for a new type of device,
+        device support for standard EPICS records had to be written in addition to the driver
+        support. Now a driver just implements one or more of the standard interfaces.</p>
+    </li>
+    <li>A port provides access to device instances
+      <p>
+        A port, which has a portName, identifies a communication path to one or more device
+        instances. For example a GPIB port can have up to 15 devices connected to it. An
+        RS232 port communicates with a single device. Drivers register a port. Device support
+        connects to a port.</p>
+    </li>
+    <li>asynManager controls access to a port
+      <p>
+        asynManager, a component of asynDriver, provides exclusive access to a driver via
+        calls to queueRequest, lockPort/unlockPort, and queueLockPort/queueUnlockPort. Once
+        device support has access, it can make an arbitrary number of calls to the driver
+        knowing that no other support can call the driver. Device and driver support do
+        not need to implement queues or semaphores since asynManager does this for them.</p>
+    </li>
+    <li>
+     asynDriver device support for standard record types is provided.
+     Thus, when support for a new device is implemented via asynDriver,
+     no new DSET code is required.
+    </li>
+</ul>
+
+<h3>areaDetector</h3>
+<p>
+<b>TBD</b>
+Can Mark Rivers provide description?
+</p>
+<p>
+<a href="https://github.com/areaDetector">areaDetector
+</a>
+</p>
+<p>
+areaDetector is a toolkit for controlling area (2-D) detectors, including CCDs, pixel array detectors, and online imaging plates.
+</p>
+<p>
+It includes:
+</p>
+<dl>
+   <dt>hardware support</dt>
+     <dd>
+      Many hardware devices are supported.
+       Including make cameras.
+     </dd>
+   <dt>OPI support</dt>
+     <dd>
+      OPI support for control and for image display is available.
+      This includes display configuration files for several display managers.
+     </dd>
+   <dt>MUCH MORE</dt>
+</dl>
+<p>When Marty Kraimer left APS, Mark Rivers took over responsibility for asynDriver.
+He made several enhancements with a major one being NDArray and processing chains.
+NDArray holds multi dimensional data as well as additional data.
+This data can be passed down a processing chain.
+</p>
+<p>
+</p>
+<h2>OPI History</h2>
+<p>
+<b>TBD</b>
+Who should provide documentation?
+Can Bob coordinate?
+</p>
 <h3>EDD/DM MEDM EDM</h3>
 <h3>Alarm Tools</h3>
 <h3>Strip Tool</h3>
-<h3>CSS</h3>
+<h3>SDDS</h3>
 <h3>Archiver</h3>
+<h3>CSS</h3>
 <h3>???</h3>
+
+<h2>EPICSV4 history</h2>
+<p>
+<b>TBD</b>
+This needs input from others.
+<br />
+At least Ralph, Andrew, Michael, and Kunal should provide input.
+<br />
+Who else?
+</p>
+<h3>javaIOC</h3>
+<h4>Background</h4>
+<p>On February 1 2006 Marty Kraimer left Argonne
+with the intention of starting work on
+an IOC similar to an existing EPICS IOC except that the database supports fully structured data.
+</p>
+<p>Andrew Johnson became resposible for epics-base development.
+The other code that Marty was actively developing was asynDriver.
+Since this was being co-developed with Mark Rivers, Mark took
+over asynDriver.
+</p>
+<h4>Vision</h4>
+<p>A brief statement of the vision was to implement an IOC similar to a V3 IOC but with support for fully structured data.
+This included the components:</p>
+<dl>
+   <dt>pvData</dt>
+     <dd>Structured data</dd>
+   <dt>pvAccess</dt>
+     <dd>
+       Transfers structured data between a client and servers.
+       <dl>
+        <dt>API</dt>
+          <dd>
+          Application program interfaces are defined for a channel and a channel
+          provider.
+          The channel API is for a client and the channel provider API is for the
+          server.
+          </dd>
+        <dt>pva network protocol</dt>
+           <dd>
+            A network protocol standard for client and server communication.
+           </dd>
+        <dt>channel provider registry</dt>
+          <dd>
+          An arbitrary number of channel providers can be created.
+          Each must register with the registry.
+          </dd>
+        <dt>Network Implementation</dt>
+          <dd>
+           Two channel providers are implemented for network communication.
+           One for the client and one for the server.
+          </dd>
+        <dt>caProvider</dt>
+          <dd>
+          A channel provider that uses the V3 channel access network protocol to
+          communicate with a V3 server.
+          </dd>
+       </dl>
+     </dd>
+   <dt>pvDatabase</dt>
+     <dd>
+        Memory resident database of PVRecords.
+        <br />
+        A channel provider for PVRecords
+     </dd>
+</dl>
+<h4>javaIOC development</h4>
+<p>What is now called EPICSV4 started with a project named javaIOC,
+which was under develoment from 2006 until 2010.
+</p>
+<p>Java was initial implementation language for the following reasons:</p>
+<ol>
+   <li>Java took care of memory management.</li>
+   <li>Java had recently added proper support for multi-threading.</li>
+   <li>Marty had been coming up to speed on programming in Java.
+       (Maybe this was the most important reason ?)
+   </li>
+</ol>
+<h4>APS Meeting June 2006</h4>
+At an EPICS meeting at APS in June 2006 Marty presented the first progress
+report on the javaIOC.
+At this time what was implemented was the pvData component and the beginning of pvRecord and pvDatabase.
+<h4>DESY Meeting April 2007</h4>
+<p>By this meeting a lot more was implemented.
+It had support for pvDatabase and a channelProvider for pvDatabase.
+</p>
+<h5>Financial Support</h5>
+<p>At this meeting Matthias Clausen (DESY) and Bob Dalesio offered to provide financial
+support for javaIOC development.
+</p>
+<p>
+Matthias provided initial support (about 1 Man Year).
+Bob, via DOE SBIR grants and BNL, provided the remaining support.
+</p>
+<h4>Matej becomes responsible for pvAccess</h4>
+<p>A major missing component for the javaIOC was network support for pvAccess.
+During the DESY EPICS Meeting Matthias, Bob, Matej Sekoranja, and Marty had a private meeting.
+They discussed making Matej responsible for the network support for pvAccess.
+</p>
+<p>
+From then until about the end of 2010 Matej and Marty were the main developers for
+pvData, pvAccess, and pvDatabase.
+</p>
+<p>The support for Matej, who works for cosyLab,
+was initially from Matthais and Bob.
+In later years he has also received support from DLS, PSI, SNS, and ESS.
+</p>
+
+<h4>Middle Layer Services</h4>
+<p>
+Before 2010 Bob Dalesio had present a concept of
+Middle Layer Services at several EPICS meetings.
+An important data source is IOC records.</p>
+<p>In order to provide really efficent Services it is desirable to be able to run
+the service as part of the IOC that has the records.
+Since pvData provides structured data, it is ideal for 
+implementing services.
+This means that pvData, pvAccess, and pvDatabase must be implemented in C++ as well as Java.
+</p>
+
+<h3>History Since 2010</h3>
+
+<h4>Additional Developers</h4>
+<p>
+In addition to Matej and Marty the following people have been active
+developers of EPICSV4 code:
+</p>
+<pre>
+David Hickin        until 201?
+Michael Davidsaver
+Ralph Lange
+Andrew Johnson
+Kunal               Now resposible for Java implementation
+Greg White          Until 201?
+Sinisa Vesela       Respobsible for pvaPy
+Guobao Shen         Created masarService
+Timo Korhonen,
+Kay Kasemir         Also contributes to Java implementation
+Steve Hartman.
+</pre>
+<h4>C++ implementation</h4>
+<p>
+Existing code in the javaIOC was moved to repositories named pvDataJava, pvAccessJava,
+and pvDatabaseJava.
+At this point javaIOC was abandoned.
+In addition repositories were created for pvDataCPP, pvAccessCPP, and pvDataBaseCPP.
+The overall project was named EPICSV4.
+</p>
+<p>
+Michael Davidsaver and David Hicken joined Marty and Matej as developers.
+David was avaiable until 201?, Matej was available until 201?.
+Michael was instrumental in implementing memory managment for
+handling structured data.
+He is now responsible for pvDataCPP and pvAccessCPP.
+</p>
+<h4>normative types</h4>
+<p>This is a set of standard data structure defined via pvData types.
+These allow implementation of middle layer services.
+</p>
+<h4>pva2pva</h4>
+<p>
+This has two main components: qsrv and a gateway.
+qsrv is a channel provider for accessing V3 DBRecords.
+qsrv started as a project named pvaSrv.
+Michael was assigned the task of creating a gateway and also take over support
+for qsrv.
+This were combined into project pva2pva with pvaSrv renamed to qsrv.
+Michael is now responsible for pva2pva.
+</p>
+<h4>pvaClient</h4>
+<p>This is a easier to use API on top of pvAccess.
+pvaClient supports both synchronous and asynchronous communication,
+while pvAccess is asynchronous only.
+</p>
+<h3>epicsCoreJava</h3>
+<p>
+<b>TBD</b>
+Who should provide input?
+<br/>
+At least Kunal, Kay, and Gabrieli.
+</p>
+<p>The following were moved to a new project named epicsCoreJava:
+pvDataJava,normativeTypesJava, pvAccessJava, pvaClientJava, and pvDataBaseJava.
+</p>
+<p>epicsCoreJava also has a number of other support modules.
+</p>
 </div>
 </body>
 </html>
