@@ -21,7 +21,7 @@
 <div class="head">
 <h1>epicsHistory</h1>
 
-<h2 class="nocount">2019.02.23</h2>
+<h2 class="nocount">2019.03.06</h2>
 <dl>
   <dt>editors:</dt>
     <dd>Marty Kraimer
@@ -72,12 +72,12 @@ EPICS is toolkit for creating a client/server network based distributed control 
      <dd>
       The client side of an EPICS control system is an arbitary number of
       OPI (OPerator Interface) programs.
-     Some examples are  display, control, and, data acqisition.
+     Some examples are  display, control, and data acqisition.
      </dd>
    <dt>network</dt>
      <dd>
        The software that connects an OPI to IOCS.
-       The API allows a client to read, write, and monitor IOC records
+       The API allows a client to read, write, and monitor IOC records.
        The code uses TCP/UDP protocols for network communication.
      </dd>
 </dl>
@@ -96,7 +96,7 @@ Without their ideas EPICS would not exist.
 <p>
 GTACS was developed over a period of several years with feedback from LANL/GTA users. 
 The primary implementers included
-Bob Dalesio, Jeff Hill, Deb Kerstiens, Andy Kozubal, and Matt Needes.
+Bob Dalesio, Jeff Hill, Deb Kerstiens, Rossele Wright, and Andy Kozubal.
 </p>
 <p>
 <b>BOB</b> who else should be acknowleged?
@@ -394,14 +394,13 @@ The last release of R3.12 was in Nov 1995.
 </p>
 <pre>
 LANL/GTA
-   Bob Dalesio, Jeff Hill, Deb Kerstiens, Matt Needes, Andy Kozubal
+   Bob Dalesio, Jeff Hill, Deb Kerstiens, Rossele Wright, Andy Kozubal
 ANL/APS
    Janet Anderson, Mark Anderson, Ben-chin Cha, Marty Kraimer,
    Nick Karonis, Jim Kowalkowski, John Winans, Bob Zieman
 </pre>
 <h4>unbundle code from epics-base</h4>
-<p>GTACS releases included all code involved with IOCs
-and some client code.
+<p>GTACS releases included all IOC and network code and some client code.
 Support for more and more hardware devices were needed.
 In order to allow a more orderly development environment,
 major parts of what was in GTACS were made separate projects.
@@ -490,7 +489,7 @@ DCT (Database Configuration Tool) to support the new facilities. Janet Anderson 
 During 1993 and 1994, Matt Needes at LANL implemented and supplied the description of fast database links and the database debugging tools.
 </p>
 <p>
-During 1993 and 1994 Jim Kowalkowski at ANL/APS developed GDCT and also developed the ASCII database instance format now used as the standard format. At that time he also created the functionality of the dbLoadRecords and dbLoadTemplate commands.
+During 1993 and 1994 Jim Kowalkowski at ANL/APS developed GDCT and also developed the ASCII database instance format used  in the 3.13 releases. At that time he also created the functionality of the dbLoadRecords and dbLoadTemplate commands.
 </p>
 
 <h3>epics-base R3.13</h3>
@@ -514,7 +513,7 @@ In early 1996 Bob Dalesio tackled the problem of allowing runtime link modificat
 <h3>epics-base R3.14</h3>
 <h4>operating system independence</h4>
 <p>
-In early 1999 the port of iocCore to non vxWorks operating systems was started. The principle developers were Marty Kraimer, Jeff Hill, and Janet Anderson. William Lupton converted the sequencer as well as helping with the posix threads implementation of osiSem and osiThread. Eric Norum provided the port to RTEMS and also contributed the shell that is used on non vxWorks environments. Ralph Lange provided the port to HPUX.
+In early 1999 the port of iocCore to non vxWorks operating systems was started. The principle developers were Marty Kraimer, Jeff Hill, and Janet Anderson. William Lupton converted the sequencer as well as helping Marty with the posix threads implementation of osiSem and osiThread. Eric Norum provided the port to RTEMS and also contributed the shell that is used on non vxWorks environments. Ralph Lange provided the port to HPUX.
 Andrew Johnson was already contributing to
 EPICS development. In January 1999 he started working at APS
 and became a major contributer to epics-base development.
@@ -522,7 +521,7 @@ and became a major contributer to epics-base development.
 <p>
 Many other people were involved with EPICS development, including new record, device, and driver support modules.
 There was a strong Collaboration between Accelerator controls and Beamline controls
-to develop support modules. See below for more details.
+to develop support modules. See below for more details about this collaboration.
 </p>
 <h4>R3.14 after 2006</h4>
 <p>
@@ -631,7 +630,7 @@ of devices, operating systems, and hardware communication protocols.
            and other IOCs will see the new values in their reflective memory
            with a minimum delay.
            <br />
-           In the early 1990s support for a system was developed at APS by Frank Lenksus.
+           In the early 1990s support for a reflective memory system was developed at APS by Frank Lenksus.
           </dd>
       </dl>
   
@@ -754,7 +753,7 @@ This caused problems:
      </dd>
 </dl>
 <p>By the mid 1990s, multiple frameworks started appearing to solve these problems.
-Then, after working with and on more then one framework, Marty Kraimer
+Then, after working on more then one framework, Marty Kraimer
 came up with the idea of asynDriver.
 The goal was to generalize a framework named MPF (Message Passing Facility).
 The initial target was support for Industry Pack.
