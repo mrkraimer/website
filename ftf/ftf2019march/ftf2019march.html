@@ -1,0 +1,309 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>Core Developer FTF March 2019</title>
+  <link rel="stylesheet" type="text/css"
+  href="../../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../../css/epicsv4.css" />
+  <style type="text/css">
+  </style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../../css/tocgen.js">
+  </script>
+</head>
+
+<body>
+
+<div class="head">
+<h1>Core Developer FTF March 2019</h1>
+
+<h2 class="nocount">Working Draft, 2019.03.25</h2>
+<dl>
+  <dt>editors:</dt>
+    <dd>Marty Kraimer</dd>
+</dl>
+
+<p>This product is available via an
+<a
+href="../../LICENSE">open source license
+</a>
+</p>
+
+</div>
+
+<div id="toc">
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+
+<div id="contents" class="contents">
+
+<h2>introduction</h2>
+
+<p>
+The EPICS core developers will have a Face To Face meeting at SLAC.
+This document presents some technical topics that I hope can be discussed.
+</p>
+<dl>
+   <dt>pvput</dt>
+    <dd>
+    The goal is to document the semantics.
+    </dd>
+   <dt>pvRequest</dt>
+    <dd>
+     <b>qsrv</b> does not honor the clients requested field subset.
+      It does not honor it for any of channelGet, channelPut, or monitor.
+    </dd>
+   <dt>miscellaneous issues</dt>
+     <dd>
+      Some issues from the September 2018 FTF that were not discussed.
+     </dd>
+</dl>
+<h2>pvput semantics</h2>
+<p>This section describes what I think are the semantics for pvput.
+</p>
+<h3>non JSON semantics</h3>
+<p>This works only on a top level field named <b>value</b> that is either
+a scalar or scalar array.
+For a <b>pvput</b> to a scalar array the number of elements must appear before the elements.
+</p>
+<p>Some examples are:</p>
+<pre>
+mrk> pvput -r "value" PVRdouble 10
+Old : 0 
+New : 10 
+mrk> pvput -r "value" PVRboolean true
+Old : false 
+New : true 
+mrk> pvput -r "value" PVRbooleanArray true false true     //NOTE that nelements did not appear
+Old : []
+New : [false,true]
+mrk> pvput -r "value" PVRbooleanArray 3 true false true
+Old : [false,true]
+New : [true,false,true]
+mrk> 
+</pre>
+<p>But the following <b>pvput</b> did not work</p>
+<pre>
+mrk> pvget -r "voltage" PVRdumbPowerSupply
+PVRdumbPowerSupply structure 
+    structure voltage
+        double value 0
+        alarm_t alarm 
+            int severity 0
+            int status 0
+            string message 
+mrk> pvput -r "voltage.value" PVRdumbPowerSupply 10
+Old : structure 
+    structure voltage
+        double value 0
+Error: Structure has no .value
+New : structure 
+    structure voltage
+        double value 0
+mrk> 
+</pre>
+<h3>JSON semantics</h3>
+<p>The json syntax starts with:</p>
+<pre>
+name='...'
+</pre>
+<p>For example:</p>
+<pre>
+mrk> pvput -r "value" PVRdouble value='5'
+</pre>
+<p>The <b>name</b> must be the name of a top level field in the servers PVStructure.
+It is not possible to change the values of multiple top level fields with a single pvput.
+</p>
+<p>JSON syntax supports the following field types:</p>
+<dl>
+   <dt>scalar</dt>
+    <dd>
+     All scalar types are supported.
+    </dd>
+   <dt>scalarArray</dt>
+    <dd>
+     Supported.
+    </dd>
+   <dt>structure</dt>
+    <dd>
+     Supported as long as each selected subfields has type scalar, scalarArray, or structure.
+    </dd>
+   <dt>structureArray</dt>
+    <dd>
+      ??? have not tested.
+    </dd>
+   <dt>union</dt>
+    <dd>
+     Not supported.
+     <br />
+     Could restricted union be supported?
+    </dd>
+   <dt>unionArray</dt>
+    <dd>
+     Not supported.
+    </dd>
+</dl>
+<h3>JSON examples</h3>
+<h4>simple examples</h4>
+<p>The top level field is named <b>value</b>
+and the field type is scalar or scalar array:</p>
+<pre>
+mrk> pvput -r "value" PVRdouble value='5'
+Old : 10 
+New : 5 
+mrk> pvput -r "value" PVRdouble value='10'
+Old : 5 
+New : 10 
+mrk> pvput -r "value" PVRboolean value='false'
+Old : true 
+New : false 
+mrk> pvput -r "value" PVRbooleanArray value='[true,false,true]'
+Old : [true,false,true]
+New : [true,false,true]
+mrk> 
+</pre>
+<h4>structured data examples</h4>
+<pre>
+mrk> pvget -r positionRB scanServerPutGet
+scanServerPutGet structure 
+    Point positionRB
+        point_t value
+            double x 0
+            double y 0
+        time_t timeStamp &lt;undefined&gt;              
+            long secondsPastEpoch 0
+            int nanoseconds 0
+            int userTag 0
+mrk> pvput -r positionRB scanServerPutGet positionRB='{"value":{"x":"1.0","y":"2.0"}}'
+Old : structure 
+    Point positionRB
+        point_t value
+            double x 0
+            double y 0
+        time_t timeStamp &lt;undefined&gt;              
+            long secondsPastEpoch 0
+            int nanoseconds 0
+            int userTag 0
+New : structure 
+    Point positionRB
+        point_t value
+            double x 1
+            double y 2
+        time_t timeStamp &lt;undefined&gt;              
+            long secondsPastEpoch 0
+            int nanoseconds 0
+            int userTag 0
+mrk> pvput -r positionRB scanServerPutGet positionRB='{"value":{"x":"1.0","y":"2.0"},"timeStamp":{"userTag":"10"}}'
+Old : structure 
+    Point positionRB
+        point_t value
+            double x 1
+            double y 2
+        time_t timeStamp &lt;undefined&gt;              
+            long secondsPastEpoch 0
+            int nanoseconds 0
+            int userTag 0
+New : structure 
+    Point positionRB
+        point_t value
+            double x 1
+            double y 2
+        time_t timeStamp &lt;undefined&gt;              10 
+            long secondsPastEpoch 0
+            int nanoseconds 0
+            int userTag 10
+mrk> pvput -r "voltage" PVRdumbPowerSupply voltage='{"value":"5"}'
+Old : structure 
+    structure voltage
+        double value 0
+        alarm_t alarm 
+            int severity 0
+            int status 0
+            string message 
+New : structure 
+    structure voltage
+        double value 5
+        alarm_t alarm 
+            int severity 0
+            int status 0
+            string message 
+mrk> 
+</pre>
+<h2>qsrv and pvRequest</h2>
+<p>
+<b>qsrv</b>, i. e. the channel server for <b>DBRecord</b>s does not honor
+the field subset specified in the <b>pvRequest</b> structure.
+</p>
+<p>An example is:</p>
+<pre>
+mrk> pvget -p ca -r "timeStamp" -v DBRdoubleArray
+DBRdoubleArray structure 
+    time_t timeStamp 2019-03-25 14:29:02.998  
+        long secondsPastEpoch 1553538542
+        int nanoseconds 998091332
+        int userTag 0
+mrk> pvget -p pva -r "timeStamp" -v DBRdoubleArray
+DBRdoubleArray epics:nt/NTScalarArray:1.0 
+    double[] value [1,2,3,4,5]
+    alarm_t alarm 
+        int severity 0
+        int status 0
+        string message NO_ALARM
+    time_t timeStamp 2019-03-25 14:29:02.998  
+        long secondsPastEpoch 1553538542
+        int nanoseconds 998091332
+        int userTag 0
+    structure display
+        double limitLow 0
+        double limitHigh 10
+        string description 
+        string units Counts
+        int precision 0
+        enum_t form (0) Default
+            int index 0
+            string[] choices ["Default", "String", "Binary", "Decimal", "Hex", "Exponential", "Engineering"]
+    control_t control
+        double limitLow 0
+        double limitHigh 10
+        double minStep 0
+    valueAlarm_t valueAlarm
+        boolean active false
+        double lowAlarmLimit nan
+        double lowWarningLimit nan
+        double highWarningLimit nan
+        double highAlarmLimit nan
+        int lowAlarmSeverity 0
+        int lowWarningSeverity 0
+        int highWarningSeverity 0
+        int highAlarmSeverity 0
+        byte hysteresis 0
+mrk> 
+</pre>
+<h2>miscellaneous issues</h2>
+<p>
+This is some items from the Sept 2018 FTF meeting that were not discussed.
+</p>
+<h3>monitor event mask</h3>
+<p>Currently neither <b>ca</b> or <b>qsrv</b> has support for DBE_ARCHIVE.
+What to do?
+<br />
+Perhaps allow the following field option:
+</p>
+<pre>
+field(value[DBE=value])
+</pre>
+<b>value</b> can be any combination of
+<b>DBE_VALUE|DBE_ALARM|DBE_ARCHIVE|DBE_PROPERTY</b>
+<h3>alarm acknowledgement</h3>
+<p>
+Is this a problem for <b>ca</b> and for <b>qsrv</b>?
+<br />
+Is it handled by a client issuing gets and puts to fields <b>ACKS</b> and <b>ACKT</b>?
+</p>
+</div>
+</body>
+</html>
