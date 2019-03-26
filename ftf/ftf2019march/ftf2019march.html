@@ -21,7 +21,7 @@
 <div class="head">
 <h1>Core Developer FTF March 2019</h1>
 
-<h2 class="nocount">Working Draft, 2019.03.25</h2>
+<h2 class="nocount">2019.03.26</h2>
 <dl>
   <dt>editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -86,7 +86,7 @@ Old : [false,true]
 New : [true,false,true]
 mrk> 
 </pre>
-<p>But the following <b>pvput</b> did not work</p>
+<p>But the following <b>pvput</b> failed</p>
 <pre>
 mrk> pvget -r "voltage" PVRdumbPowerSupply
 PVRdumbPowerSupply structure 
@@ -106,6 +106,7 @@ New : structure
         double value 0
 mrk> 
 </pre>
+<p>Below is the same request, using JSON syntax, that does work.
 <h3>JSON semantics</h3>
 <p>The json syntax starts with:</p>
 <pre>
@@ -168,6 +169,21 @@ mrk>
 </pre>
 <h4>structured data examples</h4>
 <pre>
+mrk> pvput -r "voltage" PVRdumbPowerSupply voltage='{"value":"5"}'
+Old : structure 
+    structure voltage
+        double value 0
+        alarm_t alarm 
+            int severity 0
+            int status 0
+            string message 
+New : structure 
+    structure voltage
+        double value 5
+        alarm_t alarm 
+            int severity 0
+            int status 0
+            string message 
 mrk> pvget -r positionRB scanServerPutGet
 scanServerPutGet structure 
     Point positionRB
@@ -216,21 +232,6 @@ New : structure
             long secondsPastEpoch 0
             int nanoseconds 0
             int userTag 10
-mrk> pvput -r "voltage" PVRdumbPowerSupply voltage='{"value":"5"}'
-Old : structure 
-    structure voltage
-        double value 0
-        alarm_t alarm 
-            int severity 0
-            int status 0
-            string message 
-New : structure 
-    structure voltage
-        double value 5
-        alarm_t alarm 
-            int severity 0
-            int status 0
-            string message 
 mrk> 
 </pre>
 <h2>qsrv and pvRequest</h2>
@@ -285,7 +286,7 @@ mrk>
 </pre>
 <h2>miscellaneous issues</h2>
 <p>
-This is some items from the Sept 2018 FTF meeting that were not discussed.
+The following are some items from the Sept 2018 FTF meeting that were not discussed.
 </p>
 <h3>monitor event mask</h3>
 <p>Currently neither <b>ca</b> or <b>qsrv</b> has support for DBE_ARCHIVE.
