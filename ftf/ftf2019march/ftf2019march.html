@@ -21,7 +21,7 @@
 <div class="head">
 <h1>Core Developer FTF March 2019</h1>
 
-<h2 class="nocount">2019.03.26</h2>
+<h2 class="nocount">2019.03.27</h2>
 <dl>
   <dt>editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -117,7 +117,6 @@ name='...'
 mrk> pvput -r "value" PVRdouble value='5'
 </pre>
 <p>The <b>name</b> must be the name of a top level field in the servers PVStructure.
-It is not possible to change the values of multiple top level fields with a single pvput.
 </p>
 <p>JSON syntax supports the following field types:</p>
 <dl>
@@ -180,6 +179,30 @@ Old : structure
 New : structure 
     structure voltage
         double value 5
+        alarm_t alarm 
+mrk> pvput -r "voltage,power" PVRdumbPowerSupply power='{"value":1.2}' voltage='{"value":1.2}'
+Old : structure 
+    structure voltage
+        double value 5
+        alarm_t alarm 
+            int severity 0
+            int status 0
+            string message 
+    structure power
+        double value 0
+        alarm_t alarm 
+            int severity 0
+            int status 0
+            string message 
+New : structure 
+    structure voltage
+        double value 1.2
+        alarm_t alarm 
+            int severity 0
+            int status 0
+            string message 
+    structure power
+        double value 1.2
         alarm_t alarm 
             int severity 0
             int status 0
