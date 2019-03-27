@@ -134,7 +134,7 @@ mrk> pvput -r "value" PVRdouble value='5'
     </dd>
    <dt>structureArray</dt>
     <dd>
-      ??? have not tested.
+      supported
     </dd>
    <dt>union</dt>
     <dd>
@@ -255,6 +255,20 @@ New : structure
             long secondsPastEpoch 0
             int nanoseconds 0
             int userTag 10
+mrk> pvput PVRstructureArray '{"value":[{"name":"marty","value":"vvvv"},{"name":"blow","value":"yyy"}]}'
+Old : structure 
+    structure[] value
+        structure 
+            string name marty
+            string value vvvv
+New : structure 
+    structure[] value
+        structure 
+            string name marty
+            string value vvvv
+        structure 
+            string name blow
+            string value yyy
 mrk> 
 </pre>
 <h2>qsrv and pvRequest</h2>
