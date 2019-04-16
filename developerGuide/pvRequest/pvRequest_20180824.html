@@ -1,0 +1,1023 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>EPICS pvRequest</title>
+  <link rel="stylesheet" type="text/css"
+  href="../../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../../css/epicsv4.css" />
+  <style type="text/css">
+  </style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../../css/tocgen.js">
+  </script>
+</head>
+
+<body>
+
+<div class="head">
+<h1>EPICS pvRequest</h1>
+
+<h2 class="nocount">2019.04.15</h2>
+<dl>
+  <dt>latest version:</dt>
+    <dd>
+      <a href="pvRequest_20180824.html">pvRequest_20180824.html</a>
+    </dd>
+    <dt>previous version:</dt>
+    <dd>
+       <a href="pvRequest_20140227.html">pvRequest_20140227.html</a>
+    </dd>
+  <dt>editors:</dt>
+    <dd>Marty Kraimer</dd>
+</dl>
+
+<h2 class="nocount">Abstract</h2>
+
+<p>
+Each create method of class <b>Channel</b>, in <b>pvAccess</b>,  has an argument <b>PVStructure pvRequest</b>.
+This document discusses how this argument is defined and used.
+</p>
+<p>This product is available via an
+<a
+href="../LICENSE">open source license
+</a>
+</p>
+
+</div>
+
+<div id="toc">
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+
+<div id="contents" class="contents">
+
+<h2>Introduction</h2>
+<h3>pvAccess: pvRequest argument</h3>
+<p><b>pvAccess</b> defines interface <b>Channel</b>,
+which is a connection between a client and a server.
+<b>Channel</b> has a number of create methods.
+Each has an argument <b>pvRequest</b>:
+</p>
+<pre>
+NOTE: The following is pseudo code.
+ChannelProcess createChannelProcess(
+    ChannelProcessRequester channelProcessRequester,
+    PVStructure pvRequest);
+ChannelGet createChannelGet(
+    ChannelGetRequester channelGetRequester,
+    PVStructure pvRequest);
+ChannelPut createChannelPut(
+    ChannelPutRequester channelPutRequester,
+    PVStructure pvRequest);
+ChannelPutGet createChannelPutGet(
+    ChannelPutGetRequester channelPutGetRequester,
+    PVStructure pvRequest);
+ChannelRPC createChannelRPC(
+    ChannelRPCRequester channelRPCRequester,
+    PVStructure pvRequest);
+ChannelArray createChannelArray(
+    ChannelArrayRequester channelArrayRequester,
+    PVStructure pvRequest);
+Monitor createMonitor(
+    MonitorRequester MonitorRequester,
+    PVStructure pvRequest);
+</pre>
+<h3>terminology</h3>
+<dl>
+   <dt>channel access</dt>
+   <dd>
+      This refers to both the client API and network protocol that has existed since the last
+       half of the 1980's.
+       <br />
+      It is used by clients to communicate with the runtime database of DBRecords in an IOC.
+   </dd>
+   <dt>pva</dt>
+   <dd>
+       This is the V4 channel provider.
+       This includes:
+        <dl>
+            <dt>network protocol</dt>
+              <dd>
+                 A network protocol that passes <b>PVStructure</b> data between client and server.
+               </dd>
+            <dt>client API</dt>
+               <dd>An API for clients</dd>
+            <dt>provider API</dt>
+                <dd>
+                  An API for use by channel providers.
+                 A provider can exist on either the client or server.
+                </dd>
+            <dt>implementation</dt>
+                <dd>
+                A provider for both client and server side of the network protocol is implemented.
+                </dd>
+        </dl>
+   </dd>
+   <dt>ca</dt>
+   <dd>
+       This is a client side provider that uses the <b>channel access</b> network protocol.
+   </dd>
+   <dt>qsrv</dt>
+   <dd>
+       This is a server side provider that provides access to DBRecords.
+   </dd>
+</dl>
+<h3>brief history of pvRequest</h3>
+<p>In 2006 a project named <b>javaIOC</b> was started by Marty Kraimer.
+Shortly after Matej Sekoranja also started working on this project.
+Until about 2000, they were the only <b>javaIOC</b> developers.
+</p>
+<p>
+The pvAccess API was one of the first projects.
+How to pass client requests to the  server was a big problem.
+Then it was agreed that, since pvData supports structured data,
+a single argument can be used to pass client requests to the server, i.e.
+</p>
+<pre>
+PVStructure pvRequest
+</pre>
+<p><b>pvRequest</b> allows a client to pass structured data to the server.
+But without something more servers and tools would not know what to do with a pvRequest structure.
+Thus a facility <b>CreateRequest</b> was created.
+It takes a <b>request</b> string and creates a <b>pvRequest</b>.
+</p>
+<p>
+In about 2000 work started on a C++ implementation of what was in the javaIOC.
+At this time more people became involved with develpment.
+This is now what is called the <b>EPICS 7</b> <b>V4</b> modules.
+Both Java, C++, and Python implementations are now provided.
+</p>
+<h3>createRequest</h3>
+<p><b>pvAcccess</b> does not define the format of a <b>pvRequest</b> but <b>pvData</b> does
+provide a convenience method:</p>
+<pre>
+PVStructure createRequest(String request);
+</pre>
+This creates a <b>pvRequest</b> that can be used to communicate with a server.
+<p>
+pvDataCPP and pvDataJava both implement <b>CreateRequest</b>.
+</p>
+<p>
+A pvRequest structure allows a client to select:
+</p>
+<dl>
+    <dt>an arbitrary set of fields.</dt>
+      <dd>
+        When a client connects to  channel, it receives a <b>Structure</b> that describes the
+        <b>PVStructure</b> the channel supports.
+        From the <b>Structure</b>, or just by anticipating what the server supports,
+        the client can select the fields it wants to use.
+      </dd>
+      <dt>global and field specific options</dt>
+      <dd>
+         The client can pass global and field specific options to the server.
+         <br />
+         An option is just a <b>name,value</b> pair, where both name and value are a string.
+      </dd>
+</dl>
+<h3>client guidelines</h3>
+<p>When a client connects to a channel, the client callback has a  <b>Structure</b> argument.
+The <b>Structure</b> is the introspection interface for the <b>PVStructure</b> associated with the channel.
+The client can use <b>Structure</b> to select the fields it wants to get, put, monitor, etc.
+</p>
+<p>
+Another way is for the client to guess which fields the channel supports.
+This is what most clients will do.
+For example a widget for a display manager knows which fields it requires.
+</p>
+<p>The server may provide a different set of fields then the client requests.
+When a get, put, etc, connects the client code must be prepared to accept what the server provides.
+</p>
+<h3>server guidelines</h3>
+<p>A server only provides fields it supports for the operation, e. g. get, put.
+If it does not support any fields the client requests then it should return an error.
+</p>
+<p>The server looks for record and field options it supports,
+and just ignores other options.
+</p>
+
+<h2>Goals</h2>
+<p>pvAccess provides the ability to pass structured data between clients and servers.
+Since the data can be quite complex it could be very difficult for clients to use.
+Lets consider a few typical types of clients.</p>
+<h3>client tools</h3>
+<p>Tools like CSS caqtDM, etc., provide widgets like strip chart , alarm display, slider, etc.
+These widgets want data like EPICS base provides.
+That means some combination of <b>value</b>, <b>alarm</b>, <b>timeStamp</b>,
+<b>display</b>, and <b>control</b> information.
+</p>
+<h3>channelPutGet services</h3>
+<p>A service that is implemented via a channelPutGet request could provide data via a structure like:</p>
+<pre>
+structure recordName
+    structure argument
+       // details are service specific
+    structure result
+       // details are service specific
+</pre>
+where
+<dl>
+   <dt>argument</dt>
+     <dd>Data sent by client</dd>
+   <dt>result</dt>
+     <dd>Data returned to the client from the service.</dd>
+</dl>
+<p>In this case the client could just say that it wants <b>"putField(argument),getField(result)"</b>
+</p>
+<h3>normative type support</h3>
+<p>There is automatic support for some normative types like NTScalar and NTArray.
+Other normative types could provide helper code that either uses the conventions and support described
+in this document or invent their own support for creating a pvRequest.</p>
+<h3>other specialized support</h3>
+<p>For specialized support it is always possible to create private conventions for pvRequest.
+But then general pupose tools will be much less useful
+and it may also be necessary for the support to implement various Channel methods.</p>
+
+
+<h2>Create Request</h2>
+<h3>where defined</h3>
+<p><b>pvData</b> (both pvDataJava and pvDataCPP) have a convenience class with a method <b>createRequest</b>.
+For example pvDataJava has:</p>
+<pre>
+public class CreateRequestFactory {
+   public static PVStructure createRequest(String request)
+}
+</pre>
+<h3>purpose</h3>
+<p>The purpose is to create a pvRequest structures for accesssing data in a server.
+It allows the clients to select an arbitrary subset of the fields in the top level structure
+associated with the channel.
+It also allows the client to specify options.
+Thus the client can specify:</p>
+<dl>
+  <dt>desired fields</dt>
+     <dd>An arbitrary set of fields can be specified.</dd>
+   <dt>global options</dt>
+    <dd>Global options are options that apply to the record itself.</dd>
+  <dt>field options</dt>
+     <dd>These are options that apply to a field.
+      </dd>
+</dl>
+<p><b>NOTE:</b> The term record is adapted from pvDatabase. A pvDatabase is database of
+a memory resident <b>smart</b> records.
+A pvAcccess channel is a connection to a record.
+A record has a top level <b>PVStructure</b> that holds the data for the record.
+</p>
+<p>
+Other pvAcccess providers must provide a <b>PVStructure</b> for each channel it supports.
+</p>
+<p>
+<b>qsrv</b> is a channel provider for iocCore <b>DBRecord</b>s.
+</p>
+<h3>syntax</h3>
+<p><b>NOTE:</b> an appendix has a <b>BNF</b> description of request.
+<br />
+This section provides an easier (hopefully) to understand description.
+</p>
+<p>A request argument has the syntax:</p>
+<pre>
+record[option,...]field(fieldDef,...)
+OR
+field(fieldDef,...)
+OR
+fieldDef,...
+OR
+record[option,...]putField(fieldDef,...)getField(fieldDef,...)
+OR
+putField(fieldDef,...)getField(fieldDef,...)
+</pre>
+<p>NOTES:</p>
+<ul>
+    <li>An empty string is also valid. It is the same as <b>field()</b>.</li>
+    <li>Order is important, e. g. record can not appear after field.</li>
+    <li>The following:
+<pre>
+field()
+getField()
+putField()
+</pre>
+       all mean an entire data structure.
+      </li>
+</ul> 
+<p>Thus a request consists of record options and sets of field definitions or
+just field definitions. A record option is of the form:</p>
+<pre>
+record[name=value,...]
+</pre>
+
+<p>A <b>field(...)</b>,<b>getField(...)</b>,<b>putField(...)</b> is a comma separated set of <b>fieldDefs</b>
+which are of
+the form:</p>
+<pre>
+fullFieldName
+or
+fullFieldName[option,...]
+or
+fullFieldName{fieldDef,...}     // recursive definition
+or
+fullFieldName[option,...]{fieldDef,...}     // recursive definition
+</pre>
+
+<p><b>fullFieldName</b> selects a subfield of the current sub-structure being accessed.
+Initially this means the top level structure of the data associated with the channel.
+In a recursive definition the current sub-structure becomes the location asscociated with fullFieldName
+</p>
+<p>If
+<b>fieldName{fieldDef,...}</b> is given then the generated data structure will have
+a structure field with subfields.</p>
+
+
+<p>The syntax was chosen to be easy to use and to parse:</p>
+<dl>
+   <dt>record[...]</dt>
+      <dd>
+      Specifies a set of global options, i. e., options that apply to the record itself. 
+      </dd>
+   <dt>field(...)</dt>
+   <dt>putField(...)</dt>
+   <dt>getField(...)</dt>
+      <dd>
+      Each selects a set of subfields of the top level structure.
+      Each specifies a comma separated set of <b>fieldDef</b>s.
+      </dd>
+   <dt>fieldDef</dt>
+     <dd>Selects a single subfield of the current structure.</dd>
+   <dt>option</dt>
+      <dd>
+      A <b>name=value</b> pair. Both <b>name</b> and <b>value</b> are character strings.
+      </dd>
+   <dt>[...]</dt>
+      <dd>
+      Holds a comma separated set of <b>option</b>s.
+      </dd>
+   <dt>{...}</dt>
+      <dd>
+      Selects a set of subfields of a substructure within the top level structure.
+      Each defines a comma separated set of <b>fieldDef</b>s.
+      This is a recursive definition.
+      Thus a <b>fullFieldName</b> within <b>{}</b> is relative to structure that is referenced
+      by <b>{}</b>.
+      </dd>
+</dl>
+<h4>naming conventions</h4>
+<dl>
+  <dt>blanks</dt>
+      <dd>All blanks are removed before parsing is started.</dd>
+   <dt>reserved characters</dt>
+      <dd>The following characters may not be used except as used in the above syntax:
+<pre>
+{ } ( ) [ ] = ,
+</pre>
+       <br />
+       The character <b>'.'</b> in a <b>fieldDef</b> separates field names.
+      </dd>
+    <dt>field name</dt>
+       <dd>
+       A field name can only contain alphanumeric characters and the character <b>'_'</b>,
+       but must not start with the character <b>'_'</b>.
+       <br />
+       This is not enforced by the current parser but should be a rule for field names.
+       </dd>
+    <dt>option name</dt>
+      <dd>This should follow the same convertion as field name.
+       <br />
+       This is not enforced by the parser but future changes could.
+      </dd>
+   <dt>option value</dt>
+       <dd>For now the only illegal characters are the reserved characters.
+        <br />
+        Alphanumeric characters are valid.
+        <br />
+        The characters <b>':'</b> and <b>'?'</b> are also valid.
+        <br />
+        What other characters should be allowed?
+      </dd>
+
+</dl>
+
+
+<p>
+Thus a request consists of record options and sets of field definitions or
+just field definitions.
+<br />
+A record option is of the form:</p>
+<pre>
+record[name=value,...]
+</pre>
+
+<p><b>field</b>,<b>putFeld</b>, and <b>getField</b> each contain a comma separated set of fieldDefs which are of
+the form:</p>
+<pre>
+fullFieldName
+or 
+fullFieldName[option,...]
+or 
+fullFieldName{request}     // recursive definition
+</pre>
+
+<p>A <b>fullFieldName</b> is the full name of a field in the PVRecord.
+</p>
+
+<p>If request is null or an empty string than an entire structure is selected.</p>
+
+<p>The syntax was chosen to be easy to use and to parse:</p>
+<dl>
+   <dt>record[]</dt>
+      <dd>
+      Specifies a set of global options, i. e., options that apply to the record itself. 
+      </dd>
+   <dt>field()</dt>
+   <dt>putField()</dt>
+   <dt>getField()</dt>
+      <dd>
+      Each selects a set of subfields of the top level structure.
+      Each defines a comma separated set of <b>fieldDef</b>s.
+      </dd>
+   <dt>fieldDef</dt>
+     <dd>Selects a single subfield of the current structure.</dd>
+   <dt>option</dt>
+      <dd>
+      A <b>name=value</b> pair. Both <b>name</b> and <b>value</b> are character strings.
+      </dd>
+   <dt>[]</dt>
+      <dd>
+      Holds a comma separated set of <b>option</b>s.
+      </dd>
+   <dt>{}</dt>
+      <dd>
+      Selects a set of subfields of a substructure within the top level structure.
+      Each defines a comma separated set of <b>fieldDef</b>s.
+      This is a recursive definition.
+      Thus a <b>fullFieldName</b> within <b>{}</b> is relative to structure that is referenced
+      by <b>{}</b>.
+      </dd>
+</dl>
+<h3>examples</h3>
+<pre>
+mrk> pvget -r "" -i PVRdouble   // "" means entire PVStructure
+PVRdouble
+epics:nt/NTScalar:1.0 
+    double value 0
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 0
+        int nanoseconds 0
+        int userTag 0
+mrk> pvget -r "value" -i PVRdouble
+PVRdouble
+structure 
+    double value 0
+mrk> pvget -r "record[process=true]field(value,timeStamp)" -i PVRdouble
+PVRdouble
+structure 
+    double value 0
+    time_t timeStamp
+        long secondsPastEpoch 1533581620
+        int nanoseconds 697865085
+        int userTag 0
+</pre>
+
+<h2>Existing Options</h2>
+<p>Some record options, but no field options, are officialy supported. 
+The next section describe possible field options.
+</p>
+<p>At present the following record options are supported:</p>
+<dl>
+    <dt>queueSize</dt>
+     <dd>
+      This is used to define the queueSize for monitors.
+      The default is:
+<pre>
+record[queueSize=2]
+</pre>
+      A larger size can be specified.
+     </dd>
+    <dt>process</dt>
+     <dd>
+      This is used by <b>qsrv</b> and <b>pvDatabase</b> to specify if records should be processed.
+      The default is <b>false</b> for channelGet and <b>true</b> for channelPut and channelPutGet.
+      <br />
+       An example is:
+<pre>
+record[process=false]
+</pre>
+     </dd>
+    <dt>block</dt>
+     <dd>
+      This is used to specify if a request to process a record should
+      block until the record completes processing.
+      The default is the same as the value of the  <b>process</b> option.
+      An example is:
+<pre>
+record[block=false]
+</pre>
+     </dd>
+</dl>
+<h2>pvRequest compliance</h2>
+<h3>pvDatabase</h3>
+<p>
+<b>pvDatabaseCPP</b> and <b>pvDatabaseJava</b> are complient with <b>pvRequest</b> including record options.
+The latest <b>epics-base</b> repositories do not support any field options.
+However see below for a <b>pvDatabaseCPP</b> implementation that does support field options.
+</p> 
+<h3>ca provider</h3>
+<p><b>ca</b> is a client provider that uses the <b>channel access</b> network protocol,
+but presents data to the client as <b>pvData</b> structures.
+</p>
+<p>
+The latest version of <b>ca</b> in <b>pvAccessCPP</b> has <b>pvRequest</b> support that
+allows the client to select a combination of
+of <b>value</b>, <b>alarm</b>, <b>timeStamp</b>,
+<b>display</b>, <b>control</b>, and <b>valueAlarm</b> information.
+<br />
+But there are some problems.
+Hopefully these will be fixed.
+</p>
+<h3>qsrv</h3>
+<p><b>qsrv</b> is not complient with <b>pvRequest</b>
+<br />
+For example:
+</p>
+<pre>
+mrk> pvget -p ca -r "value" -i DBRdouble
+DBRdouble
+structure 
+    double value 0
+mrk> pvget -p pva -r "value" -i DBRdouble
+DBRdouble
+epics:nt/NTScalar:1.0 
+    double value 0
+    alarm_t alarm
+        int severity 3
+        int status 2
+        string message UDF
+    time_t timeStamp
+        long secondsPastEpoch 631152000
+        int nanoseconds 0
+        int userTag 0
+    display_t display
+        double limitLow -10
+        double limitHigh 10
+        string description 
+        string format 
+        string units volts
+    control_t control
+        double limitLow -9
+        double limitHigh 9
+        double minStep 0
+    valueAlarm_t valueAlarm
+        boolean active false
+        double lowAlarmLimit -8
+        double lowWarningLimit -6
+        double highWarningLimit 6
+        double highAlarmLimit 8
+        int lowAlarmSeverity 0
+        int lowWarningSeverity 0
+        int highWarningSeverity 0
+        int highAlarmSeverity 0
+        double hysteresis 0
+</pre>
+<h2>pvDatabase: Proposed plugin support</h2>
+<p>This section describes a set of proposed field options for pvDatabase,
+but first a brief description of channel filters is provided.
+The channel filters were the inspiration for many of the proposed field options.
+Next a brief description of an implementation of filters for PVRecords is provided.
+A client makes requests via field options.
+Finally a set of proposed options is described.
+</p>
+<h3>iocCore channel filters</h3>
+<p>Beginning with the 3.15 releases of <b>epics-base</b>
+channel filters are supported.
+Currently there is support for <b>TimeStamp</b>, <b>Deadband</b>, <b>Array</b>, and <b>Synchronize</b>.
+In addition code can be written to support other plugins without requiring any changes to <b>epics-base</b>.
+</p>
+<p>
+Using the <b>channel access</b> client API, the client requests plugins by appending to the channel name.
+<br />
+For example:
+</p>
+<pre>
+caget test:channel 'test:channel.{"arr":{"s":2,"i":2,"e":8}}' test:channel.[3:5] test:channel.[3:2:-3]
+ test:channel 10 0 1 2 3 4 5 6 7 8 9
+ test:channel.{"arr":{"s":2,"i":2,"e":8}} 4 2 4 6 8
+ test:channel.[3:5] 3 3 4 5
+ test:channel.[3:2:-3] 3 3 5 7
+</pre>
+<p>Some observations about the channel filters:
+</p>
+<dl>
+  <dt>channel access does not provide for client options</dt>
+    <dd>
+      The client API allows the client to choose one of the <b>DBR_...</b>
+      data types. It does not provide for client specific options.
+    </dd>
+  <dt>client specifies filter by appending to the  channel name</dt>
+    <dd>
+     Since the client API does not provide client specific options,
+     this is the only way to specify options.
+   </dd>
+  <dt>channel filters only make sense for value field</dt>
+   <dd>
+    Filters only make sense for field <b>VAL</b>, which is the default field if no field name is specified.
+   </dd>
+   <dt>current implementation does not connect if client gives an incorrect request</dt>
+     <dd>
+<pre>
+mrk> caget DBRdoubleArray.[2:4]
+DBRdoubleArray.[2:4] 3 3 4 5
+mrk> caget DBRdoubleArray.[xxx:yyy]
+Channel connect timed out: 'DBRdoubleArray.[xxx:yyy]' not found.
+</pre>
+     </dd>
+    <dt>current implementation does not work for put</dt>
+       <dd>
+<pre>
+mrk> caget DBRdoubleArray.[2:4]
+DBRdoubleArray.[2:4] 3 3 4 5
+mrk> caput DBRdoubleArray.[2:4] 3 10 20 30
+Old : DBRdoubleArray.[2:4] 3 3 4 5
+New : DBRdoubleArray.[2:4] 3 3 0 0
+mrk> caget DBRdoubleArray.[2:4]
+DBRdoubleArray.[2:4] 3 2.50321e-308 0 0
+</pre>
+      </dd>
+</dl>
+<h3>pvDatabase plugin support</h3>
+<p>
+<a
+href="https://github.com/mrkraimer/pvDatabaseCPP">pvDatabaseCPPMRK
+</a>
+implements support for plugins.
+It does that via the <b>pvCopy</b> facility.
+</p>
+<p>
+ <b>pvCopy</b> is implemented in pvData.
+<b>pvDatabaseCPPMRK</b> has a local version of <b>pvCopy</b> which has been modified to support plugins.
+It currently has support for <b>array</b>, <b>deadband</b> , and <b>timeStamp</b> similar to what
+iocCore filter implements.
+Since <b>pvCopy</b> implements the support,
+PVRecord code does not have to know about the plugins.
+</p>
+<p>Other plugins can be created and registered with the plugin support.
+</p>
+<p>Instead of a client requesting plugins via info appended to the channel name,
+the client specifies field options.
+<br />
+For example:
+</p>
+<pre>
+mrk> pvget -r "value" PVRdoubleArray
+PVRdoubleArray
+structure 
+    double[] value [1,2,3,4,5,6,7,8,9,10]
+mrk> pvget -r "value[array=3:5]" PVRdoubleArray
+PVRdoubleArray
+structure 
+    double[] value [4,5,6]
+</pre>
+<h3>array plugin</h3>
+<p>
+This  filter is used to retrieve parts of an array (subarrays and strided subarrays).
+It is modeled after the iocCore array channel filter.
+</p>
+<p>
+This filter works for both get and put.
+It works for any scalarArray field.
+It has not been tested for structureArray or unionArray fields.
+</p>
+<p>The syntax is one of the following:</p>
+<pre>
+[array=start]
+[array=start:end]
+[array=start:increment:end]
+</pre>
+<p>
+<b>start</b> and <b>end</b> both specify an index.
+<b>increment</b> must be a positive integer.
+</p>
+<p>
+<b>start</b> and <b>end</b> can be a positive or negative integer.
+If negative it is relative to the end of the array with -1 meaning the last element.
+</p>
+<p>Suppose that the master array is:</p>
+<pre>
+1,2,3,4,5,6,7,8,9,10
+</pre>
+<p>Then the get request</p>
+<pre>
+[array=0:4]
+</pre>
+gets
+<pre>
+1,2,3,4,5
+</pre>
+The request:
+<pre>
+[array=-3:-1]
+</pre>
+gets
+<pre>
+8,9,10
+</pre>
+The request:
+<pre>
+[array=2:5]
+</pre>
+gets
+<pre>
+3,4,5,6
+</pre>
+The request:
+<pre>
+[array=0:2:-1]
+</pre>
+gets
+<pre>
+1,3,5,7,9
+</pre>
+<h3>deadband plugin</h3>
+<p>
+This filter is used to limit the changes to a numeric scalar field that are reported to a client.
+It is modeled after the iocCore deadband channel filter.
+</p>
+<p>
+This filter only works for numeric scalar fields and only for toCopy.
+</p>
+<p>The syntax is one of the following:</p>
+<pre>
+[deadband=abs:value]
+[deadband=rel:value]
+</pre>
+where
+<dl>
+   <dt>abs</dt>
+    <dd>The amount value must change since the last value the client received.</dd>
+   <dt>rel</dt>
+     <dd>
+       The percentage amount the value must change since the last value the client received. 
+     </dd>
+</dl>
+<h3>timeStamp plugin</h3>
+<p>
+This filter is used for accessing a timeStamp field. 
+It is modeled after the iocCore timeStamp channel filter.
+</p>
+<p>
+This filter only works for a timeStamp field.
+</p>
+<p>The syntax is one of the following:</p>
+<pre>
+[timestamp=current]
+[timestamp=copy]
+</pre>
+where
+<dl>
+  <dt>current</dt>
+     <dd>
+      Only works for toCopy=true.
+      Instead of taking the timestamp from master the timeStamp for the client is set to
+      the current time.
+     </dd>
+   <dt>copy</dt>
+     <dd>
+      Only works for toCopy=false.
+      The timestamp in master is set equal to the timeStamp from the client.
+     </dd>
+</dl>
+<h3>ignore plugin</h3>
+<p>This is not an actual plugin but is handled by pvCopy itself.
+It is used to suppress sending data to a client unless other fields have changed.
+</p>
+<p>The syntax is:</p>
+<pre>
+[ignore=true]
+</pre>
+
+<h2>Appendix I: Description of the PVStructure created by createRequest</h2>
+<p><b>NOTE:</b> This section is only of interest to someone who is implementing code that
+has to introspect a structure generated by createRequest.</p>
+
+<p>pvRequest is a PVStructure that describes 1) record options and 2) field
+requests and options. It has the following structure:</p>
+<pre>
+structure
+  structure record
+    structure _options
+      option
+      ...
+  structure field
+    structure fieldName
+      structure _options
+        option
+        ...
+      structure fieldName
+        structure _options
+          option
+          ...
+        ...  
+  structure putField
+    structure fieldName
+      structure _options
+        option
+        ...
+      structure fieldName
+        structure _options
+          option
+          ...
+        ...  
+  structure getField
+    structure fieldName
+      structure _options
+        option
+        ...
+      structure fieldName
+        structure _options
+          option
+          ...
+        ...  
+</pre>
+
+<p>where</p>
+<dl>
+  <dt>record</dt>
+    <dd>The options that apply to the entire record.</dd>
+  <dt>option</dt>
+    <dd>This is of the form 
+      <b>string &lt;name&gt; &lt;value&gt;</b>
+    </dd>
+  <dt>field</dt>
+    <dd>Definitions that select fields of the PVRecord and options for the
+      fields. This definition is recursive.</dd>
+  <dt>fieldName</dt>
+    <dd>The field name that will appear in the PVStructure that is a copy of
+      the fields selected from the PVRecord. </dd>
+</dl>
+
+<p>Note:</p>
+<ul>
+  <li>The definition is recursive , i.e. an arbitarily complex structure can be
+    defined.</li>
+  <li>If a pvRequest with no fields is specified than all fields if the target
+    PVRecord will appear in the PVCopy.</li>
+</ul>
+
+<p>An example of option is process.</p>
+
+<p>Process is a record option:</p>
+<pre>
+structure
+  structure record
+    structure _options
+      string process true
+   
+</pre>
+
+<p>For example if process is an option to createGet then the record will be
+processed before data is fetched. NOTE: scalarType boolean is also
+supported.</p>
+
+<p>The following is an example of a field option:</p>
+<pre>
+structure 
+    structure field
+        structure value
+            structure _options
+                string monitorAlgorithm onChange
+</pre>
+
+<p>Some examples are:</p>
+<pre>
+request 
+structure 
+
+request alarm,timeStamp,power.value
+structure 
+    structure alarm
+    structure timeStamp
+    structure power
+        structure value
+
+request record[process=true]field(alarm,timeStamp,power.value)
+structure 
+    structure record
+        structure _options
+            string process true
+    structure field
+        structure alarm
+        structure timeStamp
+        structure power
+            structure value
+
+request record[process=true]field(alarm,timeStamp[algorithm=onChange,causeMonitor=false],power{value,alarm})
+structure 
+    structure record
+        structure _options
+            string process true
+    structure field
+        structure alarm
+        structure timeStamp
+            structure _options
+                string algorithm onChange
+                string causeMonitor false
+        structure power
+            structure value
+            structure alarm
+
+request record[process=true,xxx=yyy]field(alarm,timeStamp[causeMonitor=true],power.value)
+structure 
+    structure record
+        structure _options
+            string process true
+            string xxx yyy
+    structure field
+        structure alarm
+        structure timeStamp
+            structure _options
+                string causeMonitor true
+        structure power
+            structure value
+</pre>
+<h2>Appendix II: V4 Property Definitions</h2>
+<p>
+This is not directly related to <b>pvRequest</b>.
+However it does impact various V4 modules so it is briefly mentioned here.
+</p>
+<h3>enum</h3>
+<pre>
+enum_t value
+    int index 0
+    string[] 
+</pre>
+<p>Look OK.</p>
+<h3>alarm</h3>
+<pre>
+alarm_t alarm
+    int severity
+    int status
+    string message
+</pre>
+<p>Looks OK.</p>
+<h3>timeStamp</h3>
+<pre>
+time_t timeStamp
+    long secondsPastEpoch
+    int nanoseconds
+    int userTag
+</pre>
+<p>Looks OK.</p>
+<h3>control</h3>
+<pre>
+control_t control
+    double limitLow
+    double limitHigh
+    double minStep
+</pre>
+<p>Looks OK.</p>
+<h3>display</h3>
+<pre>
+display_t display
+    double limitLow
+    double limitHigh
+    string description 
+    string format 
+    string units
+</pre>
+<p><b>format</b> is a problem but what to do?
+</p>
+<h3>valueAlarm</h3>
+<pre>
+valueAlarm_t valueAlarm
+    boolean active
+    double lowAlarmLimit
+    double lowWarningLimit
+    double highWarningLimit
+    double highAlarmLimit
+    int lowAlarmSeverity
+    int lowWarningSeverity
+    int highWarningSeverity
+    int highAlarmSeverity
+    double hysteresis
+</pre>
+<p>The above is OK.
+But there is a version for each numeric type.
+Note that <b>control</b> and <b>display</b> only have double for limit fields.
+<br />
+Perhaps the same should be true for <b>valueAlarm</b>.
+</p>
+<h2>Appendix III: BNF syntax for request</h2>
+<p>
+<b>NOT DONE</b>
+</p> 
+<pre>
+&lt;request> := 
+</pre>
+</div>
+</body>
+</html>

@@ -1,0 +1,758 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>EPICS 7: command line tools</title>
+  <link rel="stylesheet" type="text/css"
+  href="../../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../../css/epicsv4.css" />
+  <style type="text/css">
+  /*<![CDATA[*/
+     .about { margin-left: 3em; margin-right: 3em; font-size: .83em}
+     table { margin-left: auto; margin-right: auto }
+     .diagram { text-align: center; margin: 2.5em 0 }
+     span.opt { color: grey }
+     span.nterm { font-style:italic }
+     span.term { font-family:courier }
+     span.user { font-family:courier }
+     span.user:before { content:"<" }
+     span.user:after { content:">" }
+     .nonnorm { font-style:italic }
+     p.ed { color: #AA0000 }
+     span.ed { color: #AA0000 }
+     p.ed.priv { display: inline; }
+     span.ed.priv { display: inline; }
+  /*]]>*/</style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../../css/tocgen.js">
+  </script>
+</head>
+<body>
+
+<div class="head">
+<h1>EPICS 7: command line tools</h1>
+<!-- Maturity: Working Draft or Request for Comments, or Recommendation, and date.  -->
+
+<h2 class="nocount">2019.04.15</h2>
+<dl>
+    <dt>Editors:</dt>
+   <dd>
+      Marty Kraimer
+    </dd>
+  </dl>
+</div>
+
+<div id="toc">
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+
+<div id="contents" class="contents">
+<h2>Introduction</h2>
+<p>This is a tutorial for the following command line tools implemented in pvAccessCPP:
+</p>
+<dl>
+   <dt>pvlist</dt>
+   <dd>
+      Display a list of pvAccess servers in the local area network,
+      or a list of the channels for a particular server.
+   </dd>
+   <dt>pvinfo</dt>
+   <dd>
+      Display the introspection interface for a channel.
+   </dd>
+   <dt>pvget</dt>
+   <dd>
+     Get or monitor data for a channel.
+   </dd>
+   <dt>pvmonitor</dt>
+   <dd>
+     A synonym for <b>pvget -m</b>.
+   </dd>
+   <dt>pvput</dt>
+   <dd>
+     Put data to a channel.
+   </dd>
+   <dt>eget</dt>
+   <dd>
+     Not described in this document.
+   </dd>
+</dl>
+<p>pvAccessCPP provides command line tools. Each provides help. For example:</p>
+<pre>
+pvlist -help
+</pre>
+<p>
+The examples shown in this section assume that
+your <b>PATH</b> environment variable includes the appropriate bin directory from pvAccessCPP.
+For example:</p>
+<pre>
+export PATH=$PATH:${EPICSV7}/pvAccessCPP/bin/${EPICS_HOST_ARCH}
+</pre>
+<p>The examples also assume that you have cloned exampleCPP as follows:
+</p>
+<pre>
+git clone https://github.com/epics-base/exampleCPP.git
+</pre>
+<p>After building exampleCPP start an example database as follows:
+</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/exampleCPP/database/iocBoot/exampleDatabase
+mrk> ../../bin/linux-x86_64/exampleDatabase st.cmd
+</pre>
+<p>After the exampleDatabase is started the command line supports many commands.
+A few important commands are:</p>
+<dl>
+   <dt>dbl</dt>
+     <dd>
+     Provides a list of all <b>DBRecord</b>s.
+     </dd>
+   <dt>pvdbl</dt>
+     <dd>
+     Provides a list of all <b>PVRecord</b>s.
+     </dd>
+   <dt>help</dt>
+     <dd>
+     Shows all the commands.
+     </dd>
+   <dt>exit</dt>
+     <dd>
+     Exits the IOC.
+     </dd>
+</dl>
+<h2>pvlist</h2>
+<p>The options are:</p>
+<pre>
+mrk> pvlist -help
+
+Usage: pvlist [options] [server address or GUID starting with '0x']...
+
+options:
+  -h: Help: Print this message
+  -V: Print version and exit
+  -i                 Print server info (when server address list/GUID is given)
+  -w &lt;sec&gt;:          Wait time, specifies timeout, default is 3.000000 second(s)
+  -q:                Quiet mode, print only error messages
+  -d:                Enable debug output
+
+examples:
+	pvlist
+	pvlist ioc0001
+	pvlist 10.5.1.205:10000
+	pvlist 0x83DE3C540000000000BF351F
+</pre>
+<p>Without any arguments this shows the location of all V4 servers it can locate.
+For example:</p>
+<pre>
+pvlist
+GUID 0xC50BFC5B000000003E347E33 version 1: tcp@[10.0.0.111:5075, 192.168.124.1:5075]
+</pre>
+<p>This only shows one line because only the exampleDatabase server is running.
+In an operational system the output could be quite extensive.</p>
+<p>
+Once the location of a server is known the list of channel names can be shown by asking for either
+the GUID or tcp address.
+Thus either:</p>
+<pre>
+pvlist 0xC50BFC5B000000003E347E33
+</pre>
+or
+<pre>
+pvlist 10.0.0.111:5075
+</pre>
+produces:
+<pre>
+DBRao01
+DBRdouble00
+...
+</pre>
+<h2>pvinfo</h2>
+<p>pvinfo retrieves the introspection interface for selected channels
+</p>
+<p>The options are:</p>
+<pre>
+mrk> pvinfo -help
+
+Usage: pvinfo [options] &lt;PV name&gt;...
+
+
+options:
+  -h: Help: Print this message
+  -V: Print version and exit
+  -w &lt;sec&gt;:          Wait time, specifies timeout, default is 3.000000 second(s)
+  -p &lt;provider&gt;:     Set default provider name, default is 'pva'
+  -d:                Enable debug output
+  -c:                Wait for clean shutdown and report used instance count (for expert users)
+Example: pvinfo double01
+</pre>
+<p>Some examples:
+</p>
+<pre>
+mrk> pvinfo PVRdouble
+PVRdouble
+Server: 10.0.0.26:5075
+Type:
+    epics:nt/NTScalar:1.0
+        double value
+        alarm_t alarm
+            int severity
+            int status
+            string message
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+mrk> pvinfo DBRdouble
+DBRdouble
+Server: 10.0.0.26:5075
+Type:
+    epics:nt/NTScalar:1.0
+        double value
+        alarm_t alarm
+            int severity
+            int status
+            string message
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+        structure display
+            double limitLow
+            double limitHigh
+            string description
+            string units
+            int precision
+            enum_t form
+                int index
+                string[] choices
+        control_t control
+            double limitLow
+            double limitHigh
+            double minStep
+        valueAlarm_t valueAlarm
+            boolean active
+            double lowAlarmLimit
+            double lowWarningLimit
+            double highWarningLimit
+            double highAlarmLimit
+            int lowAlarmSeverity
+            int lowWarningSeverity
+            int highWarningSeverity
+            int highAlarmSeverity
+            byte hysteresis
+mrk> pvinfo PVRdumbPowerSupply
+PVRdumbPowerSupply
+Server: 10.0.0.26:5075
+Type:
+    structure
+        alarm_t alarm
+            int severity
+            int status
+            string message
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+        structure power
+            double value
+            alarm_t alarm
+                int severity
+                int status
+                string message
+        structure voltage
+            double value
+            alarm_t alarm
+                int severity
+                int status
+                string message
+        structure current
+            double value
+            alarm_t alarm
+                int severity
+                int status
+                string message
+
+</pre>
+<h2>pvget - pvmonitor</h2>
+<p>The following describes pvget.
+</p>
+<p>
+pvmonitor is the same as:</p>
+<pre>
+pvget -m
+</pre>
+<h3>Basic Usage</h3>
+<p>pvget provides functionality similar to caget.
+But it can use either provider <b>pva</b> or <b>ca</b> to access a channel.
+This it can accesss both <b>DBRecord</b>s and <b>PVRecord</b>s.
+</p>
+<p>For example:</p>
+<pre>
+mrk> caget DBRdouble
+DBRdouble                      1
+mrk> pvget DBRdouble
+DBRdouble 2019-04-15 15:24:08.357  1 
+mrk> caget PVRdouble
+Channel connect timed out: 'PVRdouble' not found.
+mrk> pvget PVRdouble
+PVRdouble 2019-04-15 15:29:27.826  1 
+mrk> 
+</pre>
+<p>The options are:</p>
+<pre>
+mrk> pvget -help
+
+Usage: pvget [options] &lt;PV name&gt;...
+
+options:
+  -h: Help: Print this message
+  -V: Print version and exit
+  -r &lt;pv request&gt;:   Request, specifies what fields to return and options, default is ''
+  -w &lt;sec&gt;:          Wait time, specifies timeout, default is 5.000000 second(s)
+  -p &lt;provider&gt;:     Set default provider name, default is 'pva'
+  -M &lt;raw|nt|json&gt;:  Output mode.  default is 'nt'
+  -v:                Show entire structure (implies Raw mode)
+  -q:                Quiet mode, print only error messages
+  -d:                Enable debug output
+ deprecated options:
+  -q, -t, -i, -n, -F: ignored
+  -f &lt;input file&gt;:   errors
+ Output details:
+  -m -v:             Monitor in Raw mode.  Print only fields marked as changed.
+  -m -vv:            Monitor in Raw mode.  Highlight fields marked as changed, show all valid fields.
+  -m -vvv:           Monitor in Raw mode.  Highlight fields marked as changed, show all fields.
+  -vv:               Get in Raw mode.  Highlight valid fields, show all fields.
+
+example: pvget double01
+</pre>
+<h3>Simple examples</h3>
+<p>Some examples are:</p>
+<pre>
+mrk> pvget PVRdouble
+PVRdouble                      5
+mrk> pvget PVRdoubleArray
+PVRdoubleArray 5 1 2 3 4 5
+mrk> pvget PVRenum01
+PVRenum01                         zero
+mrk> pvget -v PVRenum
+PVRenum epics:nt/NTEnum:1.0 
+    enum_t value (1) one
+        int index 1
+        string[] choices ["zero", "one"]
+    alarm_t alarm 
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp 2018-11-26 10:19:40.278  
+        long secondsPastEpoch 1543245580
+        int nanoseconds 277571561
+        int userTag 0
+</pre>
+<p>Multiple channels can be accessed witn a single command. For example:</p>
+<pre>
+mrk> pvget PVRdouble01 PVRdouble02
+PVRdouble01                       0
+PVRdouble02                       0
+</pre>
+<p>The above examples all use channel provider <b>pva</b>, i. e. the pvAccess server for network
+communication.
+</p>
+<p>
+It is also possible to use <b>ca</b>.
+Thus it can access a V3 IOC even if the IOC has no V4 support.
+</p>
+<pre>
+mrk> pvget -p ca DBRdouble01
+DBRdouble01                       0
+mrk> pvget -p ca -r "value,alarm,timeStamp" DBRdouble01
+DBRdouble01 2019-04-16 05:48:31.010  0 
+</pre>
+<p>pvget can also monitor, i. e. it has functionality similer to camonitor.</p>
+<pre>
+mrk> pvget -m -r "value,alarm,timeStamp" PVRdouble
+PVRdouble 2019-04-16 05:50:20.004  1 
+PVRdouble 2019-04-16 05:51:19.018  2 
+</pre>
+<p>When a DBRecord is accessed via provider <b>pva</b>, <b>qsrv</b> is the server side
+provider that provides access to the DBRecord.
+When provider <b>ca</b> is used the channel access network protocol,
+which has existed since the early days of EPICS, is used to access the DBRecord.
+One difference is that <b>qsrv</b> does not honor the client request to select a subset of
+the fields in the DBRecord.
+</p>
+<p>
+For example:
+</p>
+<pre>
+mrk> pvget -r "value" -p ca -v DBRdouble
+DBRdouble structure 
+    double value 1
+mrk> pvget -r "value" -p pva -v DBRdouble
+DBRdouble epics:nt/NTScalar:1.0 
+    double value 1
+    alarm_t alarm 
+        int severity 0
+        int status 0
+        string message NO_ALARM
+    time_t timeStamp 2019-04-16 08:46:04.215  
+        long secondsPastEpoch 1555418764
+        int nanoseconds 214583119
+        int userTag 0
+    structure display
+        double limitLow -10
+        double limitHigh 10
+        string description 
+        string units volts
+        int precision 2
+        enum_t form (0) Default
+            int index 0
+            string[] choices ["Default", "String", "Binary", "Decimal", "Hex", "Exponential", "Engineering"]
+    control_t control
+        double limitLow -9
+        double limitHigh 9
+        double minStep 0
+    valueAlarm_t valueAlarm
+        boolean active false
+        double lowAlarmLimit -8
+        double lowWarningLimit -6
+        double highWarningLimit 6
+        double highAlarmLimit 8
+        int lowAlarmSeverity 0
+        int lowWarningSeverity 0
+        int highWarningSeverity 0
+        int highAlarmSeverity 0
+        byte hysteresis 0
+mrk> 
+</pre>
+<h3>PVRecord filters</h3>
+<p><b>pvDatabaseCPP</b> provides support for filters attached to fields.
+</p>
+<p>
+For a complete description see:
+<a
+href="../pluginSupport/pluginSupport.html">pluginSupport
+</a>
+</p>
+<p>The following shows an example that uses the array filter:</p>
+<pre>
+mrk> pvget PVRdoubleArray
+PVRdoubleArray 2019-04-16 06:06:14.841  [1,2,3,4,5,6,7,8,9,10]
+mrk> pvget -r "value[array=2:6],alarm,timeStamp" PVRdoubleArray
+PVRdoubleArray 2019-04-16 06:06:14.841  [3,4,5,6,7]
+mrk> pvget -r "value[array=2:2:10],alarm,timeStamp" PVRdoubleArray
+PVRdoubleArray 2019-04-16 06:06:14.841  [3,5,7,9]
+</pre>
+<h3>IocCore Channel Filters</h3>
+<p>The EPICS 7 releases of <b>epics-base</b> support Channel Filters.
+</p>
+<p>See
+<a
+href="https://epics.anl.gov/base/R7-0/2-docs/filters.html">filters
+</a>
+</p>
+<p>
+The following shows an example that uses the array filter:</p>
+<pre>
+mrk> pvget DBRdoubleArray
+DBRdoubleArray 2019-04-16 08:59:37.622  [1,2,3,4,5]
+mrk> pvget DBRdoubleArray.[2:3]                        // BUG in qsrv
+DBRdoubleArray.[2:3] 2019-04-16 08:59:37.622  [1,2]
+mrk> caget DBRdoubleArray.[2:3]
+DBRdoubleArray.[2:3] 2 3 4
+mrk> pvget -p ca DBRdoubleArray.[2:3]
+DBRdoubleArray.[2:3] [3,4]
+</pre>
+<h2>pvput</h2>
+<h3>Basic Usage</h3>
+<p>pvput provides functionality similar to caput.
+For example:</p>
+<pre>
+mrk> caput DBRdouble01 1.0
+Old : DBRdouble01                       0
+New : DBRdouble01                       1
+mrk> pvput DBRdouble01 2.0
+Old : DBRdouble01                       1
+New : DBRdouble01                       2
+</pre>
+<p>To see all options enter:</p>
+<pre>
+mrk> pvput -help
+Usage: pvput [options] &lt;PV name&gt; &lt;value&gt;
+       pvput [options] &lt;PV name&gt; &lt;size/ignored&gt; &lt;value&gt; [&lt;value&gt; ...]
+       pvput [options] &lt;PV name&gt; &lt;field&gt;=&lt;value&gt; ...
+       pvput [options] &lt;PV name&gt; &lt;json_array&gt;
+       pvput [options] &lt;PV name&gt; &lt;json_map&gt;
+
+options:
+  -h: Help: Print this message
+  -V: Print version and exit
+  -r &lt;pv request&gt;:   Request, specifies what fields to return and options, default is ''
+  -w &lt;sec&gt;:          Wait time, specifies timeout, default is 5.000000 second(s)
+  -p &lt;provider&gt;:     Set default provider name, default is 'pva'
+  -M &lt;raw|nt|json&gt;:  Output mode.  default is 'nt'
+  -v:                Show entire structure (implies Raw mode)
+  -q:                Quiet mode, print only error messages
+  -d:                Enable debug output
+ Deprecated options:
+  default: Auto - try value as enum string, then as index number
+  -n, -s, -F, -t: ignored
+  -f &lt;input file&gt;: error
+ JSON support is present
+
+Examples:
+
+  pvput double01 1.234       # shorthand
+  pvput double01 value=1.234
+
+  pvput arr:pv X 1.0 2.0  # shorthand  (X is arbitrary and ignored)
+  pvput arr:pv "[1.0, 2.0]"            # shorthand
+  pvput arr:pv value="[1.0, 2.0]"
+
+Field values may be given with JSON syntax.
+
+Complete structure
+
+  pvput double01 '{"value":1.234}'
+
+Sub-structure(s)
+
+  pvput group:pv some='{"value":1.234}' other='{"value":"a string"}'
+
+
+</pre>
+<h3>Simple examples</h3>
+<p>Here are some examples:</p>
+<pre>
+mrk> pvput PVRdouble 5
+Old : PVRdouble                      0
+New : PVRdouble                      5
+mrk> pvput PVRdoubleArray '[1,2,3]'
+Old : 2019-04-16 09:17:22.694  [1,2,3,4,5,6,7,8]
+New : 2019-04-16 09:17:58.103  [1,2,3]
+mrk> pvput PVRdoubleArray '[1,2,3,4,5,6,7,8]'
+Old : 2019-04-16 09:17:58.103  [1,2,3]
+New : 2019-04-16 09:18:06.830  [1,2,3,4,5,6,7,8]
+mrk> pvput PVRstring 'hello world'
+Old : 2019-04-16 09:20:16.703  hhh 
+New : 2019-04-16 09:20:44.622  hello world 
+mrk> pvput PVRstringArray '["a a","bbb bbb","cc ccc"]'
+Old : 2019-04-16 09:21:23.936  []
+New : 2019-04-16 09:22:36.855  ["a a", "bbb bbb", "cc ccc"]
+mrk> pvput PVRstringArray '["a a","bbb bbb","cc ccc"]'
+Old : 2019-04-16 09:21:23.936  []
+New : 2019-04-16 09:22:36.855  ["a a", "bbb bbb", "cc ccc"]
+</pre>
+<h3>Put to multiple fields</h3>
+<p>
+pvput can write to multiple fields using <b>JSON</b> syntax.
+It can write to any field type except for <b>union</b> and <b>unionArray</b>.
+</p>
+<p>For example</p>
+<pre>
+mrk> pvinfo PVRdumbPowerSupply
+PVRdumbPowerSupply
+Server: 10.0.0.26:5075
+Type:
+    structure
+        alarm_t alarm
+            int severity
+            int status
+            string message
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+        structure power
+            double value
+            alarm_t alarm
+                int severity
+                int status
+                string message
+        structure voltage
+            double value
+            alarm_t alarm
+                int severity
+                int status
+                string message
+        structure current
+            double value
+            alarm_t alarm
+                int severity
+                int status
+                string message
+
+mrk> pvput -r "voltage" PVRdumbPowerSupply voltage='{"value":"5"}'
+Old : structure 
+    ...
+New : structure 
+    structure voltage
+        double value 5
+        alarm_t alarm 
+            int severity 0
+            int status 0
+            string message 
+mrk> pvput -r "voltage,power" PVRdumbPowerSupply  power='{"value":1.2}' voltage='{"value":1.2}'
+Old : structure 
+    ...
+New : structure 
+    structure voltage
+        double value 1.2
+        alarm_t alarm 
+            int severity 0
+            int status 0
+            string message 
+    structure power
+        double value 1.2
+        alarm_t alarm 
+            int severity 0
+            int status 0
+            string message 
+mrk>
+mrk> pvinfo PVRBigRecord
+PVRBigRecord
+Server: 10.0.0.26:5075
+Type:
+    structure
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+        structure scalar
+            structure boolean
+                boolean value
+            structure byte
+                byte value
+            structure long
+                long value
+            structure double
+                double value
+            structure string
+                string value
+        structure scalarArray
+            structure boolean
+                boolean[] value
+            structure byte
+                byte[] value
+            structure long
+                long[] value
+            structure double
+                double[] value
+            structure string
+                string[] value
+        structure[] structureArray
+            structure
+                string name
+                string value
+        union restrictedUnion
+            string string
+            string[] stringArray
+        any variantUnion
+
+mrk> pvput PVRBigRecord scalar='{"boolean":{"value":true},"double":{"value":5}}'
+Old : structure 
+   ...
+New : structure 
+   ...
+    structure scalar
+        structure boolean
+            boolean value true
+        structure byte
+            byte value 0
+        structure long
+            long value 0
+        structure double
+            double value 5
+        structure string
+            string value 
+    ...
+mrk> pvput PVRBigRecord scalar='{"string":{"value":"Hi"}}' scalarArray='{"string":{"value":["aa","bb"]}}'
+Old : structure 
+    ...
+New : structure 
+    time_t timeStamp 2019-04-16 09:46:50.379  
+        long secondsPastEpoch 1555422410
+        int nanoseconds 379367681
+        int userTag 0
+    structure scalar
+        structure boolean
+            boolean value true
+        structure byte
+            byte value 0
+        structure long
+            long value 0
+        structure double
+            double value 5
+        structure string
+            string value Hi
+    structure scalarArray
+        structure boolean
+            boolean[] value []
+        structure byte
+            byte[] value []
+        structure long
+            long[] value []
+        structure double
+            double[] value []
+        structure string
+            string[] value ["aa", "bb"]
+    structure[] structureArray
+    union restrictedUnion
+        (none)
+    any variantUnion
+        (none)
+mrk> pvput PVRBigRecord '{"structureArray":[{"name":"marty","value":"Kraimer"},{"name":"bob","value":"Dalesio"}]}'
+Old : structure 
+    ...
+New : structure 
+    ...
+    structure[] structureArray
+        structure 
+            string name marty
+            string value Kraimer
+        structure 
+            string name bob
+            string value Dalesio
+    union restrictedUnion
+        (none)
+    any variantUnion
+        (none)
+</pre>
+<h3>PVRecord filters</h3>
+<p>An example using the array filter is:</p>
+<pre>
+mrk> pvget PVRdoubleArray
+PVRdoubleArray 2019-04-16 13:55:38.384  [1,2,3,4,5,6,7,8,9,10]
+mrk> pvput -r "value[array=1:3]"  PVRdoubleArray [100,200,300]
+Old : [2,3,4]
+New : [100,200,300]
+mrk> pvget PVRdoubleArray
+PVRdoubleArray 2019-04-16 13:57:02.736  [1,100,200,300,5,6,7,8,9,10]
+mrk> 
+</pre>
+<h3>IocCore Channel Filters</h3>
+<p>Does not seem to work for pvput:</p>
+<pre>
+mrk> pvput DBRdoubleArray [1,2,3,4,5,6]
+Old : 2019-04-16 08:59:37.622  [1,2,3,4,5]
+New : 2019-04-16 13:59:09.886  [1,2,3,4,5]
+mrk> pvput DBRdoubleArray.[2:3] [100,200]
+Old : 2019-04-16 13:59:09.886  [1,2]
+New : 2019-04-16 14:00:39.714  [100,200]
+mrk> pvget DBRdoubleArray
+DBRdoubleArray 2019-04-16 14:00:39.714  [100,200]
+mrk> pvput DBRdoubleArray [1,2,3,4,5,6]
+Old : 2019-04-16 14:00:39.714  [100,200]
+New : 2019-04-16 14:01:09.475  [1,2,3,4,5]
+mrk> pvput -p ca DBRdoubleArray.[2:3] [100,200]
+Old : [3,4]
+New : []
+mrk> pvget DBRdoubleArray
+DBRdoubleArray 2019-04-16 14:01:27.982  [100,200]
+mrk> 
+</pre>
+</div>
+</body>
+</html>

@@ -36,7 +36,7 @@
 <h1>EPICS V4 Developer's Guide</h1>
 <!-- Maturity: Working Draft or Request for Comments, or Recommendation, and date.  -->
 
-<h2 class="nocount">EPICS V7 Working Draft, 2018.11.26</h2>
+<h2 class="nocount">2019.04.16</h2>
 <p>
 <b>NOTE: This is the working version of the developerGuide.</b>
 <br />
@@ -516,243 +516,18 @@ A client running as part of a V3 IOC also has the same choices.
 Since <b>channelProviderRegistry</b> allows an arbitrary number of providers,
 additional providers can be developed for either the client or remote side of <b>pva</b>.
 </p>
-<h2>pvlist, pvget, pvput, pvinfo, and eget</h2>
-<p>pvAccessCPP provides command line tools. Each provides help. For example:</p>
-<pre>
-pvlist -help
-</pre>
-<p>
-The examples shown in this section assume that the example database described in the next secton is running.
-Also your <b>PATH</b> environment variable must include the appropriate bin directory from pvAccessCPP.
-For example:</p>
-<pre>
-export PATH=$PATH:${EPICSV7}/pvAccessCPP/bin/${EPICS_HOST_ARCH}
-</pre>
-<h3>pvlist</h3>
-<p>The options are:</p>
-<pre>
-mrk> pvlist -help
-
-Usage: pvlist [options] [server address or GUID starting with '0x']...
-
-options:
-  -h: Help: Print this message
-  -V: Print version and exit
-  -i                 Print server info (when server address list/GUID is given)
-  -w &lt;sec&gt;:          Wait time, specifies timeout, default is 3.000000 second(s)
-  -q:                Quiet mode, print only error messages
-  -d:                Enable debug output
-
-examples:
-	pvlist
-	pvlist ioc0001
-	pvlist 10.5.1.205:10000
-	pvlist 0x83DE3C540000000000BF351F
-</pre>
-<p>Without any arguments this shows the location of all V4 servers it can locate.
-For example:</p>
-<pre>
-pvlist
-GUID 0xC50BFC5B000000003E347E33 version 1: tcp@[10.0.0.111:5075, 192.168.124.1:5075]
-</pre>
-<p>This only shows one line because only the exampleDatabase server is running.
-In an operational system the output could be quite extensive.</p>
-<p>
-Once the location of a server is known the list of channel names can be shown by asking for either
-the GUID or tcp address.
-Thus either:</p>
-<pre>
-pvlist 0xC50BFC5B000000003E347E33
-</pre>
-or
-<pre>
-pvlist 10.0.0.111:5075
-</pre>
-produces:
-<pre>
-DBRao01
-DBRdouble00
-...
-</pre>
-
-<h3>pvget</h3>
-<p>pvget provides functionality similar to caget.
-For example:</p>
-<pre>
-mrk> caget DBRdouble01
-DBRdouble01                    0
-</pre>
-<p>The options are:</p>
-<pre>
-mrk> pvget -help
-
-Usage: pvget [options] &lt;PV name&gt;...
-
-options:
-  -h: Help: Print this message
-  -V: Print version and exit
-  -r &lt;pv request&gt;:   Request, specifies what fields to return and options, default is ''
-  -w &lt;sec&gt;:          Wait time, specifies timeout, default is 5.000000 second(s)
-  -p &lt;provider&gt;:     Set default provider name, default is 'pva'
-  -M &lt;raw|nt|json&gt;:  Output mode.  default is 'nt'
-  -v:                Show entire structure (implies Raw mode)
-  -q:                Quiet mode, print only error messages
-  -d:                Enable debug output
- deprecated options:
-  -q, -t, -i, -n, -F: ignored
-  -f &lt;input file&gt;:   errors
- Output details:
-  -m -v:             Monitor in Raw mode.  Print only fields marked as changed.
-  -m -vv:            Monitor in Raw mode.  Highlight fields marked as changed, show all valid fields.
-  -m -vvv:           Monitor in Raw mode.  Highlight fields marked as changed, show all fields.
-  -vv:               Get in Raw mode.  Highlight valid fields, show all fields.
-
-example: pvget double01
-</pre>
-<p>Some examples are:</p>
-<pre>
-mrk> pvget PVRdouble
-PVRdouble                      5
-mrk> pvget PVRdoubleArray
-PVRdoubleArray 5 1 2 3 4 5
-mrk> pvget PVRenum01
-PVRenum01                         zero
-mrk> pvget -v PVRenum
-PVRenum epics:nt/NTEnum:1.0 
-    enum_t value (1) one
-        int index 1
-        string[] choices ["zero", "one"]
-    alarm_t alarm 
-        int severity 0
-        int status 0
-        string message 
-    time_t timeStamp 2018-11-26 10:19:40.278  
-        long secondsPastEpoch 1543245580
-        int nanoseconds 277571561
-        int userTag 0
-</pre>
-<p>Multiple channels can be accessed witn a single command. For example:</p>
-<pre>
-mrk> pvget PVRdouble01 PVRdouble02
-PVRdouble01                       0
-PVRdouble02                       0
-</pre>
-<p>The above examples all use channel provider pva, i. e. the pvAccess server for network
-communication.
-It is also possible to use ca, i. e. the channel access server that comes with iocCore.
-Thus it can access a V3 IOC even if the IOC has no V4 support.
+<h2>pvTools</h2>
+<p>pvAccessCPP implements the following command line tools: 
+pvlist, pvget, pvput, pvinfo, and eget.
+<p>See:
+<a
+href="./pvTools/pvTools.html">pvTools
+</a>
 </p>
-<pre>
-mrk> pvget -p ca DBRdouble01
-DBRdouble01                       0
-mrk> pvget -p ca -r "value,alarm,timeStamp" DBRdouble01
-DBRdouble01
-epics:nt/NTScalar:1.0 
-    double value 0
-    alarm_t alarm INVALID RECORD UDF_ALARM
-    time_t timeStamp &lt;undefined&gt; 0
-</pre>
-<p>pvget can also monitor, i. e. it has functionality similer to camonitor.</p>
-<pre>
-mrk> pvget -m -r "value,alarm,timeStamp" PVRdouble02
-PVRdouble02
-epics:nt/NTScalar:1.0 
-    double value 0
-    alarm_t alarm INVALID NO_STATUS UDF
-    time_t timeStamp &lt;undefine&gt; 0
-
-
-PVRdouble02
-epics:nt/NTScalar:1.0 
-    double value 1
-    alarm_t alarm NO_ALARM NO_STATUS NO_ALARM
-    time_t timeStamp 2015-05-14T08:29:55.769 0
-</pre>
-
-<h3>pvput</h3>
-<p>pvput provides functionality similar to caput.
-For example:</p>
-<pre>
-mrk> caput DBRdouble01 1.0
-Old : DBRdouble01                       0
-New : DBRdouble01                       1
-mrk> pvput DBRdouble01 2.0
-Old : DBRdouble01                       1
-New : DBRdouble01                       2
-</pre>
-<p>To see all options enter:</p>
-<pre>
-mrk> pvput -help
-...
-</pre>
-<p>Here are some examples:</p>
-<pre>
-mrk> pvput PVRdouble 5
-Old : PVRdouble                      0
-New : PVRdouble                      5
-mrk> pvput PVRdoubleArray 5 1 2 3 4 5
-Old : PVRdoubleArray 0
-New : PVRdoubleArray 5 1 2 3 4 5
-mrk> pvput -r "field(scalar)" PVRBigRecord scalar.boolean='{"value":true}' scalar.byte='{"value":9}'
-Old : 
-structure 
-    structure scalar
-        structure boolean
-            boolean value false
-        structure byte
-            byte value 2
-        structure long
-            long value 0
-        structure double
-            double value 0
-        structure string
-            string value 
-
-
-New : 
-structure 
-    structure scalar
-        structure boolean
-            boolean value true
-        structure byte
-            byte value 9
-        structure long
-            long value 0
-        structure double
-            double value 0
-        structure string
-            string value 
-
-</pre>
-<h3>pvinfo</h3>
-<p>pvinfo retrieves the introspection interface for selected channels
-</p>
-<p>The options are:</p>
-<pre>
-mrk> pvinfo -help
-
-Usage: pvinfo [options] &lt;PV name&gt;...
-
-
-options:
-  -h: Help: Print this message
-  -V: Print version and exit
-  -w &lt;sec&gt;:          Wait time, specifies timeout, default is 3.000000 second(s)
-  -p &lt;provider&gt;:     Set default provider name, default is 'pva'
-  -d:                Enable debug output
-  -c:                Wait for clean shutdown and report used instance count (for expert users)
-Example: pvinfo double01
-</pre>
-<h3>eget</h3>
-<p>eget provides many of the same features but in addition supports
-channelRPC and understands some of the normative types.
-</p>
-<p>To see all the options enter:</p>
-<pre>
-mrk> eget -help
-...
-</pre>
-
+<p>pvget and pvput support request options. See:</p>
+<a
+href="./pvRequest/pvRequest.html">pvRequest
+</a>
 <h2>example code</h2>
 <p>
 <b>NOTE:</b>
@@ -872,7 +647,7 @@ For the tutorial <b>alarm</b>, <b>timeStamp</b>, and <b>enum</b> are briefly dis
 Below, in section "Special Fields", there is a fuller description of these and the other definitions.
 Also see:
 <a
-href="../pvRequest/pvRequest.html">pvRequest
+href="./pvRequest/pvRequest.html">pvRequest
 </a>
 </p>
 <dl>
@@ -930,7 +705,7 @@ from the server, 2) provide record options, and 3) provide field specific option
 <br />
 See:
 <a
-href="../pvRequest/pvRequest.html">pvRequest
+href="./pvRequest/pvRequest.html">pvRequest
 </a>
 for a full description.
 </p>

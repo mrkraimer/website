@@ -5,14 +5,14 @@
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
   <title>EPICS pvRequest</title>
   <link rel="stylesheet" type="text/css"
-  href="../css/base.css" />
+  href="../../css/base.css" />
   <link rel="stylesheet" type="text/css"
-  href="../css/epicsv4.css" />
+  href="../../css/epicsv4.css" />
   <style type="text/css">
   </style>
   <!-- Script that generates the Table of Contents -->
   <script type="text/javascript"
-  src="../css/tocgen.js">
+  src="../../css/tocgen.js">
   </script>
 </head>
 
@@ -21,16 +21,8 @@
 <div class="head">
 <h1>EPICS pvRequest</h1>
 
-<h2 class="nocount">Working Draft, 24-Aug-2018</h2>
+<h2 class="nocount">2019.04.15</h2>
 <dl>
-  <dt>latest version:</dt>
-    <dd>
-      Being developed.
-    </dd>
-    <dt>previous version:</dt>
-    <dd>
-       <a href="pvRequest_20140227.html">pvRequest_20140227.html</a>
-    </dd>
   <dt>editors:</dt>
     <dd>Marty Kraimer</dd>
 </dl>
@@ -43,7 +35,7 @@ This document discusses how this argument is defined and used.
 </p>
 <p>This product is available via an
 <a
-href="../LICENSE">open source license
+href="../../LICENSE">open source license
 </a>
 </p>
 
@@ -205,7 +197,7 @@ and just ignores other options.
 Since the data can be quite complex it could be very difficult for clients to use.
 Lets consider a few typical types of clients.</p>
 <h3>client tools</h3>
-<p>Tools like CSS caqtDM, etc., provide widgets like strip chart , alarm display, slider, etc.
+<p>Tools like <b>CSS</b>, <b>caqtDM</b>, etc., provide widgets like strip chart , alarm display, slider, etc.
 These widgets want data like EPICS base provides.
 That means some combination of <b>value</b>, <b>alarm</b>, <b>timeStamp</b>,
 <b>display</b>, and <b>control</b> information.
@@ -458,7 +450,7 @@ fullFieldName{request}     // recursive definition
 </dl>
 <h3>examples</h3>
 <pre>
-mrk> pvget -r "" -i PVRdouble   // "" means entire PVStructure
+mrk> pvget -r "" -v PVRdouble   // "" means entire PVStructure
 PVRdouble
 epics:nt/NTScalar:1.0 
     double value 0
@@ -474,7 +466,7 @@ mrk> pvget -r "value" -i PVRdouble
 PVRdouble
 structure 
     double value 0
-mrk> pvget -r "record[process=true]field(value,timeStamp)" -i PVRdouble
+mrk> pvget -r "record[process=true]field(value,timeStamp)" -v PVRdouble
 PVRdouble
 structure 
     double value 0
@@ -483,48 +475,11 @@ structure
         int nanoseconds 697865085
         int userTag 0
 </pre>
-
-<h2>Existing Options</h2>
-<p>Some record options, but no field options, are officialy supported. 
-The next section describe possible field options.
-</p>
-<p>At present the following record options are supported:</p>
-<dl>
-    <dt>queueSize</dt>
-     <dd>
-      This is used to define the queueSize for monitors.
-      The default is:
-<pre>
-record[queueSize=2]
-</pre>
-      A larger size can be specified.
-     </dd>
-    <dt>process</dt>
-     <dd>
-      This is used by <b>qsrv</b> and <b>pvDatabase</b> to specify if records should be processed.
-      The default is <b>false</b> for channelGet and <b>true</b> for channelPut and channelPutGet.
-      <br />
-       An example is:
-<pre>
-record[process=false]
-</pre>
-     </dd>
-    <dt>block</dt>
-     <dd>
-      This is used to specify if a request to process a record should
-      block until the record completes processing.
-      The default is the same as the value of the  <b>process</b> option.
-      An example is:
-<pre>
-record[block=false]
-</pre>
-     </dd>
-</dl>
 <h2>pvRequest compliance</h2>
 <h3>pvDatabase</h3>
 <p>
-<b>pvDatabaseCPP</b> and <b>pvDatabaseJava</b> are complient with <b>pvRequest</b> including record options.
-The latest <b>epics-base</b> repositories do not support any field options.
+<b>pvDatabaseCPP</b> and <b>pvDatabaseJava</b> are compliant with <b>pvRequest</b> including record options.
+The latest <b>epics-base</b> repositories imlement plugin support, but not via <b>pvRequest</b>
 However see below for a <b>pvDatabaseCPP</b> implementation that does support field options.
 </p> 
 <h3>ca provider</h3>
@@ -536,12 +491,14 @@ The latest version of <b>ca</b> in <b>pvAccessCPP</b> has <b>pvRequest</b> suppo
 allows the client to select a combination of
 of <b>value</b>, <b>alarm</b>, <b>timeStamp</b>,
 <b>display</b>, <b>control</b>, and <b>valueAlarm</b> information.
-<br />
-But there are some problems.
-Hopefully these will be fixed.
+</p>
+<p>
+It implements record options, but not field options.
+However the client can use the <b>epics-base</b> plugin support.
 </p>
 <h3>qsrv</h3>
-<p><b>qsrv</b> is not complient with <b>pvRequest</b>
+<p><b>qsrv</b> is not compliant with <b>pvRequest</b>.
+It does honor the record options, but does not honor the field subset options.
 <br />
 For example:
 </p>
@@ -584,14 +541,60 @@ epics:nt/NTScalar:1.0
         int highAlarmSeverity 0
         double hysteresis 0
 </pre>
-<h2>pvDatabase: Proposed plugin support</h2>
-<p>This section describes a set of proposed field options for pvDatabase,
-but first a brief description of channel filters is provided.
-The channel filters were the inspiration for many of the proposed field options.
-Next a brief description of an implementation of filters for PVRecords is provided.
-A client makes requests via field options.
-Finally a set of proposed options is described.
+<h2>Existing record options</h2>
+<p>At present the following record options are supported:</p>
+<dl>
+    <dt>queueSize</dt>
+     <dd>
+      This is used to define the queueSize for monitors.
+      The default is:
+<pre>
+record[queueSize=2]
+</pre>
+      A larger size can be specified.
+     </dd>
+    <dt>process</dt>
+     <dd>
+      This is used by <b>qsrv</b> and <b>pvDatabase</b> to specify if records should be processed.
+      The default is <b>false</b> for channelGet and <b>true</b> for channelPut and channelPutGet.
+      <br />
+       An example is:
+<pre>
+record[process=false]
+</pre>
+     </dd>
+    <dt>block</dt>
+     <dd>
+      This is used to specify if a request to process a record should
+      block until the record completes processing.
+      The default is the same as the value of the  <b>process</b> option.
+      An example is:
+<pre>
+record[block=false]
+</pre>
+     </dd>
+</dl>
+<h2>pvDatabase field plugin options</h2>
+<p>
+For details see:
+<a
+href="../pluginSupport/pluginSupport.html">pluginSupport
+</a>
 </p>
+<p>
+For example:
+</p>
+<pre>
+mrk> pvget -r "value" PVRdoubleArray
+PVRdoubleArray
+structure 
+    double[] value [1,2,3,4,5,6,7,8,9,10]
+mrk> pvget -r "value[array=3:5]" PVRdoubleArray
+PVRdoubleArray
+structure 
+    double[] value [4,5,6]
+</pre>
+<h2>iocCore and qsrv plugin options</h2>
 <h3>iocCore channel filters</h3>
 <p>Beginning with the 3.15 releases of <b>epics-base</b>
 channel filters are supported.
@@ -604,11 +607,10 @@ Using the <b>channel access</b> client API, the client requests plugins by appen
 For example:
 </p>
 <pre>
-caget test:channel 'test:channel.{"arr":{"s":2,"i":2,"e":8}}' test:channel.[3:5] test:channel.[3:2:-3]
- test:channel 10 0 1 2 3 4 5 6 7 8 9
- test:channel.{"arr":{"s":2,"i":2,"e":8}} 4 2 4 6 8
- test:channel.[3:5] 3 3 4 5
- test:channel.[3:2:-3] 3 3 5 7
+mrk> caget DBRdoubleArray
+DBRdoubleArray 2019-04-15 14:16:33.909  [1,2,3,4,5]
+mrk> caget DBRdoubleArray.[2:4]
+DBRdoubleArray.[2:4] 2019-04-15 14:16:33.909  [1,2,3]
 </pre>
 <p>Some observations about the channel filters:
 </p>
@@ -639,165 +641,30 @@ Channel connect timed out: 'DBRdoubleArray.[xxx:yyy]' not found.
     <dt>current implementation does not work for put</dt>
        <dd>
 <pre>
+mrk> pvput DBRdoubleArray [1,2,3,4,5]
+Old : 2019-04-15 14:28:49.283  [100,200]
+New : 2019-04-15 14:31:15.022  [1,2,3,4,5]
 mrk> caget DBRdoubleArray.[2:4]
 DBRdoubleArray.[2:4] 3 3 4 5
 mrk> caput DBRdoubleArray.[2:4] 3 10 20 30
 Old : DBRdoubleArray.[2:4] 3 3 4 5
 New : DBRdoubleArray.[2:4] 3 3 0 0
-mrk> caget DBRdoubleArray.[2:4]
-DBRdoubleArray.[2:4] 3 2.50321e-308 0 0
+mrk> caget DBRdoubleArray
+DBRdoubleArray 5 3 0 0 0 0
+mrk> 
 </pre>
       </dd>
 </dl>
-<h3>pvDatabase plugin support</h3>
-<p>
-<a
-href="https://github.com/mrkraimer/pvDatabaseCPP">pvDatabaseCPPMRK
-</a>
-implements support for plugins.
-It does that via the <b>pvCopy</b> facility.
-</p>
-<p>
- <b>pvCopy</b> is implemented in pvData.
-<b>pvDatabaseCPPMRK</b> has a local version of <b>pvCopy</b> which has been modified to support plugins.
-It currently has support for <b>array</b>, <b>deadband</b> , and <b>timeStamp</b> similar to what
-iocCore filter implements.
-Since <b>pvCopy</b> implements the support,
-PVRecord code does not have to know about the plugins.
-</p>
-<p>Other plugins can be created and registered with the plugin support.
-</p>
-<p>Instead of a client requesting plugins via info appended to the channel name,
-the client specifies field options.
-<br />
+<h3>qsrv channel filters</h3>
+<p>Provider <b>qsrv</b>, i. e. the pvAccess Channel Provider for V3 DBRecords,
+supports channel filters just like <b>caget</b>.
 For example:
 </p>
 <pre>
-mrk> pvget -r "value" PVRdoubleArray
-PVRdoubleArray
-structure 
-    double[] value [1,2,3,4,5,6,7,8,9,10]
-mrk> pvget -r "value[array=3:5]" PVRdoubleArray
-PVRdoubleArray
-structure 
-    double[] value [4,5,6]
-</pre>
-<h3>array plugin</h3>
-<p>
-This  filter is used to retrieve parts of an array (subarrays and strided subarrays).
-It is modeled after the iocCore array channel filter.
-</p>
-<p>
-This filter works for both get and put.
-It works for any scalarArray field.
-It has not been tested for structureArray or unionArray fields.
-</p>
-<p>The syntax is one of the following:</p>
-<pre>
-[array=start]
-[array=start:end]
-[array=start:increment:end]
-</pre>
-<p>
-<b>start</b> and <b>end</b> both specify an index.
-<b>increment</b> must be a positive integer.
-</p>
-<p>
-<b>start</b> and <b>end</b> can be a positive or negative integer.
-If negative it is relative to the end of the array with -1 meaning the last element.
-</p>
-<p>Suppose that the master array is:</p>
-<pre>
-1,2,3,4,5,6,7,8,9,10
-</pre>
-<p>Then the get request</p>
-<pre>
-[array=0:4]
-</pre>
-gets
-<pre>
-1,2,3,4,5
-</pre>
-The request:
-<pre>
-[array=-3:-1]
-</pre>
-gets
-<pre>
-8,9,10
-</pre>
-The request:
-<pre>
-[array=2:5]
-</pre>
-gets
-<pre>
-3,4,5,6
-</pre>
-The request:
-<pre>
-[array=0:2:-1]
-</pre>
-gets
-<pre>
-1,3,5,7,9
-</pre>
-<h3>deadband plugin</h3>
-<p>
-This filter is used to limit the changes to a numeric scalar field that are reported to a client.
-It is modeled after the iocCore deadband channel filter.
-</p>
-<p>
-This filter only works for numeric scalar fields and only for toCopy.
-</p>
-<p>The syntax is one of the following:</p>
-<pre>
-[deadband=abs:value]
-[deadband=rel:value]
-</pre>
-where
-<dl>
-   <dt>abs</dt>
-    <dd>The amount value must change since the last value the client received.</dd>
-   <dt>rel</dt>
-     <dd>
-       The percentage amount the value must change since the last value the client received. 
-     </dd>
-</dl>
-<h3>timeStamp plugin</h3>
-<p>
-This filter is used for accessing a timeStamp field. 
-It is modeled after the iocCore timeStamp channel filter.
-</p>
-<p>
-This filter only works for a timeStamp field.
-</p>
-<p>The syntax is one of the following:</p>
-<pre>
-[timestamp=current]
-[timestamp=copy]
-</pre>
-where
-<dl>
-  <dt>current</dt>
-     <dd>
-      Only works for toCopy=true.
-      Instead of taking the timestamp from master the timeStamp for the client is set to
-      the current time.
-     </dd>
-   <dt>copy</dt>
-     <dd>
-      Only works for toCopy=false.
-      The timestamp in master is set equal to the timeStamp from the client.
-     </dd>
-</dl>
-<h3>ignore plugin</h3>
-<p>This is not an actual plugin but is handled by pvCopy itself.
-It is used to suppress sending data to a client unless other fields have changed.
-</p>
-<p>The syntax is:</p>
-<pre>
-[ignore=true]
+mrk> pvget DBRdoubleArray
+DBRdoubleArray 2019-04-15 14:16:33.909  [1,2,3,4,5]
+mrk> pvget DBRdoubleArray.[2:4]
+DBRdoubleArray.[2:4] 2019-04-15 14:16:33.909  [1,2,3]  
 </pre>
 
 <h2>Appendix I: Description of the PVStructure created by createRequest</h2>
@@ -982,15 +849,17 @@ control_t control
 <p>Looks OK.</p>
 <h3>display</h3>
 <pre>
-display_t display
-    double limitLow
-    double limitHigh
+structure display
+    double limitLow -10
+    double limitHigh 10
     string description 
-    string format 
-    string units
+    string units volts
+    int precision 2
+    enum_t form (0) Default
+        int index 0
+        string[] choices
+            ["Default", "String", "Binary", "Decimal", "Hex", "Exponential", "Engineering"]
 </pre>
-<p><b>format</b> is a problem but what to do?
-</p>
 <h3>valueAlarm</h3>
 <pre>
 valueAlarm_t valueAlarm

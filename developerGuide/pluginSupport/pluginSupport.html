@@ -6,9 +6,9 @@
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
   <title>EPICS V4 Plugin Proposal</title>
   <link rel="stylesheet" type="text/css"
-  href="../css/base.css" />
+  href="../../css/base.css" />
   <link rel="stylesheet" type="text/css"
-  href="../css/epicsv4.css" />
+  href="../../css/epicsv4.css" />
   <style type="text/css">
   /*<![CDATA[*/
      .about { margin-left: 3em; margin-right: 3em; font-size: .83em}
@@ -28,30 +28,22 @@
   /*]]>*/</style>
   <!-- Script that generates the Table of Contents -->
   <script type="text/javascript"
-  src="../css/tocgen.js">
+  src="../../css/tocgen.js">
   </script>
 </head>
 <body>
 
 <div class="head">
-<h1>pvDatabase Plugin Proposal</h1>
+<h1>pvDatabase Plugin Support</h1>
 
-<h2 class="nocount">Working Draft, 09-Aug-2018</h2>
+<h2 class="nocount">2018.04.15</h2>
 <dl>
-  <dt>This version:</dt>
-    <dd>
-      Being developed.
-    </dd>
-    <dt>Previous version:</dt>
-    <dd>
-      None
-    </dd>
   <dt>Editors:</dt>
     <dd>Marty Kraimer</dd>
 </dl>
 
 <p>This product is available via an <a
-href="../LICENSE">open source license
+href="../../LICENSE">open source license
 </a></p>
 
 </div>
@@ -66,13 +58,13 @@ href="../LICENSE">open source license
 <h2>pvRequest Options</h2>
 <p>
 <b>NOTE:</b>
-This section describes work in progress.
-What is described is only implemented in C++ and only in:
-<a href="https://github.com/mrkraimer/pvDatabaseCPP">pvDatabaseCPP</a>
+Plugin support via pvRequest is only implemented in C++ and only in:
+<a href="https://github.com/epics-base/pvDatabaseCPP">pvDatabaseCPP</a>
 </p>
 <h3>Overview</h3>
-<p>As described in the previous section, both record and field options can be specified.
-This section provides some details about support for options.
+<p>
+Both record and field options can be specified.
+This section provides some details about support for field options.
 </p>
 <p>Some examples are:</p>
 <ul>
@@ -88,7 +80,7 @@ pvget -r "record[process=true]field(value[array=5:10])" someScalarArray
       Changes in the timeStamp field are ignored if no other fields being monitored
       change value.
 <pre>
-pvget -m -r "field(value[deadband=abs:1.0],timeStamp[ignore=true]" someChannel 
+pvget -m -r "value[deadband=abs:1.0],timeStamp[ignore=true]" -v someScalar
 </pre>
       </li>
 </ul>
