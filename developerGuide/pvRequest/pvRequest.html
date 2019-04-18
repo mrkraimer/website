@@ -21,7 +21,7 @@
 <div class="head">
 <h1>EPICS pvRequest</h1>
 
-<h2 class="nocount">2019.04.15</h2>
+<h2 class="nocount">2019.04.18</h2>
 <dl>
   <dt>editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -78,6 +78,34 @@ Monitor createMonitor(
     MonitorRequester MonitorRequester,
     PVStructure pvRequest);
 </pre>
+<h3>createRequest</h3>
+<p><b>pvAcccess</b> does not define the format of a <b>pvRequest</b> but <b>pvData</b>
+provides a convenience method:</p>
+<pre>
+PVStructure createRequest(String request);
+</pre>
+This creates a <b>pvRequest</b> that can be used to communicate with a server.
+<p>
+<b>pvDataCPP</b> and <b>pvDataJava</b> both implement <b>CreateRequest</b>.
+</p>
+<p>
+A pvRequest structure allows a client to select:
+</p>
+<dl>
+    <dt>an arbitrary set of fields.</dt>
+      <dd>
+        When a client connects to  channel, it receives a <b>Structure</b> that describes the
+        <b>PVStructure</b> the channel supports.
+        From the <b>Structure</b>, or just by anticipating what the server supports,
+        the client can select the fields it wants to use.
+      </dd>
+      <dt>global and field specific options</dt>
+      <dd>
+         The client can pass global and field specific options to the server.
+         <br />
+         An option is just a <b>name,value</b> pair, where both name and value are a string.
+      </dd>
+</dl>
 <h3>terminology</h3>
 <dl>
    <dt>channel access</dt>
@@ -133,7 +161,7 @@ a single argument can be used to pass client requests to the server, i.e.
 PVStructure pvRequest
 </pre>
 <p><b>pvRequest</b> allows a client to pass structured data to the server.
-But without something more servers and tools would not know what to do with a pvRequest structure.
+But without some additional facility, clents, servers, and tools would not know what to do with a pvRequest structure.
 Thus a facility <b>CreateRequest</b> was created.
 It takes a <b>request</b> string and creates a <b>pvRequest</b>.
 </p>
@@ -143,34 +171,7 @@ At this time more people became involved with develpment.
 This is now what is called the <b>EPICS 7</b> <b>V4</b> modules.
 Both Java, C++, and Python implementations are now provided.
 </p>
-<h3>createRequest</h3>
-<p><b>pvAcccess</b> does not define the format of a <b>pvRequest</b> but <b>pvData</b> does
-provide a convenience method:</p>
-<pre>
-PVStructure createRequest(String request);
-</pre>
-This creates a <b>pvRequest</b> that can be used to communicate with a server.
-<p>
-pvDataCPP and pvDataJava both implement <b>CreateRequest</b>.
-</p>
-<p>
-A pvRequest structure allows a client to select:
-</p>
-<dl>
-    <dt>an arbitrary set of fields.</dt>
-      <dd>
-        When a client connects to  channel, it receives a <b>Structure</b> that describes the
-        <b>PVStructure</b> the channel supports.
-        From the <b>Structure</b>, or just by anticipating what the server supports,
-        the client can select the fields it wants to use.
-      </dd>
-      <dt>global and field specific options</dt>
-      <dd>
-         The client can pass global and field specific options to the server.
-         <br />
-         An option is just a <b>name,value</b> pair, where both name and value are a string.
-      </dd>
-</dl>
+
 <h3>client guidelines</h3>
 <p>When a client connects to a channel, the client callback has a  <b>Structure</b> argument.
 The <b>Structure</b> is the introspection interface for the <b>PVStructure</b> associated with the channel.
@@ -181,7 +182,7 @@ Another way is for the client to guess which fields the channel supports.
 This is what most clients will do.
 For example a widget for a display manager knows which fields it requires.
 </p>
-<p>The server may provide a different set of fields then the client requests.
+<p>The server decides which fields it supports. It ignores fields that client requests but are not supported.
 When a get, put, etc, connects the client code must be prepared to accept what the server provides.
 </p>
 <h3>server guidelines</h3>
@@ -221,7 +222,7 @@ where
 <p>In this case the client could just say that it wants <b>"putField(argument),getField(result)"</b>
 </p>
 <h3>normative type support</h3>
-<p>There is automatic support for some normative types like NTScalar and NTArray.
+<p>There is support for some normative types like NTScalar and NTArray.
 Other normative types could provide helper code that either uses the conventions and support described
 in this document or invent their own support for creating a pvRequest.</p>
 <h3>other specialized support</h3>
@@ -231,16 +232,41 @@ and it may also be necessary for the support to implement various Channel method
 
 
 <h2>Create Request</h2>
-<h3>where defined</h3>
-<p><b>pvData</b> (both pvDataJava and pvDataCPP) have a convenience class with a method <b>createRequest</b>.
-For example pvDataJava has:</p>
+<h3>Oveview</h3>
+<p>The following are the two main components related to pvRequest:</p>
+<dl>
+   <dt>CreateRequest</dt>
+      <dd>
 <pre>
-public class CreateRequestFactory {
-   public static PVStructure createRequest(String request)
-}
+PVStructure createRequest(String request);
 </pre>
+       Creates a "PVStructure pvRequest"
+       to be passed from a client to a server.
+      A pvRequest structure allows a client to select:
+      <ol>
+         <li>An arbitrary subset of the fields in the top level data structure for the channel.</li>
+         <li>Global and field specific options</li>
+      </ol> 
+      This is implemented in <b>pvDataJava</b> and <b>pvDataCPP</b>.
+      </dd>
+   <dt>PVCopy</dt>
+     <dd>
+      PVCopy is a facility that copies data between a top
+      level PVStructure for a client and the
+      top level PVStructure from the server.
+      <br /><br />
+      It uses the pvRequest from the client to create the client top level PVStructure.
+      <br /><br />
+      PVCopy is used by the server side of pvAccess to 
+      transfer data between the two top level PVStructures.
+      <br /><br />
+     In Java this is implemented in <b>pvDataJava</b>.
+     In C++ it is implemented in <b>pvDatabaseCPP</b>.
+     </dd>
+</dl>
+
 <h3>purpose</h3>
-<p>The purpose is to create a pvRequest structures for accesssing data in a server.
+<p>The purpose is to create a pvRequest structure for accesssing data in a server.
 It allows the clients to select an arbitrary subset of the fields in the top level structure
 associated with the channel.
 It also allows the client to specify options.
@@ -263,12 +289,41 @@ A record has a top level <b>PVStructure</b> that holds the data for the record.
 Other pvAcccess providers must provide a <b>PVStructure</b> for each channel it supports.
 </p>
 <p>
-<b>qsrv</b> is a channel provider for iocCore <b>DBRecord</b>s.
+<b>qsrv</b>, which provides access to iocCore <b>DBRecord</b>s, is an example that also accepts a pvRequest
+created by a call to createRequest.
 </p>
+<h4>Relationship to Channel methods of pvAccess</h4>
+<p>Channel has methods:</p>
+<dl>
+   <dt>createChannelGet,createChannelPut,and createMonitor</dt>
+     <dd>For these the request string is of the form:
+<pre>
+record[option,...]field(fieldDef,...)
+OR
+field(fieldDef,...)
+OR
+fieldDef,...
+</pre>
+   </dd>
+   <dt>createChannelPutGet</dt>
+     <dd>For these the request string is of the form:
+<pre>
+record[option,...]putField(fieldDef,...)getField(fieldDef,...)
+OR
+putField(fieldDef,...)getField(fieldDef,...)
+</pre>
+   </dd>
+   <dt>createChannelProcess</dt>
+     <dd>Server dependent. Provider <b>local</b> accepts an empty string.</dd>
+   <dt>createChannelRPC</dt>
+      <dd>Server dependent.</dd>
+   <dt>createChannelArray</dt>
+      <dd>Server dependent. Provider <b>local</b> accepts an empty string or a string which is the field name.</dd>
+</dl>
+ 
 <h3>syntax</h3>
-<p><b>NOTE:</b> an appendix has a <b>BNF</b> description of request.
-<br />
-This section provides an easier (hopefully) to understand description.
+<p>
+This section provides an easy (hopefully) to understand description.
 </p>
 <p>A request argument has the syntax:</p>
 <pre>
@@ -416,39 +471,8 @@ fullFieldName{request}     // recursive definition
 
 <p>If request is null or an empty string than an entire structure is selected.</p>
 
-<p>The syntax was chosen to be easy to use and to parse:</p>
-<dl>
-   <dt>record[]</dt>
-      <dd>
-      Specifies a set of global options, i. e., options that apply to the record itself. 
-      </dd>
-   <dt>field()</dt>
-   <dt>putField()</dt>
-   <dt>getField()</dt>
-      <dd>
-      Each selects a set of subfields of the top level structure.
-      Each defines a comma separated set of <b>fieldDef</b>s.
-      </dd>
-   <dt>fieldDef</dt>
-     <dd>Selects a single subfield of the current structure.</dd>
-   <dt>option</dt>
-      <dd>
-      A <b>name=value</b> pair. Both <b>name</b> and <b>value</b> are character strings.
-      </dd>
-   <dt>[]</dt>
-      <dd>
-      Holds a comma separated set of <b>option</b>s.
-      </dd>
-   <dt>{}</dt>
-      <dd>
-      Selects a set of subfields of a substructure within the top level structure.
-      Each defines a comma separated set of <b>fieldDef</b>s.
-      This is a recursive definition.
-      Thus a <b>fullFieldName</b> within <b>{}</b> is relative to structure that is referenced
-      by <b>{}</b>.
-      </dd>
-</dl>
 <h3>examples</h3>
+<h4>simple example</h4>
 <pre>
 mrk> pvget -r "" -v PVRdouble   // "" means entire PVStructure
 PVRdouble
@@ -462,26 +486,79 @@ epics:nt/NTScalar:1.0
         long secondsPastEpoch 0
         int nanoseconds 0
         int userTag 0
-mrk> pvget -r "value" -i PVRdouble
+mrk> pvget -r "value" -v PVRdouble
 PVRdouble
 structure 
     double value 0
 mrk> pvget -r "record[process=true]field(value,timeStamp)" -v PVRdouble
-PVRdouble
-structure 
+PVRdouble structure 
     double value 0
-    time_t timeStamp
-        long secondsPastEpoch 1533581620
-        int nanoseconds 697865085
+    time_t timeStamp 2019-04-17 13:18:55.617  
+        long secondsPastEpoch 1555521535
+        int nanoseconds 617126872
         int userTag 0
+
 </pre>
+<h4>more complex example</h4>
+<p>Assume that the channel has the following data:</p>
+<pre>
+pvget -r "field()" -v PVRdumbPowerSupply
+PVRdumbPowerSupply structure 
+    alarm_t alarm 
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp &lt;undefined&gt;              
+        long secondsPastEpoch 0
+        int nanoseconds 0
+        int userTag 0
+    structure power
+        double value 0
+        alarm_t alarm 
+            int severity 0
+            int status 0
+            string message 
+    structure voltage
+        double value 0
+        alarm_t alarm 
+            int severity 0
+            int status 0
+            string message 
+    structure current
+        double value 0
+        alarm_t alarm 
+            int severity 0
+            int status 0
+            string message 
+</pre>
+Then the following selects a subset of the fields:
+<pre>
+mrk> pvget -r "field(alarm{severity,message},timeStamp.secondsPastEpoch,power)" -v PVRdumbPowerSupply
+PVRdumbPowerSupply structure 
+    structure alarm
+        int severity 0
+        string message 
+    structure timeStamp
+        long secondsPastEpoch 0
+    structure power
+        double value 0
+        alarm_t alarm 
+            int severity 0
+            int status 0
+            string message 
+</pre>
+
 <h2>pvRequest compliance</h2>
 <h3>pvDatabase</h3>
 <p>
 <b>pvDatabaseCPP</b> and <b>pvDatabaseJava</b> are compliant with <b>pvRequest</b> including record options.
-The latest <b>epics-base</b> repositories imlement plugin support, but not via <b>pvRequest</b>
-However see below for a <b>pvDatabaseCPP</b> implementation that does support field options.
+</p>
+<p>
+As described below <b>pvDatabaseCPP</b> supports field options via plugin support.
 </p> 
+<p>
+The latest <b>epics-base</b> implements plugin support, but not via <b>pvRequest</b>.
+</p>
 <h3>ca provider</h3>
 <p><b>ca</b> is a client provider that uses the <b>channel access</b> network protocol,
 but presents data to the client as <b>pvData</b> structures.
@@ -499,15 +576,17 @@ However the client can use the <b>epics-base</b> plugin support.
 <h3>qsrv</h3>
 <p><b>qsrv</b> is not compliant with <b>pvRequest</b>.
 It does honor the record options, but does not honor the field subset options.
-<br />
+It does honor the <b>epics-base</b> plugin support.
+</p>
+<p>
 For example:
 </p>
 <pre>
-mrk> pvget -p ca -r "value" -i DBRdouble
+mrk> pvget -p ca -r "value" -v DBRdouble
 DBRdouble
 structure 
     double value 0
-mrk> pvget -p pva -r "value" -i DBRdouble
+mrk> pvget -p pva -r "value" -v DBRdouble
 DBRdouble
 epics:nt/NTScalar:1.0 
     double value 0
@@ -608,9 +687,13 @@ For example:
 </p>
 <pre>
 mrk> caget DBRdoubleArray
-DBRdoubleArray 2019-04-15 14:16:33.909  [1,2,3,4,5]
+DBRdoubleArray 5 1 2 3 4 5
 mrk> caget DBRdoubleArray.[2:4]
-DBRdoubleArray.[2:4] 2019-04-15 14:16:33.909  [1,2,3]
+DBRdoubleArray.[2:4] 3 3 4 5
+mrk> pvget DBRdoubleArray.[2:4]
+DBRdoubleArray.[2:4] 2019-04-17 13:49:48.919  [1,2,3]   | BUG IN QSRV??
+mrk> pvget -p ca DBRdoubleArray.[2:4]
+DBRdoubleArray.[2:4] [3,4,5]
 </pre>
 <p>Some observations about the channel filters:
 </p>
@@ -651,21 +734,17 @@ Old : DBRdoubleArray.[2:4] 3 3 4 5
 New : DBRdoubleArray.[2:4] 3 3 0 0
 mrk> caget DBRdoubleArray
 DBRdoubleArray 5 3 0 0 0 0
-mrk> 
-</pre>
-      </dd>
-</dl>
-<h3>qsrv channel filters</h3>
-<p>Provider <b>qsrv</b>, i. e. the pvAccess Channel Provider for V3 DBRecords,
-supports channel filters just like <b>caget</b>.
-For example:
-</p>
-<pre>
+mrk> pvput DBRdoubleArray [1,2,3,4,5]
+Old : 2019-04-18 05:51:24.438  [100,200,300]
+New : 2019-04-18 05:52:30.546  [1,2,3,4,5]
+mrk> pvput DBRdoubleArray.[2:4] [100,200,300]
+Old : 2019-04-18 05:52:30.546  [1,2,3]
+New : 2019-04-18 05:53:08.617  [100,200,300]
 mrk> pvget DBRdoubleArray
-DBRdoubleArray 2019-04-15 14:16:33.909  [1,2,3,4,5]
-mrk> pvget DBRdoubleArray.[2:4]
-DBRdoubleArray.[2:4] 2019-04-15 14:16:33.909  [1,2,3]  
+DBRdoubleArray 2019-04-18 05:53:08.617  [100,200,300]
 </pre>
+       </dd>
+</dl>
 
 <h2>Appendix I: Description of the PVStructure created by createRequest</h2>
 <p><b>NOTE:</b> This section is only of interest to someone who is implementing code that

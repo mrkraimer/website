@@ -36,7 +36,7 @@
 <h1>EPICS V4 Developer's Guide</h1>
 <!-- Maturity: Working Draft or Request for Comments, or Recommendation, and date.  -->
 
-<h2 class="nocount">2019.04.16</h2>
+<h2 class="nocount">2019.04.18</h2>
 <p>
 <b>NOTE: This is the working version of the developerGuide.</b>
 <br />
@@ -150,10 +150,17 @@ Each has a single github repository.
 <p>
 The other components are implemented in both C++ and Java,
 with each language having it's own github repository.
-For example <b>pvData</b> has the repositories
-<a href="https://github.com/epics-base/pvDataJava">pvDataJava</a>
-and
+For example <b>pvDataCPP</b> has the repository
 <a href="https://github.com/epics-base/pvDataCPP">pvDataCPP</a>
+</p>
+<p>
+Java has bundled pvData, normative types, and pvAccess together with:
+<a href="https://github.com/epics-base/epicsCoreJava">epicsCoreJava</a>
+</p>
+<p>
+The other Java components have their own github repositories.
+For example:
+<a href="https://github.com/epics-base/pvaClientJava">pvaClientJava</a>
 </p>
 <p>EPICS 7 has separate C++ and Java releases.
 </p>
@@ -166,11 +173,12 @@ and
        <br />
        <b>epics-base</b> is what has existed since about 1990.
          It has had many releases: The oldest set of releases are the 3.11 series
-         and the newest is the base-7 series.
+         and the newest is the base_7.* series.
          <b>epics-base</b> is also refered to as <b>EPICS V3</b>.
          It provides support for <b>DBRecord</b>s.
          <br />
-         <b>DBRecord</b>s support data as a flat structure.
+         A <b>DBRecord</b> has as a flat data structure,
+         with fields determined by the record type.
        <b>PVA</b> adds structured data and works along side <b>EPICS V3</b>.
        It's main components are:
        <dl>
@@ -223,17 +231,6 @@ and
         </dd>
 </dl>
 <h3>Overview: pvData</h3>
-<p>Detailed Documentation is available at:
-<a href="
-http://epics-pvdata.sourceforge.net/docbuild/pvDataCPP/tip/documentation/html/index.html">
-pvDataCPP
-</a>
-and
-<a href="
-http://epics-pvdata.sourceforge.net/docbuild/pvDataJava/tip/documentation/html/index.html">
-pvDataJava
-</a>
-</p>
 <p>
 pvData supports structured data where a structure is a set of fields.
 Each field is composed of one of the following types:
@@ -279,17 +276,7 @@ Each field is composed of one of the following types:
       </dd>
 </dl>
 <h3>Overview: normativeTypes</h3>
-<p>Detailed Documentation is available at:
-<a href="
-http://epics-pvdata.sourceforge.net/docbuild/normativeTypesCPP/tip/documentation/html/index.html">
-normativeTypesCPP
-</a>
-and
-<a href="
-http://epics-pvdata.sourceforge.net/docbuild/normativeTypesJava/tip/documentation/html/index.html">
-normativeTypesJava
-</a>
-</p>
+
 <p>
 Each normative type defines a structure that has a set of standard fields.
 For example NTScalar defines:</p>
@@ -319,17 +306,6 @@ epics:nt/NTScalar:1.0
     string[] extra2                     //
 </pre>
 <h3>Overview: pvAccess</h3>
-<p>Detailed Documentation is available at:
-<a href="
-http://epics-pvdata.sourceforge.net/docbuild/pvAccessCPP/tip/documentation/html/index.html">
-pvAccessCPP
-</a>
-and
-<a href="
-http://epics-pvdata.sourceforge.net/docbuild/pvAccessJava/tip/documentation/html/index.html">
-pvAccessJava
-</a>
-</p>
 <p>
 A client written in either Java or C++ can communicate with a server written in either Java or C++.
 All communication between client and server is done via the methods provided by pvAccess and by <b>pvData</b> objects.
@@ -379,37 +355,15 @@ The server uses this to decide what to do
 and sends a <b>pvData</b> object back to the client, which is the RPC result.
 </p>
 <h3>Overview: pvaClient</h3>
-<p>Detailed Documentation is available at:
-<a href="
-http://epics-pvdata.sourceforge.net/docbuild/pvaClientCPP/tip/documentation/html/index.html">
-pvaClientCPP
-</a>
-and
-<a href="
-http://epics-pvdata.sourceforge.net/docbuild/pvaClientJava/tip/documentation/html/index.html">
-pvaClientJava
-</a>
-</p>
 <p>pvaClient is a synchronous wrapper for the pvAccess API, which is a callback based API.
 In addition pvaClient provides many convenience methods.
 Thus it is easier to use than pvAccess itself.
 </p>
 <p>pvaClientCPP also provides simplified callback classes, which can be used to implement
 non blocking client code.
-pvaClientJava will be upgraded to support the same features.
+pvaClientJava should be upgraded to support the same features.
 </p>
 <h3>Overview: pvDatabase</h3>
-<p>Detailed Documentation is available at:
-<a href="
-http://epics-pvdata.sourceforge.net/docbuild/pvDatabaseCPP/tip/documentation/html/index.html">
-pvDatabaseCPP
-</a>
-and
-<a href="
-http://epics-pvdata.sourceforge.net/docbuild/pvDatabaseJava/tip/documentation/html/index.html">
-pvDatabaseJava
-</a>
-</p>
 <p>A framework for implementing a network accessible database of smart memory resident
 records. Network access is via pvAccess. The data in each record is a top level PVStructure as defined by
 pvData. A complete implementation of ChannelProvider,
@@ -439,6 +393,8 @@ This is not discussed in this document.
 </ol>
 <p><b>pvAccess</b> implements <b>channelProviderRegistry</b>, which
 allows an arbitrary number of providers.
+</p>
+<p>
 Starting with EPICS 7 there are separate client and server registries.
 </p>
 <p>
@@ -519,15 +475,17 @@ additional providers can be developed for either the client or remote side of <b
 <h2>pvTools</h2>
 <p>pvAccessCPP implements the following command line tools: 
 pvlist, pvget, pvput, pvinfo, and eget.
+</p>
 <p>See:
 <a
 href="./pvTools/pvTools.html">pvTools
 </a>
 </p>
-<p>pvget and pvput support request options. See:</p>
+<p>pvget and pvput support request options. See:
 <a
 href="./pvRequest/pvRequest.html">pvRequest
 </a>
+</p>
 <h2>example code</h2>
 <p>
 <b>NOTE:</b>
@@ -566,13 +524,13 @@ In particular they both have examples:</p>
 Both exampleJava and exampleCPP have other examples.
 </p>
 
-<p>Examples in <b>exampleJava/exampleClient</b>, <b>exampleCPP/exampleClient</b>, and <b>pvaPy</b> require that the database in <b>exampleCPP/exampleClient</b> 
-or <b>exampleJava/exampleClient</b> 
+<p>Examples in exampleClient require that the database in exampleCPP/database 
+or exampleJava/database
 is started.
 If exampleCPP is used the exampleDatabase can be started either as a main
 program or as part of a V3 IOC.
 If started as part of a V3 IOC, it also has V3 records and starts <b>qsrv</b>.
-If started as a main program the result is the same as starting <b>exampleJava/database</b>
+If started as a main program the result is the same as starting exampleJava/database.
 All the V4 PVRecords have the prefix <b>PVR</b> and all the V3 DBRecords have the prefix
 <b>DBR</b>.
 </p>
@@ -589,7 +547,7 @@ The PVRecords are only available via <b>pva</b>.
 Examples of using ca and pva command line tools are:</p>
 <pre>
 mrk> pvlist 
-GUID 0x7F06B2560000000047B97D25, version 1: tcp@[10.0.0.37:45345, 192.168.124.1:45345]
+GUID 0x7F06B2560000000047B97D25 version 1: tcp@[10.0.0.37:45345, 192.168.124.1:45345]
 mrk> pvlist 0x7F06B2560000000047B97D25
 DBRao01
 DBRdouble00
@@ -806,7 +764,19 @@ At present Java provides one server side provider:
       <dd>This is implemented by pvDatabaseJava</dd>
 </dl>
 
-<h2>Special Fields</h2>
+<h2>Appendix I: Special Fields</h2>
+<p><b>NOTES</b>:
+</p>
+<dl>
+    <dt>should not be here</dt>
+      <dd>
+        This should not be part of this document but not clear where  to put it.
+      </dd>
+    <dt>has problems</dt>
+      <dd>
+       At least display appears to be broken.
+      </dd>
+</dl>
 <h3>enum</h3>
 <p>An enumerated structure is a structure that has fields:</p>
 <pre>
@@ -1078,14 +1048,24 @@ where
 <h3>display</h3>
 <p>Display information is represented by the following structure</p>
 <pre>
-display_t display
+structure display
     double limitLow
     double limitHigh
-    string description
-    string format
+    string description 
     string units
+    int precision
+    enum_t form Default
+        int index
+        string[] choices 
+            ["Default", "String", "Binary", "Decimal", "Hex", "Exponential", "Engineering"]
+
 </pre>
 <h4>Display</h4>
+<p>
+<b>NOTE</b> previously a field named format was present.
+This was replaced by precision and form.
+But the Display code was never changed.
+</p>
 <pre>
 Display
     double getLow()
@@ -1094,8 +1074,8 @@ Display
     void setHigh(double value)
     String getDescription()
     void setDescription(String value)
-    String getFormat()
-    void setFormat(String value)
+    String getFormat()                 // broken
+    void setFormat(String value)       // broken 
     String getUnits()
     void setUnits(String value)
 </pre>
@@ -1223,7 +1203,7 @@ PVControl
 <h3>alarmLimit</h3>
 <p>This has unresolved issues.</p>
 
-<h2>Standard for Field::ID</h2>
+<h2>Appendix II: Standard for Field::ID</h2>
 <p>The introspection interface for every field has an ID, which is available via method:</p>
 <pre>
 class Field {
@@ -1304,710 +1284,8 @@ valueAlarm_t
 <h3>structure array</h3>
 <p>Like structure except that <b>[]</b> is appended.
 </p>
-<h2>pvRequest and pvCopy</h2>
-<h3>Oveview</h3>
-<p>Both pvDataJava and pvAccessCPP implement the following:</p>
-<dl>
-   <dt>CreateRequest</dt>
-      <dd>
-       Creates a PVStructure that is a valid pvRequest
-       to be passed between a client a server.
-       The Channel class of pvAccess has methods
-       that have pvRequest arguments.
-       For example:
-<pre>
-ChannelGet createChannelGet(
-    ChannelGetRequester channelGetRequester,
-    PVStructure pvRequest);
-</pre>
-      A pvRequest structure allows a client to select:
-      <ol>
-         <li>An arbitrary subset of the fields in the top level data structure for the channel.</li>
-         <li>Global and field specific options</li>
-      </ol> 
-      </dd>
-   <dt>PVCopy</dt>
-     <dd>
-      PVCopy is a facility that copies data between a top
-      level PVStructure for the client and the
-      top level PVStructure from the server.
-      CreateRequest allows the client to select the fields desired.
-      PVCopy is used by the server side of pvAccess to 
-      transfer data between the two top level PVStructures.
-     </dd>
-</dl>
-<p>The following subsections discuss:</p>
-<dl>
-    <dt>CreateRequest</dt>
-      <dd>CreateRequest creates a pvRequest structure from a string argument.
-         This subsection describes the syntax for the string argument.</dd>
-    <dt>pvRequest</dt>
-       <dd>The layout of a valid pvRequest structure is described.</dd>
-    <dt>PVCopy</dt>
-       <dd>Some details about PVCopy are described.</dd> 
-    <dt>Guidelines for pvDatabase services</dt>
-       <dd>This subsection is of interest for implementing new services for channel providers.</dd>
-</dl>
-<h3>CreateRequest</h3>
-<h4>Goals</h4>
-<p>CreateRequest is a parser that creates a pvRequest structure from a string.
-It was created with the following goals:</p>
-<dl>
-   <dt>Create any valid pvRequest</dt>
-     <dd>The layout of a valid pvRequest structure is described below.</dd>
-   <dt>Concise Syntax</dt>
-     <dd>The goal is to allow simple and concise syntax for common requests.
-         For example:
-<pre>
-pvget -r "value,alarm,timeStamp" channelName
-</pre>
-      </dd>
-   <dt>Simple to parse</dt>
-     <dd>This does result in the syntax being somewhat rigid.
-      For example order matters.
-      A more flexible parser could be created but for now only the existing parser is described.
-     </dd>
-</dl>
-<h4>Definition</h4>
-<pre>
-CreateRequest
-    PVStructure createRequest(string request)
-    string getMessage()
-</pre>
-<dl>
-   <dt>createRequest</dt>
-     <dd>
-     Create a pvRequest PVStructure.
-     If an invalid request is made a null PVStructure is returned.
-     </dd>
-    <dt>getMessage</dt>
-     <dd>
-      The reason why the last request failed.
-     </dd>
-</dl>
-<h4>Purpose</h4>
-<p>CreateRequest allows a client to select an arbitrary subset of the fields in the top level structure
-associated with a channel.
-It also allows the client to specify options.
-Thus the client can specify:</p>
-<dl>
-  <dt>Global Options</dt>
-    <dd>Global options are options that apply to the record itself.</dd>
-  <dt>Desired Fields</dt>
-     <dd>An arbitrary set of fields can be selected from the top level structure that holds the
-      data in the record.</dd>
-  <dt>Field Options</dt>
-     <dd>These are options that apply to a selected field.
-      </dd>
-</dl>
-<p><b>NOTE:</b> The term record is adapted from pvDatabase. A pvDatabase has a memory resident database of <b>smart</b>
-records. A pvAcccess channel is a connection to a record. A record has a top level PVStructure that holds the
-data for the record.
-A pvAcccess server can be implemented that does not use the pvDatabase model but it must provide top level
-PVStructures to which a pvAcccess Channel can be attached.
-<b>qsrv</b>, which provides access to iocCore V3 records, is an example that also accepts a pvRequest
-created by a call to createRequest.
-</p>
-<h4>Relationship to Channel methods of pvAccess</h4>
-<p>Channel has methods:</p>
-<dl>
-   <dt>createChannelGet,createChannelPut,and createMonitor</dt>
-     <dd>For these the request string is of the form:
-<pre>
-record[option,...]field(fieldDef,...)
-OR
-field(fieldDef,...)
-OR
-fieldDef,...
-</pre>
-   </dd>
-   <dt>createChannelPutGet</dt>
-     <dd>For these the request string is of the form:
-<pre>
-record[option,...]putField(fieldDef,...)getField(fieldDef,...)
-OR
-putField(fieldDef,...)getField(fieldDef,...)
-</pre>
-   </dd>
-   <dt>createChannelProcess</dt>
-     <dd>Server dependent. Provider <b>local</b> accepts an empty string.</dd>
-   <dt>createChannelRPC</dt>
-      <dd>Server dependent.</dd>
-   <dt>createChannelArray</dt>
-      <dd>Server dependent. Provider <b>local</b> accepts an empty string or a string which is the field name.</dd>
-</dl>
- 
-<h4>Syntax</h4>
-<p>A request argument has the syntax:</p>
-<pre>
-record[option,...]field(fieldDef,...)
-OR
-field(fieldDef,...)
-OR
-fieldDef,...
-OR
-record[option,...]putField(fieldDef,...)getField(fieldDef,...)
-OR
-putField(fieldDef,...)getField(fieldDef,...)
-</pre>
-<p>NOTES:</p>
-<ul>
-    <li>An empty string is also valid.
-       In this case an empty pvRequest structure is created.</li>
-    <li>Order is important, e. g. record can not appear after field.</li>
-    <li>The following:
-<pre>
-field()
-getField()
-putField()
-</pre>
-       means an entire data structure.
-      </li>
-</ul> 
-<p>Thus a request consists of record options and sets of field definitions or
-just field definitions. A record option is of the form:</p>
-<pre>
-record[name=value,...]
-</pre>
 
-<p>A field,putFeld,getField is a comma separated set of fieldDefs which are of
-the form:</p>
-<pre>
-fullFieldName
-or
-fullFieldName[option,...]
-or
-fullFieldName{fieldDef,...}     // recursive definition
-or
-fullFieldName[option,...]{fieldDef,...}     // recursive definition
-</pre>
-
-<p><b>fullFieldName</b> selects a subfield of the current sub-structure being accessed.
-Initially this means the top level structure of the data associated with the channel.
-In a recursive definition the current sub-structure becomes the location asscociated with fullFieldName
-</p>
-<p>If
-<b>fieldName{fieldDef,...}</b> is given then the generated data structure will have
-a structure field with subfields.</p>
-
-<p>Assume that the channel has the following data:</p>
-<pre>
-pvget -r "field()" -i powerSupply
-powerSupply
-structure 
-    alarm_t alarm
-        int severity 2
-        int status 0
-        string message bad voltage
-    time_t timeStamp
-        long secondsPastEpoch 0
-        int nanoseconds 0
-        int userTag 0
-    structure power
-        double value 0
-    structure voltage
-        double value 0
-    structure current
-        double value 0
-</pre>
-Then the following selects a subset of the fields:
-<pre>
-mrk> pvget -r "field(alarm{severity,message},timeStamp.secondsPastEpoch,power)" -i powerSupply
-powerSupply
-structure 
-    structure alarm
-        int severity 2
-        string message bad voltage
-    structure timeStamp
-        long secondsPastEpoch 0
-    structure power
-        double value 0
-</pre>
-
-        
-
-
-<p>The syntax was chosen to be easy to use and to parse:</p>
-<dl>
-   <dt>record[...]</dt>
-      <dd>
-      Specifies a set of global options, i. e., options that apply to the record itself. 
-      </dd>
-   <dt>field(...)</dt>
-   <dt>putField(...)</dt>
-   <dt>getField(...)</dt>
-      <dd>
-      Each selects a set of subfields of the top level structure.
-      Each specifies a comma separated set of <b>fieldDef</b>s.
-      </dd>
-   <dt>fieldDef</dt>
-     <dd>Selects a single subfield of the current structure.</dd>
-   <dt>option</dt>
-      <dd>
-      A <b>name=value</b> pair. Both <b>name</b> and <b>value</b> are character strings.
-      </dd>
-   <dt>[...]</dt>
-      <dd>
-      Holds a comma separated set of <b>option</b>s.
-      </dd>
-   <dt>{...}</dt>
-      <dd>
-      Selects a set of subfields of a substructure within the top level structure.
-      Each defines a comma separated set of <b>fieldDef</b>s.
-      This is a recursive definition.
-      Thus a <b>fullFieldName</b> within <b>{}</b> is relative to structure that is referenced
-      by <b>{}</b>.
-      </dd>
-</dl>
-<h4>Naming conventions</h4>
-<dl>
-  <dt>blanks</dt>
-      <dd>All blanks are removed before parsing is started.</dd>
-   <dt>reserved characters</dt>
-      <dd>The following characters may not be used except as used in the above syntax:
-<pre>
-{ } ( ) [ ] = ,
-</pre>
-       <br />
-       The character
-<pre>
-.
-</pre>
-      in a fieldDef separates field names.
-      </dd>
-    <dt>field name</dt>
-       <dd>
-       A field name can only contain alphanumeric characters and the character <b>_</b>,
-       but must not start with the character <b>_</b>.
-       <br />
-       This is not enforced by the current parser but should be a rule for field names.
-       </dd>
-    <dt>option name</dt>
-      <dd>This should follow the same convertion as field name.
-       <br />
-       This is not enforced by the parser but future changes could.
-      </dd>
-   <dt>option value</dt>
-       <dd>For now the only illegal characters are the reserved characters.
-        At least the following character should also be allowed:
-<pre>
-: 
-</pre>
-       <br />
-       What other characters should be allowed?
-      </dd>
-
-</dl>
-
-<h4>Simple Examples</h4>
-<p>Clients like CSS, Synoptic Displays, Alarm Managers, and Archive Managers only want access to
-some combination of the following fields: <b>value</b>, <b>alarm</b>, <b>timeStamp</b>, <b>display</b>, and
-<b>control</b>. If the request is for a record that has these all as top level fields
-the request string is just a comma separated list of the field names. For
-example:</p>
-<pre>
-"value,alarm,timeStamp"
-</pre>
-
-<p>If the record is does not have the desired field at the top level then the
-field can still be accessed but in this case the full structure is preserved.
-For example:</p>
-<pre>
-"alarm,timeStamp,power.value"
-</pre>
-
-<p>Will get the top level alarm and timeStamp and the value from a
-structure named power. Thus the above works for a record that is structured as
-follows:</p>
-<pre>powerSupply
-    alarm
-    timeStamp
-    power
-       value
-       display
-       ...
-    ...
-</pre>
-What is returned to the client is:
-<pre>powerSupply
-    alarm
-    timeStamp
-    power
-       value
-</pre>
-
-<p>The only option most clients want is to request that a record be processed
-as part of a get or put requests. This is done via requests like the
-following:</p>
-<pre>
-"record[process=true]field(value,alarm,timeStamp)"
-</pre>
-<h4>Power Supply Example</h4>
-
-<p>The following examples are for a power supply record:</p>
-<pre>
-powerSupply
-    alarm
-    timeStamp
-    power
-       value
-       alarm
-       .. other fields
-    voltage
-       value
-       alarm
-       .. other fields
-    current
-       value
-       alarm
-       .. other fields
-    .. other fields
-</pre>
-
-
-<p>The following request:</p>
-<pre>
-"field(alarm,timeStamp,power.value)"
-</pre>
-<p>Will return to the client the following:</p>
-<pre>
-record psSimple
-    alarm_t alarm
-        severity NONE status NONE
-        message null
-    time_t 2013-02-27 06:04:30.997 userTag 0
-    structure power
-        double value 10.0
-</pre>
-
-<p>Note that if the actual record does not have a requested field than it will
-not be present in the structure returned to the client.
-</p>
-
-<p>The following is the same except that a record option and an option for the
-value field will be given.</p>
-<pre>
-"record[process=true]field(alarm,timeStamp,power.value[monitorAlgorithm=onChange])"
-</pre>
-
-<p>The options are to process the record and to cause power.value to cause a monitor only if the value changes.</p>
-
-
-<p>The following:</p>
-<pre>
-"field(alarm,timeStamp,power{value,alarm},current{value,alarm},voltage{value,alarm})"
-</pre>
-<p>Will return to the client the following:</p>
-<pre>
-record psEmbeded
-    alarm_t alarm
-        severity NONE status NONE
-        message
-    time_t 1969-12-31 19:00:00.000 userTag 0
-    structure power
-        double value 0.0
-    structure current
-        double value 0.0
-        alarm_t alarm
-            severity NONE status NONE
-            message
-    structure voltage
-        double value 0.0
-        alarm_t alarm
-            severity NONE status NONE
-            message
-</pre>
-
-
-<h3>Syntax for pvRequest structure created by createRequest</h3>
-<p><b>NOTE:</b> This section is only of interest to someone who is implementing code that
-has to introspect a structure generated by createRequest.</p>
-
-<p>pvRequest is a PVStructure that describes 1) record options and 2) field
-requests and options. It has the following structure:</p>
-<pre>
-structure
-  structure record
-    structure _options
-      option
-      ...
-  structure field
-    structure fieldName
-      structure _options
-        option
-        ...
-      structure fieldName
-        structure _options
-          option
-          ...
-        ...
-  structure putField
-    structure fieldName
-      structure _options
-        option
-        ...
-      structure fieldName
-        structure _options
-          option
-          ...
-        ...
-  structure getField
-    structure fieldName
-      structure _options
-        option
-        ...
-      structure fieldName
-        structure _options
-          option
-          ...
-        ...
-</pre>
-<p>where</p>
-<dl>
-  <dt>record</dt>
-    <dd>The options that apply to the entire record.</dd>
-  <dt>option</dt>
-    <dd>This is of the form
-      <b>string name value</b>
-    </dd>
-  <dt>field</dt>
-    <dd>Definitions that select fields of the PVRecord and options for the
-      fields. This definition is recursive.</dd>
-  <dt>fieldName</dt>
-    <dd>The field name that will appear in the PVStructure that is a copy of
-      the fields selected from the PVRecord. </dd>
-</dl>
-
-<p>Note:</p>
-<ul>
-  <li>The definition is recursive , i.e. an arbitarily complex structure can be
-    defined.</li>
-  <li>If a pvRequest with no fields is specified than all fields if the target
-    PVRecord will appear in the PVCopy.</li>
-</ul>
-
-<p>An example of option is process.</p>
-
-<p>Process is a record option:</p>
-<pre>
-structure
-  structure record
-    structure _options
-      string process true
-
-</pre>
-<p>For example if process is an option to createGet then the record will be
-processed before data is fetched. NOTE: scalarType boolean is also
-supported.</p>
-
-<p>The following is an example of a field option:</p>
-<pre>
-structure
-    structure field
-        structure value
-            structure _options
-                string monitorAlgorithm onChange
-</pre>
-
-<p>Some examples are:</p>
-<pre>
-request
-structure
-
-request alarm,timeStamp,power.value
-structure
-    structure alarm
-    structure timeStamp
-    structure power
-        structure value
-
-request record[process=true]field(alarm,timeStamp,power.value)
-structure
-    structure record
-        structure _options
-            string process true
-    structure field
-        structure alarm
-        structure timeStamp
-        structure power
-            structure value
-request record[process=true]field(alarm,timeStamp[algorithm=onChange,causeMonitor=false],power{value,alarm})
-structure
-    structure record
-        structure _options
-            string process true
-    structure field
-        structure alarm
-        structure timeStamp
-            structure _options
-                string algorithm onChange
-                string causeMonitor false
-        structure power
-            structure value
-            structure alarm
-
-request record[process=true,xxx=yyy]field(alarm,timeStamp[causeMonitor=true],power.value)
-structure
-    structure record
-        structure _options
-            string process true
-            string xxx yyy
-    structure field
-        structure alarm
-        structure timeStamp
-            structure _options
-                string causeMonitor true
-        structure power
-            structure value
-</pre>
-
-<h3>PVCopy</h3>
-<p>This is the interface for mapping between a PVStructure that contain a copy
-of the data for a subset of the fields in a PVRecord. Note that this interface
-is NOT for a single PVStructure but for a single PVRecord and a single
-Structure introspection interface that describes a subset of the fields in the
-PVRecord. For example if a server supports monitor queues then the server will
-allocate a PVStructure for each queue element but will create a single
-PVCopy.</p>
-<pre>
-PVCopy
-    PVMaster getPVMaster()
-    void traverseMaster(PVCopyTraverseMasterCallback callback)
-    Structure getStructure()
-    PVStructure createPVStructure()
-    int getCopyOffset(PVField masterPVField)
-    int getCopyOffset(PVStructure masterPVStructure,PVField masterPVField)
-    PVField getMasterPVField(int structureOffset)
-    void initCopy(PVStructure pvCopy, BitSet bitSet,boolean masterLocked)
-    void updateCopySetBitSet(PVStructure copyPVStructure,BitSet bitSet,boolean lockMaster)
-    void updateCopyFromBitSet(PVStructure copyPVStructure,BitSet bitSet,boolean lockMaster)
-    boolean updateMaster(PVStructure pvCopy,BitSet bitSet,boolean lockMaster)
-    PVStructure getOptions(PVStructure copyPVStructure,int fieldOffset)
-    String dump()
-}
-</pre>
-<p>where</p>
-<dl>
-  <dt>getPVMaster</dt>
-    <dd>Get the PVMaster to which this PVCopy is attached</dd>
-  <dt>traverseMaster</dt>
-     <dd>
-      Traverse all the fields in master.
-      The callback is called for each field in master.
-     </dd>
-  <dt>getStructure</dt>
-    <dd>Get the introspection interface which describes the subset of the
-      fields in the PVMaster.</dd>
-  <dt>createPVStructure</dt>
-    <dd>Create a PVStructure which can hold a subset of the data from the
-      PVMaster. A client may require multiple PVStructures. For example if a
-      monitor request supports a queue than a PVStructure is required for each
-      queue element. </dd>
-  <dt>getCopyOffset(PVField masterPVField)</dt>
-    <dd>Given a PVField from the master determine the offset within the
-      PVStructure where the copy of the data is located.
-      PVStructure.getSubField(offset) can be called to locate the PVField
-      within the PVStructure. </dd>
-  <dt>getCopyOffset(PVStructure masterPVStructure,PVField masterPVField)</dt>
-    <dd>Given a masterPVField within a masterPVStructure determine the offset
-      within the PVStructure where the copy of the data is located.
-      PVStructure.getSubField(offset) can be called to locate the PVField
-      within the PVStructure. </dd>
-  <dt>getMasterPVField</dt>
-    <dd>Given an offset within a PVStructure return the corresponding PVField
-      in the PVMaster.</dd>
-  <dt>initCopy</dt>
-    <dd>Initialize PVStructure with the current data from the PVMaster. The
-      bitSet will have offset 0 set to 1 and all other bits set to 0. </dd>
-  <dt>updateCopySetBitSet</dt>
-    <dd>Update PVStructure from PVMaster. The BitSet shows which fields in
-      PVStructure have changed.</dd>
-  <dt>updateCopyFromBitSet</dt>
-    <dd>Update PVStructure from PVMaster. Only fields that have the offset in
-      bitSet set to true are modified.</dd>
-  <dt>updateMaster</dt>
-    <dd>Update the fields in PVMaster with data from PVStructure. Only fields
-      that have the offset in bitSet set to true are modified. </dd>
-  <dt>getOptions</dt>
-    <dd>Get options for a field in a PVStructure created by pvCopy
-    The arguments are the pvStructure and the offset of the field for which the options are wanted.
-    It returns the options or null if the field did not have options.
-    </dd>
-  <dt>dump</dt>
-    <dd>Provides a dump of the internal pvCopy nodes. This is useful for debugging
-     monitor algorithms.</dd>
-</dl>
-
-<h3>Guidelines for pvDatabase Services</h3>
-<p>This section is for services that use pvDatabaseCPP.
-A service provides a top level PVStructure
-and implements methods init, process, and destroy.
-pvDatabaseCPP and pvAccessCPP provide a complete implementation of the server
-side of pvAccess.
-From the PVStructure a PVRecord is created.
-This record can be locked.
-</p>
-<p>pvDatabaseJava is similar except that the service only implements method process.
-</p>
-<p>A server is providing data for multiple clients.
-Each client has it's own top level PVStructure that has data
-for a subset of the fields in the servers top level PVStructure.
-The service must be careful of how it updates data in it's top leve
-PVStructure or else data for a client can change after process completes
-and before it is sent to the client.
-</p>
-<p>Previously the mapping between a PVStructure and it's associated
-bitSet as shown:
-<a href="#bitAssignment">bitSet for pvStructure</a>
-</p>
-<p>This can also be used to present guidelines for modifing fields
-in the top level PVStructure for the service:</p>
-<p>The pvRecord must be locked whenever any field is modfied.</p>
-<p>Any union, unionArray, or structureArray field that has a bit
-of the bitSet assigned to it <b>must</b> be replaced.
-Modifing subFields of the field is <b>not</b> permisible.
-</p>
-
-<h2>pvRequest Options</h2>
-
-<h3>Overview</h3>
-<p>As described in the previous section, both record and field options can be specified.
-For this release of PVA only record options are implemented.
-</p>
-<h3>Record Options</h3>
-<p>At present the following record options are in use:</p>
-<dl>
-    <dt>queueSize</dt>
-     <dd>
-      This is used to define the queueSize for monitors.
-      The default is:
-<pre>
-record[queueSize=2]
-</pre>
-      A larger size can be specified.
-     </dd>
-    <dt>process</dt>
-     <dd>
-      This is used by qsrv and pvDatabaseCPP to specify of records should be processed.
-      The default is <b>false</b> for channelGet and <b>true</b> for channelPut and channelPutGet,
-       An example is:
-<pre>
-record[process=false]
-</pre>
-     </dd>
-    <dt>block</dt>
-     <dd>
-      This is used by qsrv to specify if a request to process a record should
-      block until the record completes processing.
-      It is also used by the ca provider (in pvAccess) for channelPuts.
-      The default is not to block.
-      An example is:
-<pre>
-record[block=true]
-</pre>
-     </dd>
-</dl>
-<h2>Convert Facility</h2>
+<h2>Appendix III: Convert Facility</h2>
 <p>Both pvDataJava and pvDataCPP have a Convert Facility.
 Although they have some common features they are different enough that they
 will be discussed separately.
@@ -2175,10 +1453,9 @@ class Convert {
 public:
     static ConvertPtr getConvert();
     ~Convert();
+    void copy(PVFieldPtr const &amp; from, PVFieldPtr const &amp; to);
     void getString(std::string * buf,PVFieldPtr const &amp; pvField,int indentLevel);
     void getString(std::string * buf,PVFieldPtr const &amp; pvField);
-    void getString(std::string * buf,PVField const * pvField,int indentLevel);
-    void getString(std::string * buf,PVField const * pvField);
     std::size_t fromString(
         PVStructurePtr const &amp;pv,
         StringArray const &amp; from,
@@ -2218,7 +1495,7 @@ public:
     void fromDouble(PVScalarPtr const &amp; pv, double from);
 }
 
-extern ConvertPtr getConvert();
+static inline ConvertPtr getConvert() { return Convert::getConvert(); }
 </pre>
 
 <h4>pvSubArrayCopy.h</h4>
