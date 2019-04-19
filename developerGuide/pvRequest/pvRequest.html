@@ -21,7 +21,7 @@
 <div class="head">
 <h1>EPICS pvRequest</h1>
 
-<h2 class="nocount">2019.04.18</h2>
+<h2 class="nocount">2019.04.19</h2>
 <dl>
   <dt>editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -674,9 +674,8 @@ structure
     double[] value [4,5,6]
 </pre>
 <h2>iocCore and qsrv plugin options</h2>
-<h3>iocCore channel filters</h3>
 <p>Beginning with the 3.15 releases of <b>epics-base</b>
-channel filters are supported.
+channel plugin filters are supported.
 Currently there is support for <b>TimeStamp</b>, <b>Deadband</b>, <b>Array</b>, and <b>Synchronize</b>.
 In addition code can be written to support other plugins without requiring any changes to <b>epics-base</b>.
 </p>
@@ -890,76 +889,8 @@ structure
         structure power
             structure value
 </pre>
-<h2>Appendix II: V4 Property Definitions</h2>
-<p>
-This is not directly related to <b>pvRequest</b>.
-However it does impact various V4 modules so it is briefly mentioned here.
-</p>
-<h3>enum</h3>
-<pre>
-enum_t value
-    int index 0
-    string[] 
-</pre>
-<p>Look OK.</p>
-<h3>alarm</h3>
-<pre>
-alarm_t alarm
-    int severity
-    int status
-    string message
-</pre>
-<p>Looks OK.</p>
-<h3>timeStamp</h3>
-<pre>
-time_t timeStamp
-    long secondsPastEpoch
-    int nanoseconds
-    int userTag
-</pre>
-<p>Looks OK.</p>
-<h3>control</h3>
-<pre>
-control_t control
-    double limitLow
-    double limitHigh
-    double minStep
-</pre>
-<p>Looks OK.</p>
-<h3>display</h3>
-<pre>
-structure display
-    double limitLow -10
-    double limitHigh 10
-    string description 
-    string units volts
-    int precision 2
-    enum_t form (0) Default
-        int index 0
-        string[] choices
-            ["Default", "String", "Binary", "Decimal", "Hex", "Exponential", "Engineering"]
-</pre>
-<h3>valueAlarm</h3>
-<pre>
-valueAlarm_t valueAlarm
-    boolean active
-    double lowAlarmLimit
-    double lowWarningLimit
-    double highWarningLimit
-    double highAlarmLimit
-    int lowAlarmSeverity
-    int lowWarningSeverity
-    int highWarningSeverity
-    int highAlarmSeverity
-    double hysteresis
-</pre>
-<p>The above is OK.
-But there is a version for each numeric type.
-Note that <b>control</b> and <b>display</b> only have double for limit fields.
-<br />
-Perhaps the same should be true for <b>valueAlarm</b>.
-</p>
-<h2>Appendix III: BNF syntax for request</h2>
+
+<h2>Appendix II: BNF syntax for request</h2>
 <p>
 <b>NOT DONE</b>
 </p> 

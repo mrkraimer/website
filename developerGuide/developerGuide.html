@@ -36,7 +36,7 @@
 <h1>EPICS V4 Developer's Guide</h1>
 <!-- Maturity: Working Draft or Request for Comments, or Recommendation, and date.  -->
 
-<h2 class="nocount">2019.04.18</h2>
+<h2 class="nocount">2019.04.19</h2>
 <p>
 <b>NOTE: This is the working version of the developerGuide.</b>
 <br />
@@ -764,7 +764,36 @@ At present Java provides one server side provider:
       <dd>This is implemented by pvDatabaseJava</dd>
 </dl>
 
-<h2>Appendix I: Special Fields</h2>
+<h2>Appendix I: Standard Fields</h2>
+<p>The following discusses the following fields:
+</p>
+<dl>
+  <dt>enum</dt>
+    <dd>
+     V4 replacment for the value field data for bi, bi, mbbi, mbbo, records types.
+    </dd>
+  <dt>alarm</dt>
+    <dd>
+     V4 implementation of alarm status and severity.
+    </dd>
+  <dt>timeStamp</dt>
+    <dd>
+      V4 implementation of timeStamp.
+    </dd>
+  <dt>display</dt>
+    <dd>
+      V4 implementation of display fields.
+    </dd>
+  <dt>control</dt>
+    <dd>
+      V4 implementation of control fields.
+    </dd>
+  <dt>valueAlarm</dt>
+    <dd>
+      V4 implementation of alarm limits.
+    </dd>
+</dl>
+
 <p><b>NOTES</b>:
 </p>
 <dl>
@@ -772,12 +801,15 @@ At present Java provides one server side provider:
       <dd>
         This should not be part of this document but not clear where  to put it.
       </dd>
-    <dt>has problems</dt>
+    <dt>following have problems</dt>
       <dd>
-       At least display appears to be broken.
+       Code for display is broken. See below.
+       <br />
+       valueAlarm should only support double. See below.
       </dd>
 </dl>
 <h3>enum</h3>
+<h4>structure</h4>
 <p>An enumerated structure is a structure that has fields:</p>
 <pre>
 enum_t
@@ -832,6 +864,7 @@ PVEnumerated
 </dl>
 
 <h3>alarm</h3>
+<h4>structure</h4>
 <p>An alarm structure is defined as follows:</p>
 <pre>
 alarm_t alarm
@@ -936,6 +969,7 @@ PVAlarm
 
 
 <h3>timeStamp</h3>
+<h4>structure</h4>
 <p>A timeStamp is represented by the following structure</p>
 <pre>
 time_t timeStamp
@@ -949,7 +983,7 @@ seconds and nanoseconds are signed integers and thus can be negative. Since the
 seconds is kept as a 64 bit integer, it allows for a time much greater than the
 present age of the universe. Since the nanoseconds portion is kept as a 32 bit
 integer it is subject to overflow if a value that corresponds to a value that
-is greater than a little more than 2 seconds of less that about -2 seconds. The
+is greater than a little more than 2 seconds or a little less than -2 seconds. The
 support code always adjust seconds so that the nanoSecconds part is normalized,
 i. e. it has is 0&lt;=nanoseconds&lt;nanoSecPerSec..</p>
 <h4>TimeStamp</h4>
@@ -1046,6 +1080,7 @@ where
 </dl>
 
 <h3>display</h3>
+<h4>structure</h4>
 <p>Display information is represented by the following structure</p>
 <pre>
 structure display
@@ -1060,6 +1095,11 @@ structure display
             ["Default", "String", "Binary", "Decimal", "Hex", "Exponential", "Engineering"]
 
 </pre>
+<p>
+<b>NOTES:</b>
+pvDataJava has not been updated to use precision and form.
+It still has a string field named format.
+</p>
 <h4>Display</h4>
 <p>
 <b>NOTE</b> previously a field named format was present.
@@ -1138,6 +1178,7 @@ PVDisplay
 </dl>
 
 <h3>control</h3>
+<h4>structure</h4>
 <p>Control information is represented by the following structure</p>
 <pre>
 structure control
@@ -1200,8 +1241,35 @@ PVControl
       can be called.</dd>
 </dl>
 
-<h3>alarmLimit</h3>
-<p>This has unresolved issues.</p>
+<h3>valueAlarm</h3>
+<h4>structure</h4>
+<p>For each numeric scalar type the following is defined:</p>
+<pre>
+boolean active
+scalarType lowAlarmLimit
+scalarType lowWarningLimit
+scalarType highWarningLimit
+scalarType highAlarmLimit
+int lowAlarmSeverity
+int lowWarningSeverity
+int highWarningSeverity
+int highAlarmSeverity
+scalarType hysteresis
+</pre>
+<b>NOTE:</b> I think this should only be defined for double.
+<p>For boolean the following is defined:</p>
+<pre>
+boolean active
+int falseSeverity
+int trueSeverity
+int changeStateSeverity
+</pre>
+<p>For enum the following is defined:</p>
+<pre>
+boolean active
+int stateSeverity
+int changeStateSeverity
+</pre>
 
 <h2>Appendix II: Standard for Field::ID</h2>
 <p>The introspection interface for every field has an ID, which is available via method:</p>
@@ -1263,24 +1331,9 @@ time_t
 display_t
 control_t
 enum_t
-alarmLimit_t
 valueAlarm_t
 </pre>
-<p><b>Issues:</b></p>
-<dl>
-   <dt>display_t</dt>
-      <dd>This has field
-      <pre>string format</pre>
-     The allowed syntax should be defined.
-      </dd>
-    <dt>alarmLimit_t,valueAlarm_t</dt>
-      <dd>standardField and standardPVField define
-      valueAlarm for boolean, each numeric scalar type, and for enum_t.
-     alarmLimit_t has the same fields as valueAlarm for double.
-     I suspect that most tools will only use alarmLimit_t.
-     What to do?
-      </dd>
-</dl>
+
 <h3>structure array</h3>
 <p>Like structure except that <b>[]</b> is appended.
 </p>
