@@ -1,0 +1,482 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>scanServiceExample</title>
+  <link rel="stylesheet" type="text/css"
+  href="../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../css/epicsv4.css" />
+  <style type="text/css">
+  </style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../css/tocgen.js">
+  </script>
+</head>
+
+<body>
+
+<div class="head">
+<h1>scanServiceExample</h1>
+
+<h2 class="nocount">2019.05.14</h2>
+<dl>
+  <dt>editors:</dt>
+    <dd>Marty Kraimer</dd>
+</dl>
+
+<p>This product is available via an
+<a
+href="../LICENSE">open source license
+</a>
+</p>
+
+</div>
+
+<div id="toc">
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+
+<div id="contents" class="contents">
+
+<h2>Introduction</h2>
+<h3>Overview</h3>
+<p>
+<b>scanServiceExample</b> is an example service implemented via a <b>PVRecord</b> ( described in
+<a
+href="../developerGuide/developerGuide.html">developerGuide
+</a>
+).
+<br />
+There are actually two implementation.
+One uses channelPutGet and the other uses channelRPC.
+</p>
+<p>
+Terminology:
+</p>
+<dl>
+   <dt>scanService</dt>
+     <dd>
+     This is code that perform a scan.
+      It is used by both server implementations.
+     </dd>
+   <dt>scanServerPutGet</dt>
+     <dd>
+       A PVRecord server that is implemented via channelPutGet.
+     </dd>
+   <dt>scanServerRPC</dt>
+     <dd>
+       A PVRecord server that is implemented via channelRPC.
+     </dd>
+   <dt>scanServer</dt>
+     <dd>
+      Used when the discussion applies to either server.
+     </dd>
+   <dt>scanClientPutGet</dt>
+     <dd>
+      Client code that communicates with scanServerPutGet.
+     </dd>
+   <dt>scanClientRPC</dt>
+     <dd>
+      Client code that communicates with scanServerRPC.
+     </dd>
+   <dt>scanClient</dt>
+     <dd>
+      Used when the discussion applies to either client.
+     </dd>
+</dl>
+
+<p>This example has two main goals:</p>
+<ol>
+   <li>Show an example of a service implemented via a <b>PVRecord</b>.</li>
+   <li>Make the argument that <b>channelPutGet</b> is better than <b>channeRPC</b></li>
+</ol>
+<h3>Background</h3>
+<p>This example is motivated by
+<a
+href="https://github.com/epics-base/exampleCPP/tree/master/pvDatabaseRPC">pvDatabaseRPC
+</a>
+, which was created by David Hickin while he was working at the Diamond Light Source.
+It implements a scan service via <b>channelRPC</b>.
+</p>
+<p>
+<b>scanServiceExample</b> is a simplified version of <b>pvDatabaseRPC</b>
+but also gives an example of using <b>channelPutGet</b> in addition to <b>channelRPC</b>.
+</p>
+<h3>Getting Started</h3>
+<p><b>scanServiceExample</b> is available at: 
+<a
+href="https://github.com/mrkraimer/scanServiceExample">scanServiceExample
+</a>
+</p>
+<p>In order to fully understand this example you should clone and build it.
+</p>
+<p>After it is build you can start the following servers:
+</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/scanServiceExample/iocBoot/scanServerPutGet
+mrk> ../../bin/linux-x86_64/scanServerPutGet st.cmd
+...
+epics> pvdbl
+scanServerPutGet
+</pre>
+and
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/scanServiceExample/iocBoot/scanServerRPC
+mrk> ../../bin/linux-x86_64/scanServerRPC st.cmd
+...
+epics> pvdbl
+scanServerRPC
+</pre>
+<p>After starting the two services you can monitor each service via the command:
+</p>
+<pre>
+pvget -r "" -m scanServerPutGet scanServerRPC
+</pre>
+<p>To run the client code you can run commands like:
+</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/scanServiceExample
+mrk> bin/linux-x86_64/scanClientPutGet configure .1 .1 0 0
+mrk> bin/linux-x86_64/scanClientPutGet start
+</pre>
+or
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/scanServiceExample
+mrk> bin/linux-x86_64/scanClientRPC configure .1 .1 0 0
+mrk> bin/linux-x86_64/scanClientRPC start
+</pre>
+<h2>Scan Service</h2>
+<p>
+The scanService moves through a set of points, where a point is an x,y pair of doubles.
+It is used by both <b>scanServerPutGet</b> and <b>scanServerRPC</b>.
+</p>
+<p>The public methods of ScanService are:</p>
+<pre>
+class Point
+{
+public:
+...
+    double x;
+    double y;
+};
+
+class ScanService::Callback
+{
+public:
+    virtual void update(int flags);
+        const static int SETPOINT_CHANGED  = 0x1;
+        const static int READBACK_CHANGED  = 0x2;
+        const static int SCAN_COMPLETE     = 0x4;
+};
+
+class ScanService : public epicsThreadRunable
+{
+...
+public:
+    static ScanServicePtr create();
+    virtual void run()
+...
+    void registerCallback(Callback::shared_pointer const &amp; callback);
+    bool unregisterCallback(Callback::shared_pointer const &amp; callback);
+    Point getPositionSetpoint();
+    Point getPositionReadback();
+    void configure(const std::vector&lt;Point&gt; &amp; newPoints);
+    void startScan();
+    void stopScan();
+    void setRate(double stepDelay,double stepDistance);
+    void setDebug(bool value);
+...
+}
+</pre>
+<p>where:
+</p>
+<dl>
+    <dt>Callback::update</dt>
+      <dd>
+       A <b>scanServer</b> must create a <b>Callback</b>.
+       Whenever the <b>scanService</b> has a change of state to report it calls the update method. 
+      </dd>
+    <dt>create</dt>
+      <dd>
+       A <b>scanServer</b> calls this to create a single instance of ScanService.
+      A thread is created that performs scans.
+      </dd>
+    <dt>registerCallback</dt>
+     <dd>
+      This is called in order to receive updates.
+      An update occurs whenever a scan starts a new setpoint, each time a move is made,
+      and when a scan stops.
+     </dd>
+    <dt>unregisterCallback</dt>
+     <dd>
+      This is called to stop updates.
+     </dd>
+    <dt>getPositionSetpoint</dt>
+     <dd>
+      Get the current setpoint.
+     </dd>
+    <dt>getPositionReadback</dt>
+     <dd>
+       Get the current position.
+     </dd>
+    <dt>configure</dt>
+     <dd>
+      Specify a new scan configuration.
+     </dd>
+    <dt>startScan</dt>
+     <dd>
+      Start a scan with the current configuration.
+     The first move is to the first point.
+     Moves are made in small steps between points.
+     </dd>
+    <dt>stopScan</dt>
+     <dd>
+     Stop the current scan.
+     This can be called by client code or when a scan completes.
+     </dd>
+   <dt>setRate</dt>
+     <dd>
+        <dl>
+           <dt>stepDelay</dt>
+            <dd>
+             The number of seconds the scan thread waits between moves.
+            </dd>
+           <dt>stepDistance</dt>
+             <dd>
+               The distance to move.
+             </dd>
+        </dl> 
+     </dd>
+   <dt>setDebug</dt>
+      <dd>
+       If true then the service displays a message every time configure, startScan, and stopScan
+       is called.
+      </dd>
+</dl>
+
+<h2>Scan Server</h2>
+<p>There are two example servers:</p>
+<dl>
+    <dt>scanServerRPC</dt>
+      <dd>
+      This creates the following PVRecord:
+<pre>
+mrk> pvinfo scanServerRPC
+scanServerRPC
+Type:
+    structure
+        Point positionSP
+            point_t value
+                double x
+                double y
+            time_t timeStamp
+                long secondsPastEpoch
+                int nanoseconds
+                int userTag
+        Point positionRB
+            point_t value
+                double x
+                double y
+            time_t timeStamp
+                long secondsPastEpoch
+                int nanoseconds
+                int userTag
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+</pre>
+     The client issues scan requests via <b>channelRPC</b> requests.
+     </dd>
+    <dt>scanServerPutGet</dt>
+     <dd>
+      This creates the following PVRecord:
+<pre>
+pvinfo scanServerPutGet
+scanServerPutGet
+Type:
+    structure
+        Point positionSP
+            point_t value
+                double x
+                double y
+            time_t timeStamp
+                long secondsPastEpoch
+                int nanoseconds
+                int userTag
+        Point positionRB
+            point_t value
+                double x
+                double y
+            time_t timeStamp
+                long secondsPastEpoch
+                int nanoseconds
+                int userTag
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+        structure argument
+            string command
+            structure configArg
+                double[] x
+                double[] y
+            structure rateArg
+                double stepDelay
+                double stepDistance
+            structure debugArg
+                boolean value
+        structure result
+            string value
+</pre>
+     Note that the difference from <b>scanServerRPC</b> is <b>argument</b> and <b>result</b>
+     These are fields a client uses for <b>channelPutGet</b> request.
+     </dd>
+</dl>
+
+<h2>Scan Client</h2>
+<h3>Two Implementations</h3>
+<p>There are two example clients:</p>
+<dl>
+    <dt>scanClientRPC</dt>
+      <dd>
+      This uses <b>channelRPC</b> requests to access record <b>scanServerRPC</b>.
+      </dd>
+    <dt>scanClientPutGet</dt>
+      <dd>
+      This uses <b>channelPutGet</b> requests to access record <b>scanServerPutGet</b>.
+      </dd>
+</dl>
+<h3>User Interface</h3>
+<p>Both clients are accessed via the same user interface.
+If a user enters no arguments then help is displayed.
+For example:
+</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/scanServiceExample
+mrk> bin/linux-x86_64/scanClientRPC 
+if interactive is specified then interactive mode is specified
+following are choices for non interactive mode:
+   configure x0 y0 ... xn yn
+   start
+   stop
+   setRate stepDelay stepDistance
+   setDebug true|false
+</pre>
+<p>The following are some non interactive examples:</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/scanServiceExample
+mrk> bin/linux-x86_64/scanClientPutGet configure .1 .2 0 0
+structure 
+    structure result
+        string value configure success
+
+mrk> bin/linux-x86_64/scanClientPutGet start
+structure 
+    structure result
+        string value startScan success
+
+mrk> bin/linux-x86_64/scanClientPutGet stop
+structure 
+    structure result
+        string value stopScan success
+
+mrk> bin/linux-x86_64/scanClientPutGet setDebug true
+structure 
+    structure result
+        string value configure success
+
+mrk> bin/linux-x86_64/scanClientPutGet setRate .5 .1
+structure 
+    structure result
+        string value configure success
+
+mrk> bin/linux-x86_64/scanClientPutGet start
+structure 
+    structure result
+        string value startScan success
+</pre>
+<p>The following is an interactive example:</p>
+<pre>
+mrk> bin/linux-x86_64/scanClientRPC i
+enter one of: exit configure start stop setRate setDebug
+configure
+enter x y values
+.1 .2 0 0
+response
+structure 
+    string value configure success
+
+enter one of: exit configure start stop setRate setDebug
+start
+response
+structure 
+    string value start success
+
+enter one of: exit configure start stop setRate setDebug
+setRate
+enter stepDelay
+.5
+enter stepDistance
+.1
+response
+structure 
+    string value setRate success
+
+enter one of: exit configure start stop setRate setDebug
+configure
+enter x y values
+1 2 0 0
+response
+structure 
+    string value configure success
+
+enter one of: exit configure start stop setRate setDebug
+start
+response
+structure 
+    string value start success
+
+enter one of: exit configure start stop setRate setDebug
+exit
+</pre>
+<h3>Monitoring</h3>
+<p>The following monitors setpoint and argument changes:</p>
+<pre>
+pvget -m -r "positionSP,argument,result" scanServerPutGet scanServerRPC
+</pre>
+<p>The following monitors position changes.</p>
+<pre>
+pvget -m -r "positionRB" scanServerPutGet scanServerRPC
+</pre>
+Be prepared for lotsof updates while scanning is active.
+<h2>Comparison of channelPutGet vs channelRPC</h2>
+<h4>source code size</h4>
+<p>Note the size of the source modules:</p>
+<pre>
+mrk> wc scanClientPutGet/scanClientPutGet.cpp scanClientRPC/scanClientRPC.cpp
+  313   824 11594 scanClientPutGet/scanClientPutGet.cpp
+  380   890 12671 scanClientRPC/scanClientRPC.cpp
+  693  1714 24265 total
+mrk> wc scanServerPutGet/scanServerPutGet.cpp scanServerRPC/scanServerRPC.cpp
+  263   506  8235 scanServerPutGet/scanServerPutGet.cpp
+  396   759 12054 scanServerRPC/scanServerRPC.cpp
+  659  1265 20289 total
+</pre>
+<p>For both client and server channelPutGet code is shorter.</p>
+<h4>argument and result</h4>
+<p>With channelPutGet a client can see the arguments and result for client scan requests.
+</p>
+
+</div>
+</body>
+</html>
