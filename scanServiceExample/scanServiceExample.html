@@ -21,7 +21,7 @@
 <div class="head">
 <h1>scanServiceExample</h1>
 
-<h2 class="nocount">2019.05.14</h2>
+<h2 class="nocount">2019.05.21</h2>
 <dl>
   <dt>editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -458,13 +458,13 @@ pvget -m -r "positionSP,argument,result" scanServerPutGet scanServerRPC
 <pre>
 pvget -m -r "positionRB" scanServerPutGet scanServerRPC
 </pre>
-Be prepared for lotsof updates while scanning is active.
+Be prepared for lots of updates while scanning is active.
 <h2>Comparison of channelPutGet vs channelRPC</h2>
 <h4>source code size</h4>
 <p>Note the size of the source modules:</p>
 <pre>
 mrk> wc scanClientPutGet/scanClientPutGet.cpp scanClientRPC/scanClientRPC.cpp
-  313   824 11594 scanClientPutGet/scanClientPutGet.cpp
+  318   829 11824 scanClientPutGet/scanClientPutGet.cpp
   380   890 12671 scanClientRPC/scanClientRPC.cpp
   693  1714 24265 total
 mrk> wc scanServerPutGet/scanServerPutGet.cpp scanServerRPC/scanServerRPC.cpp
@@ -476,6 +476,13 @@ mrk> wc scanServerPutGet/scanServerPutGet.cpp scanServerRPC/scanServerRPC.cpp
 <h4>argument and result</h4>
 <p>With channelPutGet a client can see the arguments and result for client scan requests.
 </p>
+<h4>pvput</h4>
+<p>With channelPutGet a client can use pvput to interface to the scanner.
+For example:</p>
+<pre>
+pvput -r "argument" scanServerPutGet  argument='{"command":"configure","configArg":{"x":[".1",".0"],"y":[".1","0"]}}'
+pvput -r "argument" scanServerPutGet  argument='{"command":"start"}'
+</pre>
 
 </div>
 </body>
