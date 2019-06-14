@@ -36,7 +36,7 @@
 <div class="head">
 <h1>pvDatabase Plugin Support</h1>
 
-<h2 class="nocount">2018.04.15</h2>
+<h2 class="nocount">2019.06.14</h2>
 <dl>
   <dt>Editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -77,10 +77,10 @@ pvget -r "record[process=true]field(value[array=5:10])" someScalarArray
      <li>
       Monitor a record that has a numeric scalar value field<br />
       But only when value changes by at least 1.0 should a monitor occur.
-      Changes in the timeStamp field are ignored if no other fields being monitored
+      Changes in the timeStamp and alarm fields are ignored if no other fields being monitored
       change value.
 <pre>
-pvget -m -r "value[deadband=abs:1.0],timeStamp[ignore=true]" -v someScalar
+pvget -m -r "value[deadband=abs:1.0],timeStamp[ignore=true],alarm[ignore=true]" -v someScalar
 </pre>
       </li>
 </ul>
@@ -260,6 +260,34 @@ where
        The percentage amount the value must change since the last value the client received. 
      </dd>
 </dl>
+<h3>Proposed New Options</h3>
+<p>The following options could be added:
+</p>
+<pre>
+[deadband=skip:value]
+[deadband=maxrate:value]
+[deadband=maxvalue:value]
+[deadband=minvalue:value]
+</pre>
+where
+<dl>
+   <dt>skip</dt>
+     <dd>
+      value is the number of changes to ignore between declaring an event.
+     </dd>
+   <dt>maxrate</dt>
+     <dd>
+      value is the maximum rate in seconds to declare events.
+     </dd>
+   <dt>maxvalue</dt>
+     <dd>
+      only values less than or equal to value cause an event.
+     </dd>
+   <dt>minvalue</dt>
+     <dd>
+      only values greater than or equal to value cause an event.
+     </dd>
+</dl>
 <h3>TimeStamp Plugin</h3>
 <p>
 This filter is used for accessing a timeStamp field. 
@@ -297,6 +325,363 @@ It is used to suppress sending data to a client unless other fields have changed
 [ignore=true]
 </pre>
 One of the examples shown at the beginning of this section shows how it can be used.
+<h2>Examples</h2>
+<p>
+<b>UNDER DEVELOPMENT</b>
+Note that following link is in S<b>mrkraimer</b> instead of <b>epics-base</b>.
+</p>
+<p>
+<a
+href="https://github.com/mrkraimer/exampleCPP">exampleCPP
+</a>
+Contains <b>exampleCPP/plugin</b>, which contains examples that use plugins.
+</p>
+<h3>Initialize</h3>
+<h4>Start database</h4>
+<p>After building exampleCPP, start the database for the plugin examples as follows:
+</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/exampleCPP/plugin/iocBoot/plugin
+mrk> ../../bin/linux-x86_64/plugin st.cmd 
+...
+iocRun: All initialization complete
+traceRecordCreate PVRpluginTraceRecord
+removeRecordCreate PVRpluginRemoveRecord
+processRecordCreate PVRpluginProcessRecord .5
+pluginRecordCreate PVRpluginDouble
+pluginRecordCreate PVRpluginUByte pvUByte
+scalarArrayRecordCreate PVRscalarArrayDouble
+scalarArrayRecordCreate PVRscalarArrayUByte pvUByte
+scalarArrayRecordCreate PVRscalarArrayString pvString
+scalarArrayRecordCreate PVRscalarArrayBoolean pvBoolean
+epics> 
+</pre>
+Note that amoung the PVRecords sre:
+<dl>
+  <dt>PVRpluginDouble</dt>
+   <dd>
+    A record which has fields appropriate for use by the plugin example described below.
+    The value field has ScalarType pvDouble.
+   </dd>
+  <dt>PVRpluginUByte</dt>
+   <dd>
+    Like PVRpluginDouble except that the value field has ScalarType pvUByte.
+   </dd>
+  <dt>PVRscalarArrayDouble</dt>
+   <dd>
+    This is for testing the array plugin.
+   </dd>
+  <dt>PVRscalarArrayUbyte</dt>
+   <dd>
+    This is for testing the array plugin.
+   </dd>
+  <dt>PVRscalarArrayString</dt>
+   <dd>
+    This is for testing the array plugin.
+   </dd>
+  <dt>PVRscalarArrayBoolean</dt>
+   <dd>
+    This is for testing the array plugin.
+   </dd>
+  <dt>PVRpluginProcessRecord</dt>
+   <dd>
+    This is a record that has a thread that processes other records at a specified rate.
+    Below there is a script to add or remove records to be processed.
+   </dd>
+</dl>
+<h4>Start Clients</h4>
+<p>Run the following:</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/exampleCPP/plugin/testClient/scripts
+mrk> ./configAll 
+...
+</pre>
+<p>configAll does the following:</p>
+<ul>
+   <li>
+    Sets control and scalarAlarm fields for both PVRpluginDouble and PVRpluginUByte.
+   </li>
+   <li>
+    Adds both PVRpluginDouble and PVRpluginUByte to PVRpluginProcessRecord
+   </li>
+</ul>
+<h4>Run an example client</h4>
+<p>Start the following:</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/exampleCPP/plugin/testClient/scripts
+[1]+  Done                    gedit -s exampleDeadband
+mrk> ./exampleDeadband
+recordName?
+PVRpluginDouble
+deadband?
+abs:1
+</pre>
+<p>You should see lots of monitors and also see control limits enforced and see
+alarms changing as determined by scalarAlarm settings.
+</p>
+<h4>Run an example that uses the array plugin</h4>
+<pre>
+./exampleArray
+</pre>
+<h3>scripts</h3>
+<p>The scripts all appear in:
+</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/exampleCPP/plugin/testClient/scripts
+</pre>
+<p>The scripts with names that start with config or clear can be run either interactively
+or via arguments.
+The only exception is <b>configAll</b>
+</p>
+<h4>configAll</h4>
+<p>Use of this was shown above.</p>
+<h4>exampleDeadband</h4>
+<p>
+Runs an example using deadbands.
+</p>
+<h4>exampleArray</h4>
+<p>
+Runs an example showing array plugin.
+</p>
+<h4>configControl</h4>
+<p>
+An example usage is:
+</p>
+<pre>
+mrk> ./configControl
+recordName?
+PVRpluginDouble
+limitLow
+-10
+limitHigh
+10
+minStep
+.5
+Old : structure 
+    control_t control
+        double limitLow -10
+        double limitHigh 10
+        double minStep 0.5
+        double outputValue 2.5
+New : structure 
+    control_t control
+        double limitLow -10
+        double limitHigh 10
+        double minStep 0.5
+        double outputValue 2.5
+mrk> 
+</pre>
+<p>It could do the same without prompts via:
+</p>
+<pre>
+mrk> ./configControl PVRpluginDouble -10 10 .5
+Old : structure 
+    control_t control
+        double limitLow -10
+        double limitHigh 10
+        double minStep 0.5
+        double outputValue 2
+New : structure 
+    control_t control
+        double limitLow -10
+        double limitHigh 10
+        double mrk> ./configControl PVRpluginDouble -10 10 .5
+Old : structure 
+    control_t control
+        double limitLow -10
+        double limitHigh 10
+        double minStep 0.5
+        double outputValue 2
+New : structure 
+    control_t control
+        double limitLow -10
+        double limitHigh 10
+        double minStep 0.5
+        double outputValue 2
+mrk> 
+ 0.5
+        double outputValue 2
+mrk> 
+</pre>
+<p>The same could be done using pvput as follows:
+</p>
+<pre>
+mrk> pvput -r "control" PVRpluginDouble control='{"limitLow":"-10","limitHigh":"10","minStep":".5"}'
+</pre>
+<h4>clearControl</h4>
+<p>Sets all control fields so no control limits are present.
+</p>
+<h4>configScalarAlarm</h4>
+<p>
+An example usage is:
+</p>
+<pre>
+mrk> ./configScalarAlarm
+recordName?
+PVRpluginDouble
+active
+true
+lowAlarmLimit
+-8
+lowWarningLimit
+-6
+highWarningLimit
+6
+highAlarmLimit
+8
+hysteresis
+.1
+Old : structure 
+    scalarAlarm_t scalarAlarm
+        boolean active true
+        double lowAlarmLimit -8
+        double lowWarningLimit -6
+        double highWarningLimit 6
+        double highAlarmLimit 8
+        double hysteresis 0.1
+New : structure 
+    scalarAlarm_t scalarAlarm
+        boolean active true
+        double lowAlarmLimit -8
+        double lowWarningLimit -6
+        double highWarningLimit 6
+        double highAlarmLimit 8
+        double hysteresis 0.1
+mrk> 
+</pre>
+<p>
+Just like configControl it can be invoked by giving all values as arguments.
+</p>
+<h4>clearScalarAlarm</h4>
+<p>Clears all the scalarAlarm fields.</p>
+<h4>configProcessRecord</h4>
+<p>example usage is:
+</p>
+<pre>
+mrk> ./configProcessRecord
+processRecordName
+PVRpluginProcessRecord
+command?
+remove
+recordName
+PVRpluginDouble
+// result is
+PVRpluginProcessRecord
+argument={"command":"remove","recordName":"PVRpluginDouble"}
+Old : structure 
+    structure argument
+        string command add
+        string recordName PVRpluginDouble
+    structure result
+        string status PVRpluginDouble already pesent
+New : structure 
+    structure argument
+        string command remove
+        string recordName PVRpluginDouble
+    structure result
+        string status success
+mrk> 
+</pre>
+<p>It can also be invoked with arguments.</p>
+<p>
+The same can be done via:
+</p>
+<pre>
+mrk> pvput -r "argument" PVRpluginProcessRecord argument='{"command":"add","recordName":"PVRpluginDouble"}'
+Old : structure 
+    structure argument
+        string command remove
+        string recordName PVRpluginDouble
+New : structure 
+    structure argument
+        string command add
+        string recordName PVRpluginDouble
+</pre>
+<h4>controlSigned</h4>
+<p>
+Convenience script for signed control limits.
+</p>
+<h4>controlUnsigned</h4>
+<p>
+Convenience script for unsigned control limits.
+</p>
+<h4>scalarAlarmSigned</h4>
+<p>
+Convenience script for signed scalarAlarm limits.
+</p>
+<h4>scalarAlarmUnsigned</h4>
+<p>
+Convenience script for unsigned scalarAlarm limits.
+</p>
+
+<h2>Appendix I: ignore semantics</h2>
+<p>Plugin ignore is not a separate plugin, but is implemented by pvCopy itself.
+This is because it needs to implement the following semantics:
+</p>
+<p style="margin-left: 40px">
+If only fields with option <b>ignore=true</b> have been changed than no event is declared.
+But the next time any other field changes then all such fields that did get changed
+will also be part of the event data.
+</p>
+<p>The channel provider for PVDatabase calls the following for channelGet:
+</p>
+<pre>
+notifyClient = pvCopy->updateCopySetBitSet
+</pre>
+<p>The channel provider for PVDatabase calls the following for monitor
+</p>
+<pre>
+bool result = pvCopy->updateCopyFromBitSet
+</pre>
+Both update methods  end with the statement:
+<pre>
+return checkIgnore(copyPVStructure,bitSet);
+</pre>
+This code is:
+<pre>
+bool PVCopy::checkIgnore(
+     PVStructurePtr const &amp; copyPVStructure,
+     BitSetPtr const &amp; bitSet)
+{
+    if(!ignorechangeBitSet) {
+        return (bitSet->nextSetBit(0)&lt;0) ? false : true;
+    }
+    int32 numFields = copyPVStructure->getNumberFields();
+    BitSet temp(numFields);
+    temp = *bitSet;
+    int32 ind = 0;
+    while(true) {
+        ind = ignorechangeBitSet->nextSetBit(ind);
+        if(ind&lt;0) break;
+        temp.clear(ind);
+        ind++;
+        if(ind>=numFields) break;
+    }
+    return (temp.nextSetBit(0)&lt;0) ? false : true;
+}
+</pre>
+<p>
+Note that the code:
+</p>
+<ul>
+  <li>
+   Creates a temporary bitSet that is initialized to the current bitSet.
+  </li>
+  <li>
+   Looks at all fields specified by <b>ignorechangeBitSet</b>
+   and turns off the corresponding bit in the temporary bit set.
+  </li>
+  <li>
+   Returns (true,false) if the temporary bit set is  (not, is) empty.
+  </li>
+  <li>
+   The current bitSet is not modified. Thus the next time the bitSet has it's old value.
+  </li>
+</ul>
 </div>
 </body>
 </html>
