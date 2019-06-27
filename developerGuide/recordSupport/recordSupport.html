@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>pvDatabase Record Support</title>
+  <link rel="stylesheet" type="text/css"
+  href="../../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../../css/epicsv4.css" />
+  <style type="text/css">
+  /*<![CDATA[*/
+     .about { margin-left: 3em; margin-right: 3em; font-size: .83em}
+     table { margin-left: auto; margin-right: auto }
+     .diagram { text-align: center; margin: 2.5em 0 }
+     span.opt { color: grey }
+     span.nterm { font-style:italic }
+     span.term { font-family:courier }
+     span.user { font-family:courier }
+     span.user:before { content:"<" }
+     span.user:after { content:">" }
+     .nonnorm { font-style:italic }
+     p.ed { color: #AA0000 }
+     span.ed { color: #AA0000 }
+     p.ed.priv { display: inline; }
+     span.ed.priv { display: inline; }
+  /*]]>*/</style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../../css/tocgen.js">
+  </script>
+</head>
+<body>
+
+<div class="head">
+<h1>pvDatabase Record Support</h1>
+
+<h2 class="nocount">2019.06.21</h2>
+<dl>
+  <dt>Editors:</dt>
+    <dd>Marty Kraimer</dd>
+</dl>
+<p>
+<b>NOTE:</b>
+This is under development and so is pvDatabaseCPP and exampleCPP/support.
+</p>
+
+<p>This product is available via an <a
+href="../../LICENSE">open source license
+</a></p>
+
+</div>
+
+
+<div id="toc">
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+<div id="contents" class="contents">
+
+<h2>PVRecord support.</h2>
+<p>
+<b>NOTE:</b>
+PVRecord support is only implemented in C++ and only in:
+<a href="https://github.com/epics-base/pvDatabaseCPP">pvDatabaseCPP</a>
+</p>
+<h2>Overview</h2>
+<p>The following descibes support that can be attached to a PVRecord.
+The support is called each time a record is processed.
+</p>
+<p>
+<a href="https://github.com/epics-base/exampleCPP">exampleCPP</a>
+has an example named <b>support</b>, which demonstrates use of the support
+described in this document.
+</p>
+<p>
+The next two sections describe the existing support.
+Then follows a description of how to run the support example.
+Finally there is a section about how to use the support in services
+implemented via pvDatabase.
+</p> 
+<h2>controlSupport</h2>
+<p><b>controlSupport</b> is support for any field that is a numeric scalar.
+The following must appear in the same structure as the field being supported:
+</p>
+<pre>
+control_t control
+    double limitLow
+    double limitHigh
+    double minStep
+    scalarType outputValue
+</pre>
+where:
+<dl>
+  <dt>limitLow</dt>
+    <dd>
+     When the record is processed and the associated value field is modified,
+     the new value is not allowed to be less than limitLow.
+    </dd>
+  <dt>limitHigh</dt>
+    <dd>
+     When the record is processed and the associated value field is modified,
+     the new value is not allowed to be greater than limitHigh.
+    </dd>
+  <dt>minStep</dt>
+    <dd>
+    When to associated value field is changed then
+    outputValue is not allowed to change by more then minStep
+    each time the the record is processed.
+    </dd> 
+  <dt>outputValue</dt>
+    <dd>
+    The current output value. Note that it has the same scalarType as
+     the associated value field.
+    </dd>
+</dl>
+<b>NOTES:</b>
+<ul>
+   <li>
+    The limits are ignored if <b>limitHigh&lt;=limitLow</b>
+   </li>
+   <li>
+    minStep is ignored if <b>minStep&lt;=0</b>.
+   </li>
+</ul>
+<h2>scalarAlarmSupport</h2>
+<p><b>scalarAlarmSupport</b> is support for any field that is a numeric scalar.
+The following must appear in the same structure as the field being supported:
+</p>
+<pre>
+scalarAlarm_t scalarAlarm
+    double lowAlarmLimit
+    double lowWarningLimit
+    double highWarningLimit
+    double highAlarmLimit
+    double hysteresis
+</pre>
+where:
+<dl>
+  <dt>lowAlarmLimit</dt>
+    <dd>
+     When the record is processed the associated value field is checked
+     to see if it is less than lowAlarmLimit.
+     If it is the alarm field is set to major alarm.
+    </dd>
+  <dt>lowWarningLimit</dt>
+    <dd>
+     When the record is processed the associated value field is checked
+     to see if it is less than lowWarningLimit.
+     If it is the alarm field is set to minor alarm.
+    </dd>
+  <dt>highWarningLimit</dt>
+    <dd>
+     When the record is processed the associated value field is checked
+     to see if it is less than highWarningLimit.
+     If it is the alarm field is set to minor alarm.
+    </dd>
+  <dt>highAlarmLimit</dt>
+    <dd>
+     When the record is processed the associated value field is checked
+     to see if it is less than highAlarmLimit.
+     If it is the alarm field is set to major alarm.
+    </dd>
+  <dt>hysteresis</dt>
+    <dd>
+    If an alarm is raised then it is not set to a lower alarm severity
+    until the associated value changes from the current limit by at least
+    <b>hysteresis</b>.
+    </dd>
+</dl>
+<b>NOTES:</b>
+<ul>
+   <li>
+   A field named <b>alarm</b> must exists in the same structure as the field being     
+   supported and must be standard alarm field.
+   </li>
+   <li>
+    The high limits are ignored if <b>highAlarmLimit&lt;=lowAlarmLimit</b>
+   </li>
+   <li>
+    The warning limits are ignored if <b>highWarningLimit&lt;=lowWarningLimit</b>
+   </li>
+   <li>
+    High limits are checked before warning limits.
+   </li>
+   <li>
+    hysteresis is ignored if <b>hysteresis&lt;=0</b>.
+   </li>
+</ul>
+<h2>Examples</h2>
+<p>
+See
+<a href="../pvDatabaseTutorial/pvDatabaseTutorial.html">pvDatabaseTutorial</a>
+</p>
+
+</div>
+</body>
+</html>

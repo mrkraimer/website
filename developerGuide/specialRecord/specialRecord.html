@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>pvDatabase Special Record</title>
+  <link rel="stylesheet" type="text/css"
+  href="../../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../../css/epicsv4.css" />
+  <style type="text/css">
+  /*<![CDATA[*/
+     .about { margin-left: 3em; margin-right: 3em; font-size: .83em}
+     table { margin-left: auto; margin-right: auto }
+     .diagram { text-align: center; margin: 2.5em 0 }
+     span.opt { color: grey }
+     span.nterm { font-style:italic }
+     span.term { font-family:courier }
+     span.user { font-family:courier }
+     span.user:before { content:"<" }
+     span.user:after { content:">" }
+     .nonnorm { font-style:italic }
+     p.ed { color: #AA0000 }
+     span.ed { color: #AA0000 }
+     p.ed.priv { display: inline; }
+     span.ed.priv { display: inline; }
+  /*]]>*/</style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../../css/tocgen.js">
+  </script>
+</head>
+<body>
+
+<div class="head">
+<h1>pvDatabase Special Record</h1>
+
+<h2 class="nocount">2019.06.14</h2>
+<dl>
+  <dt>Editors:</dt>
+    <dd>Marty Kraimer</dd>
+</dl>
+
+<p>This product is available via an <a
+href="../../LICENSE">open source license
+</a></p>
+
+</div>
+
+
+<div id="toc">
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+<div id="contents" class="contents">
+
+<h2>Overview</h2>
+<p>PVDatabase implements a number of PVRecords that access other records in the
+same pvDatrabase instance.
+</p> 
+<h2>TraceRecord</h2>
+<p>
+This is a record that sets the trace level in another record in the same pvDatabase.
+</p>
+<pre>
+structure 
+    structure argument
+        string recordName 
+        int level 0
+    structure result
+        string status 
+</pre>
+where
+<dl>
+   <dt>recordName</dt>
+     <dd>
+       The name of another record in the same pvDatabase.
+     </dd>
+   <dt>level</dt>
+     <dd>
+       The trace level to set.
+     </dd>
+   <dt>status</dt>
+      <dd>
+       The result of the request.
+      </dd>
+</dl>
+<h2>RemoveRecord</h2>
+<p>
+This is a record that removes another record in the same pvDatabase.
+</p>
+<pre>
+structure 
+    structure argument
+        string recordName 
+    structure result
+        string status 
+</pre>
+where
+<dl>
+   <dt>recordName</dt>
+     <dd>
+       The name of another record in the same pvDatabase.
+     </dd>
+   <dt>status</dt>
+      <dd>
+       The result of the request.
+      </dd>
+</dl>
+<h2>ProcessRecord</h2>
+<p>
+This is a record that processes other records in the same pvDatabase.
+It keeps a map of all records to process.
+Records can be added or removed from the list.
+</p>
+<pre>
+structure 
+    structure argument
+        string command
+        string recordName
+    structure result
+        string status
+</pre>
+where
+<dl>
+   <dt>command</dt>
+     <dd>
+      The command can be <b>add</b> or <b>remove</b> 
+   <dt>recordName</dt>
+     <dd>
+       The name of another record in the same pvDatabase.
+     </dd>
+   <dt>status</dt>
+      <dd>
+       The result of the request.
+      </dd>
+</dl>
+<h2>AddRecord</h2>
+<p>
+<b>Proposed</b> but not implemented.
+</p>
+<h2>Configuring Special Records</h2>
+<p>In the source file where You build your IOC the appInclude.dbd file must
+have statements like:
+</p>
+<pre>
+include "PVAServerRegister.dbd"
+include "registerChannelProviderLocal.dbd"
+include "qsrv.dbd"
+include "traceRecordRegister.dbd"
+include "removeRecordRegister.dbd"
+include "processRecordRegister.dbd"
+</pre>
+<p>Then your st.cmd file can have statements like:</p>
+<pre>
+traceRecordCreate PVRsupportTraceRecord
+removeRecordCreate PVRsupportRemoveRecord
+processRecordCreate PVRsupportProcessRecord .5  // NOTE .5 second process rate
+</pre>
+</div>
+</body>
+</html>

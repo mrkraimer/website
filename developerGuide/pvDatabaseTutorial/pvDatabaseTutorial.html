@@ -1,0 +1,1400 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>pvDatabase Tutorial</title>
+  <link rel="stylesheet" type="text/css"
+  href="../../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../../css/epicsv4.css" />
+  <style type="text/css">
+  /*<![CDATA[*/
+     .about { margin-left: 3em; margin-right: 3em; font-size: .83em}
+     table { margin-left: auto; margin-right: auto }
+     .diagram { text-align: center; margin: 2.5em 0 }
+     span.opt { color: grey }
+     span.nterm { font-style:italic }
+     span.term { font-family:courier }
+     span.user { font-family:courier }
+     span.user:before { content:"<" }
+     span.user:after { content:">" }
+     .nonnorm { font-style:italic }
+     p.ed { color: #AA0000 }
+     span.ed { color: #AA0000 }
+     p.ed.priv { display: inline; }
+     span.ed.priv { display: inline; }
+  /*]]>*/</style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../../css/tocgen.js">
+  </script>
+</head>
+<body>
+
+<div class="head">
+<h1>pvDatabase Tutorial</h1>
+
+<h2 class="nocount">2019.06.27</h2>
+<dl>
+  <dt>Editors:</dt>
+    <dd>Marty Kraimer</dd>
+</dl>
+<p>
+<b>WARNING</b>
+This tutorial requires recent versions of pvDatabaseCPP and exampleCPP
+that are not in any official release as of EPICS 7.0.2.
+Until a later release is available, code must be cloned from <b>https://github.com/epics-base</b>
+</p>
+
+<p>This product is available via an <a
+href="../../LICENSE">open source license
+</a></p>
+
+</div>
+
+<div id="toc">
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+<div id="contents" class="contents">
+
+<h2>Overview</h2>
+<p>This tutorial is based on example <b>support</b>, which is one of the examples that is
+part of
+<br />
+<a href="https://github.com/epics-base/exampleCPP">exampleCPP</a>
+</p>
+<p>This tutorial assumes that you are familar with pvDatabaseCPP.
+There is documentation provided in "pvDatabaseCPP/documentation/pvDatabaseCPP.html".
+</p>
+<p>In addition this tutorial assumes you are familiar with the following components of pvDatabaseCPP.
+</p>
+<ol>
+   <li>
+     <a href="../pluginSupport/pluginSupport.html">pluginSupport</a>
+   </li>
+   <li>
+     <a href="../recordSupport/recordSupport.html">recordSupport</a>
+   </li>
+   <li>
+     <a href="../specialRecord/specialRecord.html">specialRecord</a>
+   </li>
+</ol>
+<p>This tutorial has two main objectives:</p>
+<dl>
+   <dt>pvDatabase features</dt>
+     <dd>It shows various features. In particular pluginSupport, recordSupport, and specialRecords</dd>
+   <dt>Implementing a PVRecord</dt>
+     <dd>Explains how the support example is organized.
+      It can be used as a model for implementing services based on PVRecords.
+     </dd>
+</dl>
+<p>This tutorial assume that you have cloned exampleCPP from github
+and built it.
+</p>
+
+<h2>Starting The example</h2>
+
+<h3>Start database</h3>
+<p>After building exampleCPP, start the database for the support examples as follows:
+</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/exampleCPP/support/iocBoot/support
+mrk> ../../bin/linux-x86_64/support st.cmd 
+...
+traceRecordCreate PVRtraceRecord
+removeRecordCreate PVRremoveRecord
+processRecordCreate PVRprocessRecord .5
+supportRecordCreate PVRsupportDouble
+supportRecordCreate PVRsupportUByte pvUByte
+scalarArrayRecordCreate PVRscalarArrayDouble pvDouble
+scalarArrayRecordCreate PVRscalarArrayUByte pvUByte
+scalarArrayRecordCreate PVRscalarArrayString pvString
+scalarArrayRecordCreate PVRscalarArrayBoolean pvBoolean
+scalarRecordCreate PVRscalarDouble pvDouble -10 10 .5
+scalarRecordCreate PVRscalarUByte pvUByte 0 20 1
+epics> 
+</pre>
+The following commands are used to create PVRecords:
+
+<h4>traceRecordCreate</h4>
+<p>Support for this record is implemented by pvDatabase.</p>
+
+<p>The created record sets the trace level in another pvRecord in the local pvDatabase.
+The trace level determines what messages are displayed
+when clients access the pvRecord.
+If the level is 0 no messages are displayed.
+If the level is 1 then connection and creation messages are displayed.
+If the level is 2 then messages are displayed for all client interaction.
+</p>
+<p>A created record has the following structure:</p>
+<pre>
+mrk> pvinfo PVRtraceRecord
+PVRtraceRecord
+Server: 10.0.0.9:5075
+Type:
+    structure
+        structure argument
+            string recordName
+            int level
+        structure result
+            string status
+</pre>
+<p>
+An example of using the record is:
+</p>
+<pre>
+mrk> pvput -r "argument,result" PVRtraceRecord argument='{"recordName":"PVRscalarDouble","level":"2"}'
+Old : structure 
+    structure argument
+        string recordName 
+        int level 0
+    structure result
+        string status 
+New : structure 
+    structure argument
+        string recordName PVRscalarDouble
+        int level 2
+    structure result
+        string status success
+</pre>
+This sets the trace level to 2 in record PVRscalarDouble.
+<p>
+This record is not used in rest of this tutorial.
+</p>
+
+<h4>removeRecordCreate</h4>
+<p>Support for this record is implemented by pvDatabase.</p>
+<p>The created record removes another pvRecord in the local pvDatabase.
+</p>
+<p>A created record that has the following structure:</p>
+<pre>
+mrk> pvinfo PVRremoveRecord
+PVRremoveRecord
+Server: 10.0.0.9:5075
+Type:
+    structure
+        structure argument
+            string recordName
+        structure result
+            string status
+</pre>
+<p>
+An example of using the record is:
+</p>
+<pre>
+mrk> pvput -r "argument,result" PVRremoveRecord argument='{"recordName":"PVRscalarDouble"}'
+Old : structure 
+    structure argument
+        string recordName 
+    structure result
+        string status 
+New : structure 
+    structure argument
+        string recordName PVRscalarDouble
+    structure result
+        string status success
+
+</pre>
+This removes record PVRscalarDouble from the local pvDatabase.
+<p>
+This record is not used in rest of this tutorial.
+</p>
+
+<h4>processRecordCreate</h4>
+<p>Support for this record is implemented by pvDatabase.</p>
+<p>The created record creates a thread that processes other records in the local pvDatabase.
+Before each round of processing it delays for the numbeSupport for this record is implemented by pvDatabase.
+The record supports two commands: <b>add</b> and <b>remove</b>.
+</p>
+<p>A created record has the following structure:</p>
+<pre>
+mrk> pvinfo PVRprocessRecord
+PVRprocessRecord
+Server: 10.0.0.9:5075
+Type:
+    structure
+        structure argument
+            string command
+            string recordName
+        structure result
+            string status
+</pre>
+<p>
+An example of using the record is:
+</p>
+<pre>
+mrk> pvput -r "argument,result" PVRprocessRecord argument='{"command":"add","recordName":"PVRscalarDouble"}'
+Old : structure 
+    structure argument
+        string command 
+        string recordName 
+    structure result
+        string status 
+New : structure 
+    structure argument
+        string command add
+        string recordName PVRscalarDouble
+    structure result
+        string status PVRscalarDouble not in pvDatabase
+</pre>
+This adds PVRscalarDouble to the set of records to process.
+Note that the request failed because the previous pvput removed PVRscalarDouble.
+<p>
+This record is used in the rest of this tutorial.
+</p>
+
+<h4>supportRecordCreate</h4>
+<p>Support for this record is provided in exampleCPP/support.
+It is used and described later in the tutorial.
+</p>
+<p>The created record uses the <b>control</b> and <b>scalarAlarm</b> support from
+pvDatabase.
+</p>
+<p>A created record has the following structure:</p>
+<pre>
+mrk> pvinfo PVRsupportDouble
+PVRsupportDouble
+Server: 10.0.0.9:5075
+Type:
+    structure
+        double value
+        boolean reset
+        alarm_t alarm
+            int severity
+            int status
+            string message
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+        display_t display
+            double limitLow
+            double limitHigh
+            string description
+            string format
+            string units
+        control_t control
+            double limitLow
+            double limitHigh
+            double minStep
+            double outputValue
+        scalarAlarm_t scalarAlarm
+            double lowAlarmLimit
+            double lowWarningLimit
+            double highWarningLimit
+            double highAlarmLimit
+            double hysteresis
+</pre>
+example usage appears later in this tutorial.
+
+<h4>scalarArrayRecordCreate</h4>
+<p>Support for this record is provided in exampleCPP/support.
+It creates a record that has a scalarArray value field and a timeStamp field.
+It is used to the demonstrate use of the array plugin.
+</p>
+<p>A created record  has the following structure:</p>
+<pre>
+mrk> pvinfo PVRscalarArrayDouble
+PVRscalarArrayDouble
+Server: 10.0.0.9:5075
+Type:
+    structure
+        double[] value
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+</pre>
+
+<h4>scalarRecordCreate</h4>
+<p>Support for this record is provided in exampleCPP/support.
+It is used and described later in the tutorial.
+</p>
+<p>A created record  has the following structure:</p>
+<pre>
+mrk> pvinfo PVRscalarDouble
+PVRscalarDouble
+Server: 10.0.0.9:5075
+Type:
+    structure
+        double value
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+</pre>
+<h3>Use clients to configure records</h3>
+<p>Run the following:</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/exampleCPP/support/client/scripts
+mrk> ./configAll
+</pre>
+<p>configAll does the following:</p>
+<ul>
+   <li>
+    Sets control and scalarAlarm fields for both PVRsupportDouble and PVRsupportUByte.
+   </li>
+   <li>
+    Adds the following to PVRprocessRecord:
+    <br /><br />
+    PVRsupportDouble, PVRsupportUByte, PVRscalarDouble, and PVRscalarUByte.
+    <br /><br />
+    Thus each of these records will be periodically processed.
+   </li>
+</ul>
+<h3>Run an example client</h3>
+<p>
+In one window enter:
+</p>
+<pre>
+pvget -m -r "value,control.outputValue,alarm,timeStamp" -v PVRsupportDouble
+</pre>
+Look at the output from this window after you enter the next command.
+<p>
+Enter:
+</p>
+<pre>
+pvput PVRsupportDouble  20
+</pre>
+<h2>scripts</h2>
+<p>The scripts all appear in:
+</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/exampleCPP/support/client/scripts
+</pre>
+<p>The scripts with names that start with config or clear can be run either interactively
+or via arguments.
+The only exception is <b>configAll</b>
+</p>
+
+<h3>configControl</h3>
+<p>
+An example usage is:
+</p>
+<pre>
+mrk> ./configControl
+recordName?
+PVRsupportDouble
+limitLow
+-10
+limitHigh
+10
+minStep
+.5
+Old : structure 
+    control_t control
+        double limitLow -10
+        double limitHigh 10
+        double minStep 0.5
+        double outputValue 2.5
+New : structure 
+    control_t control
+        double limitLow -10
+        double limitHigh 10
+        double minStep 0.5
+        double outputValue 2.5
+mrk> 
+</pre>
+<p>It could do the same without prompts via:
+</p>
+<pre>
+mrk> ./configControl PVRsupportDouble -10 10 .5
+Old : structure 
+    control_t control
+        double limitLow -10
+        double limitHigh 10
+        double minStep 0.5
+        double outputValue 2
+New : structure 
+    control_t control
+        double limitLow -10
+        double limitHigh 10
+        double minStep 0.5
+        double outputValue 2
+mrk> 
+</pre>
+<p>The same could be done using pvput as follows:
+</p>
+<pre>
+mrk> pvput -r "control" PVRsupportDouble control='{"limitLow":"-10","limitHigh":"10","minStep":".5"}'
+</pre>
+<h3>clearControl</h3>
+<p>Sets all control fields so that no control limits are present.
+</p>
+<h3>configScalarAlarm</h3>
+<p>
+An example usage is:
+</p>
+<pre>
+mrk> ./configScalarAlarm
+recordName?
+PVRsupportDouble
+lowAlarmLimit
+-8
+lowWarningLimit
+-6
+highWarningLimit
+6
+highAlarmLimit
+8
+hysteresis
+.1
+Old : structure 
+    scalarAlarm_t scalarAlarm
+        double lowAlarmLimit -8
+        double lowWarningLimit -6
+        double highWarningLimit 6
+        double highAlarmLimit 8
+        double hysteresis 0.1
+New : structure 
+    scalarAlarm_t scalarAlarm
+        double lowAlarmLimit -8
+        double lowWarningLimit -6
+        double highWarningLimit 6
+        double highAlarmLimit 8
+        double hysteresis 0.1
+mrk> 
+</pre>
+<p>
+Just like configControl it can be invoked by giving all values as arguments.
+</p>
+<h3>clearScalarAlarm</h3>
+<p>Clears all the scalarAlarm fields.</p>
+<h3>configProcessRecord</h3>
+<p>example usage is:
+</p>
+<pre>
+mrk> ./configProcessRecord
+processRecordName
+PVRprocessRecord
+command?
+remove
+recordName?
+PVRscalarDouble
+// result is
+PVRprocessRecord
+argument={"command":"remove","recordName":"PVRsupportDouble"}
+Old : structure 
+    structure argument
+        string command add
+        string recordName PVRscalarDouble
+    structure result
+        string status success
+New : structure 
+    structure argument
+        string command remove
+        string recordName PVRscalarDouble
+    structure result
+        string status success
+mrk> 
+</pre>
+<p>It can also be invoked with arguments.</p>
+<p>
+The same can be done via:
+</p>
+<pre>
+mrk> pvput -r "argument,result" PVRprocessRecord argument='{"command":"add","recordName":"PVRscalarDouble"}'
+Old : structure 
+    structure argument
+        string command add
+        string recordName PVRscalarDouble
+    structure result
+        string status PVRscalarDouble already present
+New : structure 
+    structure argument
+        string command add
+        spwd
+tring recordName PVRscalarDouble
+    structure result
+        string status PVRscalarDouble already present
+</pre>
+<h3>controlSigned</h3>
+<p>
+Convenience script for signed control limits.
+</p>
+<pre>
+#!/bin/sh
+./configControl PVRsupportDouble -10 10 .5
+</pre>
+<h3>controlUnsigned</h3>
+<p>
+Convenience script for unsigned control limits.
+</p>
+<pre>
+#!/bin/sh
+./configControl PVRsupportUByte 1 20 1
+</pre>
+<h3>scalarAlarmSigned</h3>
+<p>
+Convenience script for signed scalarAlarm limits.
+</p>
+<pre>
+#!/bin/sh
+./configScalarAlarm PVRsupportDouble -8 -6 6 8 .1
+</pre>
+<h3>scalarAlarmUnsigned</h3>
+<p>
+Convenience script for unsigned scalarAlarm limits.
+</p>
+<pre>
+#!/bin/sh
+./configScalarAlarm PVRsupportUByte 2 4 16 18 1
+</pre>
+<h3>configAlconfigAll
+l</h3>
+<p>Use of this was shown above.</p>
+<pre>
+#!/bin/bash
+./controlSigned
+./scalarAlarmSigned
+./controlUnsigned
+./scalarAlarmUnsigned
+./configProcessRecord PVRprocessRecord add PVRsupportDouble
+./configProcessRecord PVRprocessRecord add PVRsupportUByte
+./configProcessRecord PVRprocessRecord add PVRscalarDouble
+./configProcessRecord PVRprocessRecord add PVRscalarUByte
+</pre>
+
+<h2>Client Examples</h2>
+
+<h3>Record Support Examples</h3>
+<p>Records PVRsupportDouble and PVRsupportUByte both use the <b>control</b>
+and <b>scalarAlarm</b>
+record support from pvDatabaseCPP.
+After starting the database and running configAll The records have:
+</p>
+<pre>
+mrk> pvget -r "control,scalarAlarm" -v PVRsupportDouble PVRsupportUByte
+PVRsupportDouble structure 
+    control_t control
+        double limitLow -10
+        double limitHigh 10
+        double minStep 0.5
+        double outputValue 0
+    scalarAlarm_t scalarAlarm
+        double lowAlarmLimit -8
+        double lowWarningLimit -6
+        double highWarningLimit 6
+        double highAlarmLimit 8
+        double hysteresis 0.1
+PVRsupportUByte  structure 
+    control_t control
+        double limitLow 1
+        double limitHigh 20
+        double minStep 1
+        ubyte outputValue 0
+    scalarAlarm_t scalarAlarm
+        double lowAlarmLimit 2
+        double lowWarningLimit 4
+        double highWarningLimit 16
+        double highAlarmLimit 18
+        double hysteresis 1
+</pre>
+Look at the control and scalarAlarm settings.
+<p>In one window:
+</p>
+<pre>
+mrk> pvget -r "value,alarm,timeStamp,control.outputValue" -v -m PVRsupportDouble
+</pre>
+<p>Keep this window and see what happens when you run the following in another window:
+</p>
+<pre>
+mrk> pvput PVRsupportDouble 20
+</pre>
+<p>In the first window you will see that <b>value</b> goes to 10 and the alarm changes.
+It did NOT go to 20 because <b>control.limitHigh</b> is 10.
+But <b>control.outputValue</b> changes by .5 each time the record processes.
+On each process except the first only <b>timeStamp</b> and <b>control.outputValue</b>
+change value.
+This continues until <b>control.outputValue</b> is 10.
+Then no more monitors occur.
+</p>
+<p>Now issue some more pvputs. For example to 9 then 8 then 5 then 0.
+</p>
+<h3>Plugin Examples</h3>
+
+<h4>array</h4>
+<p>The records PVRscalarArrayDouble, PVRscalarArrayUByte, PVRscalarArrayString, and PVRscalarArrayBoolean
+are created in order to see the array plugin in action.
+</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/exampleCPP/support/client/scripts
+mrk> cat exampleArrayPlugin
+#!/bin/sh
+echo "unsigned byte array"
+pvput PVRscalarArrayUByte value=[1,2,3,4,5,6,7,8,9,10]
+pvput -r "value[array=1:3]" PVRscalarArrayUByte value=[10,20,30]
+pvget -r "value[array=1:3]" PVRscalarArrayUByte
+pvget PVRscalarArrayUByte
+pvput PVRscalarArrayUByte value=[1,2,3,4,5,6,7,8,9,10]
+pvput -r "value[array=1:2:5]" PVRscalarArrayUByte value=[10,20,30]
+pvget -r "value[array=1:2:5]" PVRscalarArrayUByte
+pvget PVRscalarArrayUByte
+echo "double array"
+pvput PVRscalarArrayDouble value='[".1",".2",".3",".4",".5",".6",".7",".8",".9","1.0"]'
+pvput -r "value[array=1:3]" PVRscalarArrayDouble value=[10,20,30]
+pvget -r "value[array=1:3]" PVRscalarArrayDouble
+pvget PVRscalarArrayDouble
+pvput PVRscalarArrayDouble value='[".1",".2",".3",".4",".5",".6",".7",".8",".9","1.0"]'
+pvput -r "value[array=1:2:5]" PVRscalarArrayDouble value=[10,20,30]
+pvget -r "value[array=1:2:5]" PVRscalarArrayDouble
+pvget PVRscalarArrayDouble
+echo "string array"
+pvput PVRscalarArrayString value='["zero","one","two","three","four","five","six","seven","eight","nine"]'
+pvput -r "value[array=1:3]" PVRscalarArrayString value='["now is zero","now is one","now is two"]'
+pvget -r "value[array=1:3]" PVRscalarArrayString
+pvget PVRscalarArrayString
+pvput PVRscalarArrayString value='["zero","one","two","three","four","five","six","seven","eight","nine"]'
+pvput -r "value[array=1:2:5]" PVRscalarArrayString value='["now is zero","now is one","now is two"]'
+pvget -r "value[array=1:2:5]" PVRscalarArrayString
+pvget PVRscalarArrayString
+echo "boolean array"
+pvput PVRscalarArrayBoolean value='["true","true","true","true","true","true","true","true","true","true"]'
+pvput -r "value[array=1:3]" PVRscalarArrayBoolean value='["false","false","false"]'
+pvget -r "value[array=1:3]" PVRscalarArrayBoolean
+pvget PVRscalarArrayBoolean
+pvput PVRscalarArrayBoolean value='["true","true","true","true","true","true","true","true","true","true"]'
+pvput -r "value[array=1:2:5]" PVRscalarArrayBoolean value='["false","false","false"]'
+pvget -r "value[array=1:2:5]" PVRscalarArrayBoolean
+pvget PVRscalarArrayBoolean
+</pre>
+<p>Just issue the command:
+</p>
+<pre>
+mrk> ./exampleArrayPlugin
+</pre>
+<h4>deadband and ignore</h4>
+<p>The records PVRscalarDouble and PVRscalarUByte are both created to show usage of
+the deadband and ignore plugins.
+Each record generates a sawtooth.
+Each time it processes it makes a step.
+</p>
+<p>
+There is an example script:
+</p>
+<pre>
+rk> pwd
+/home/epicsv4/masterCPP/exampleCPP/support/client/scripts
+mrk> ./exampleDeadbandPlugin
+recordName?
+PVRscalarDouble
+deadband?
+abs:1
+PVRscalarDouble structure 
+    time_t timeStamp 2019-06-20 14:23:34.508  
+        long secondsPastEpoch 1561055014
+        int nanoseconds 508198078
+        int userTag 0
+    double value -3
+....
+^Cmrk> 
+</pre>
+<p>The same thing can be done via:
+</p>
+<pre>
+mrk> pvget -m -v -r "timeStamp[ignore=true],alarm[ignore=true],value[deadband=abs:1]" PVRscalarDouble 
+</pre>
+<p>
+Now try different values for deadband.
+</p>
+
+<h2>Building support</h2>
+<p>This section describes the files that appear in <b>exampleCPP/support</b>.
+This example is a good way to help understand how to build a service based
+on PVRecords running along side DBRecords.
+</p>
+<p>After executing make, exampleCPP/support has the following subdirectories:
+</p>
+<pre>
+mrk> ls | cat
+bin           // generated by make
+configure     // standard files for building a V4/V3 appplication
+db            // generated by make
+dbd           // generated by make
+include       // generated by make
+ioc           // see below
+iocBoot       // see below
+lib           // generated by make
+Makefile      // see below
+README.md
+src           // see below
+testClient    // was described in previous section
+</pre>
+<h3>support/src</h3>
+<p>
+This has the files:
+</p>
+<pre>
+pv/
+    supportRecord.h
+    scalarArrayRecord.h
+    scalarRecord.h
+supportRecord.cpp
+supportRecordRegister.dbd
+supportRecordRegister.cpp
+supportMain.cpp
+scalarArrayRecord.cpp
+scalarArrayRecordRegister.dbd
+scalarArrayRecordRegister.cpp
+scalarRecord.cpp
+scalarRecordRegister.dbd
+scalarRecordRegister.cpp
+Makefile
+</pre>
+<h3>support/src - supportRecord</h3>
+<p>
+This section describes the code that implements the supportRecord.
+</p>
+<h4>pv/supportRecord.h</h4>
+<p>This describes the supportRecord implemented for exampleCPP/support.
+Look at it while also looking at supportRecord.cpp.
+Note the public methods are <b>create</b>, <b>init</b>, and <b>process</b>.
+</p>
+<p>Note also that it has the following include statements:
+</p>
+<pre>
+#include &lt;shareLib.h&gt;
+</pre>
+<p>
+This statement is for building DLL shared libraries on windows.
+All other includes must appear before this include.
+Later it is explained what supportRecord.cpp must do.
+Any code that is creating an object module library should follow these rules.
+</p>
+<h4>supportRecord.cpp</h4>
+<p>Before defining any methods the following appears:
+</p>
+<pre>
+...
+#include &lt;pv/channelProviderLocal.h&gt;
+
+#define epicsExportSharedSymbols
+#include "pv/supportRecord.h"
+</pre>
+<p>The above does the following:
+</p>
+<ul>
+   <li>
+   All includes required by this module must appear before the following statement.
+   </li>
+   <li>
+   <b>define epicsExportSharedSymbols</b> must appear before any code.
+   </li>
+   <li>
+    <b>#include "pv/supportRecord.h"</b> must appear.
+     Note that it uses "" instead of &lt;&gt;.
+     No other include should appear after this statement.
+   </li>
+</ul>
+<p>You can check that you have defined all required includes by
+look at
+</p>
+<pre>
+mrk> cat O.linux-x86_64/scalarRecord.d
+...   // LOTS OF OUTPUT
+ ../pv/scalarRecord.h  // THIS SHOULD APPEAR LAST
+mrk> 
+</pre>
+<p>The create method is:</p>
+<pre>
+SupportRecordPtr SupportRecord::create(
+    std::string const &amp; recordName,epics::pvData::ScalarType scalarType)
+{
+    FieldCreatePtr fieldCreate = getFieldCreate();
+    PVDataCreatePtr pvDataCreate = getPVDataCreate();
+    StandardFieldPtr standardField = getStandardField();
+    StructureConstPtr  topStructure = fieldCreate->createFieldBuilder()->
+        add("value",scalarType) ->
+        add("reset",pvBoolean) ->
+        add("alarm",standardField->alarm()) ->
+        add("timeStamp",standardField->timeStamp()) ->
+        add("display",standardField->display()) ->
+        add("control",ControlSupport::controlField(scalarType)) ->
+        add("scalarAlarm",ScalarAlarmSupport::scalarAlarmField()) ->
+        createStructure();
+    PVStructurePtr pvStructure = pvDataCreate->createPVStructure(topStructure);
+    SupportRecordPtr pvRecord(
+        new SupportRecord(recordName,pvStructure));
+    if(!pvRecord->init()) pvRecord.reset();
+    return pvRecord;
+}
+</pre>
+<p>The above does the following:
+</p>
+<ul>
+   <li>
+   Creates the PVStructure for the data.
+   </li>
+   <li>
+   Creates a PVRecord instance.
+   </li>
+   <li>
+    Calls the init method.
+   </li>
+</ul>
+<p>The init method is:</p>
+<pre>
+bool SupportRecord::init()
+{
+    initPVRecord();
+    PVRecordPtr pvRecord = shared_from_this();
+    PVStructurePtr pvStructure(getPVStructure());
+    controlSupport = ControlSupport::create(pvRecord);
+    bool result = controlSupport->init(
+       pvStructure->getSubField("value"),pvStructure->getSubField("control"));
+    if(!result) return false;
+    scalarAlarmSupport = ScalarAlarmSupport::create(pvRecord);
+    result = scalarAlarmSupport->init(
+       pvStructure->getSubField("value"),
+       pvStructure->getSubField&lt;PVStructure&gt;("alarm"),
+       pvStructure->getSubField("scalarAlarm"));
+    if(!result) return false;
+    pvReset = getPVStructure()->getSubField&lt;PVBoolean&gt;("reset");
+    return true;
+}
+</pre>
+where
+<dl>
+  <dt>initPVRecord</dt>
+     <dd>
+      This method is implemented by the PVRecord base class.
+       It must be called by any derived class that implements method init.
+     </dd>
+  <dt>controlSupport</dt>
+      <dd>
+      These statement create the control support, which is implemented
+      by pvDatabaseCPP.
+     </dd>
+  <dt>scalarAlarmSupport</dt>
+      <dd>
+      These statement create the scalarAlarm support, which is implemented
+      by pvDatabaseCPP.
+      </dd>
+</dl>
+<p>The process method is:</p>
+<pre>
+void SupportRecord::process()
+{
+    bool wasChanged = false;
+    if(pvReset->get()==true) {
+        pvReset->put(false);
+        controlSupport->reset();
+        scalarAlarmSupport->reset();
+    } else {
+        if(controlSupport->process()) wasChanged = true;;
+        if(scalarAlarmSupport->process()) wasChanged = true;
+    }
+    if(wasChanged) PVRecord::process();
+}
+</pre>
+where
+<dl>
+   <dt>wasChanged</dt>
+     <dd>
+     This is initialized to false.
+     It stays false unless a support returns true,
+     which means that the support modified some field.
+     If it does return true then the base class process method is
+     called, which sets the timeStamp field to the current time.
+     </dd>
+   <dt>pvReset</dt>
+     <dd>
+      If this is true then the reset method of each support is called.
+      </dd>
+   <dt>controlSupport</dt>
+     <dd>
+      The control support is called.
+     </dd>
+   <dt>scalarAlarmSupport</dt>
+     <dd>
+      The scalarAlarm support is called.
+      Note that it is called after control support,
+      because control support might change the value field.
+     </dd>
+</dl>
+
+<h4>supportRecordRegister.dbd</h4>
+<p>This has the single statement:</p>
+<pre>
+registrar("supportRecordRegister")
+</pre>
+This is used along with the following source file to allow the
+st.cmd file to create SupportRecord instances.
+
+<h4>supportRecordRegister.cpp</h4>
+<p>This creates an iocshell command to create SupportRecord instances.
+It is what is called for the following lines in the st.cmd file.
+</p>
+<pre>
+supportRecordCreate PVRsupportDouble
+supportRecordCreate PVRsupportUByte pvUByte
+</pre>
+<p>
+It implements code defined by epics-base to implement an iocshell command:
+</p>
+<pre>
+static const iocshArg testArg0 = { "recordName", iocshArgString };
+static const iocshArg testArg1 = { "scalarType", iocshArgString };
+static const iocshArg *testArgs[] = {
+    &amp;testArg0,&amp;testArg1};
+
+static const iocshFuncDef supportRecordFuncDef = {"supportRecordCreate", 2,testArgs};
+
+static void supportRecordCallFunc(const iocshArgBuf *args)
+{
+    char *recordName = args[0].sval;
+    if(!recordName) {
+        throw std::runtime_error("supportRecordCreate invalid number of arguments");
+    }
+    char *stype = args[1].sval;
+    epics::pvData::ScalarType scalarType  = epics::pvData::pvDouble;
+    if(stype) {
+        string val(stype);
+        if(val.compare("pvByte")==0) {
+            scalarType = epics::pvData::pvByte;
+        } else if(val.compare("pvShort")==0) {
+            scalarType = epics::pvData::pvShort;
+        } else if(val.compare("pvInt")==0) {
+            scalarType = epics::pvData::pvInt;
+        } else if(val.compare("pvLong")==0) {
+            scalarType = epics::pvData::pvLong;
+        } else if(val.compare("pvFloat")==0) {
+            scalarType = epics::pvData::pvFloat;
+        } else if(val.compare("pvDouble")==0) {
+            scalarType = epics::pvData::pvDouble;
+        } else if(val.compare("pvUByte")==0) {
+            scalarType = epics::pvData::pvUByte;
+        } else if(val.compare("pvUShort")==0) {
+            scalarType = epics::pvData::pvUShort;
+        } else if(val.compare("pvUInt")==0) {
+            scalarType = epics::pvData::pvUInt;
+        } else if(val.compare("pvULong")==0) {
+            scalarType = epics::pvData::pvULong;
+        } else {
+             cout &lt;&lt; val &lt;&lt; " is not a support scalar type\n";
+             return; 
+        }
+    }
+    SupportRecordPtr record = SupportRecord::create(recordName,scalarType);
+    bool result = PVDatabase::getMaster()->addRecord(record);
+    if(!result) cout &lt;&lt; "recordname" &lt;&lt; " not added" &lt;&lt; endl;
+}
+
+static void supportRecordRegister(void)
+{
+    static int firstTime = 1;
+    if (firstTime) {
+        firstTime = 0;
+        iocshRegister(&amp;supportRecordFuncDef, supportRecordCallFunc);
+    }
+}
+
+extern "C" {
+    epicsExportRegistrar(supportRecordRegister);
+}
+</pre>
+where
+<dl>
+   <dt>define arguments</dt>
+     <dd>Defines arguments for recordName and scalarType</dd>
+   <dt>epics::pvData::ScalarType scalarType</dt>
+     <dd>Initializes this to be pvDouble
+     and then if the command line includes a second argument sets it to what is requested.
+     </dd>
+   <dt>supportRecordRegister</dt>
+      <dd>Register the command with epics-base.</dd>
+   <dt>epicsExportRegistrar</dt>
+      <dd>when ioc is build this statement is executed as a result of supportRegisted.dbd</dd>
+</dl>
+<h4>supportMain.cpp</h4>
+<p>This creates a main program that implements the example directly
+instead of being part of a V3 IOC.
+</p>
+<pre>
+int main(int argc,char *argv[])
+{
+    PVDatabasePtr master = PVDatabase::getMaster();
+    ChannelProviderLocalPtr channelProvider = getChannelProviderLocal();
+    PVRecordPtr pvRecord;
+    string recordName;
+
+    recordName = "PVRtraceRecord";
+    pvRecord = TraceRecord::create(recordName);
+    master->addRecord(pvRecord);
+    recordName = "PVRremoveRecord";
+    pvRecord = RemoveRecord::create(recordName);
+    master->addRecord(pvRecord);
+    recordName = "PVRprocessRecord";
+    pvRecord = ProcessRecord::create(recordName,.5);
+    master->addRecord(pvRecord);
+    recordName = "PVRsupportDouble";
+    pvRecord = SupportRecord::create(recordName,epics::pvData::pvDouble);
+    master->addRecord(pvRecord);
+    recordName = "PVRsupportUByte";
+    pvRecord = SupportRecord::create(recordName,epics::pvData::pvUByte);
+    master->addRecord(pvRecord);
+    recordName = "PVRscalarArrayDouble";
+    pvRecord = ScalarArrayRecord::create(recordName,epics::pvData::pvDouble);
+    master->addRecord(pvRecord);
+    recordName = "PVRscalarArrayUByte";
+    pvRecord = ScalarArrayRecord::create(recordName,epics::pvData::pvUByte);
+    master->addRecord(pvRecord);
+    recordName = "PVRscalarArrayString";
+    pvRecord = ScalarArrayRecord::create(recordName,epics::pvData::pvString);
+    master->addRecord(pvRecord);
+    recordName = "PVRscalarArrayBoolean";
+    pvRecord = ScalarArrayRecord::create(recordName,epics::pvData::pvBoolean);
+    master->addRecord(pvRecord);
+    recordName = "PVRscalarDouble";
+    pvRecord = ScalarRecord::create(recordName,epics::pvData::pvDouble,-10,10,.5);
+    master->addRecord(pvRecord);
+    recordName = "PVRscalarUByte";
+    pvRecord = ScalarRecord::create(recordName,epics::pvData::pvUByte,0,20,1);
+    master->addRecord(pvRecord);
+
+
+    ServerContext::shared_pointer ctx =
+        startPVAServer("local",0,true,true);
+    string str;
+    while(true) {
+        cout &lt;&lt; "Type exit to stop: \n";
+        getline(cin,str);
+        if(str.compare("exit")==0) break;
+
+    }
+    return 0;
+}
+</pre>
+<h3>support/src - scalarArrayRecord</h3>
+<p>
+This section describes the code that implements the scalarArrayRecord.
+</p>
+<h4>pv/scalarArrayRecord.h</h4>
+<p>This describes the scalarArrayRecord implemented for exampleCPP/support.
+Look at it while also looking at scalarArrayRecord.cpp.
+Note the only public method is <b>create</b>.
+</p>
+<p>
+This is a way to create a "soft" record, i.e the code only creates a pvStructure for
+a pvRecord and lets the base class for PVRecord do everthing else.
+</p>
+
+<h4>pv/scalarArrayRecord.cpp</h4>
+<p>The create method is:
+</p>
+<pre>
+ScalarArrayRecordPtr ScalarArrayRecord::create(
+    string const &amp; recordName,
+    epics::pvData::ScalarType scalarType)
+{
+    FieldCreatePtr fieldCreate = getFieldCreate();
+    PVDataCreatePtr pvDataCreate = getPVDataCreate();
+    StandardFieldPtr standardField = getStandardField();
+    StructureConstPtr  topStructure = fieldCreate->createFieldBuilder()->
+        addArray("value",scalarType) ->
+        add("timeStamp",standardField->timeStamp()) ->
+        createStructure();
+    PVStructurePtr pvStructure = pvDataCreate->createPVStructure(topStructure);
+    ScalarArrayRecordPtr pvRecord(
+        new ScalarArrayRecord(recordName,pvStructure));
+    pvRecord->init();
+    return pvRecord;
+}
+</pre>
+<p>
+The above creates a pvRecord that only has a scalar value field and a timeStamp.
+</p>
+
+<h4>scalarArrayRecordRegister.dbd</h4>
+<p>This has the single statement:</p>
+<pre>
+registrar("scalarArrayRecordRegister")
+</pre>
+
+<h4>scalarArrayRecordRegister.cpp</h4>
+<p>This is similar to supportRecordRegister.cpp.
+</p>
+<h3>support/src - scalarRecord</h3>
+<p>This section describes the code that implements the scalarRecord.
+This record generates a saw-tooth output.
+The st.cmd file has the statements:
+</p>
+<pre>
+scalarRecordCreate PVRscalarDouble pvDouble -10 10 .5
+scalarRecordCreate PVRscalarUByte pvUByte 0 20 1
+</pre>
+The arguments are:
+<dl>
+    <dt>recordName</dt>
+      <dd>The pvRecord  name.</dd>
+    <dt>scalarType</dt>
+       <dd>The scalar type, which must be a numeric type.</dd>
+    <dt>minValue</dt>
+       <dd>Minimum value</dd>
+    <dt>maxValue</dt>
+       <dd>Maximum value</dd>
+    <dt>stepSize</dt>
+       <dd>The amount to change each time process is called.</dd>
+</dl>
+<p>
+Look at the process method generates a sawtooth with values between minValue and maxValue.
+Each time process is called it changes the value by stepSize.
+</p>
+<h4>pv/scalarRecord.h</h4>
+<p>
+This describes the supportRecord implemented for exampleCPP/support. Look at it while also looking at supportRecord.cpp. Note the public methods are <b>create</b>, <b>init</b>, and <b>process</b>.
+</p>
+<h4>scalarRecord.cpp</h4>
+<p>The create method is:</p>
+<pre>
+ScalarRecordPtr ScalarRecord::create(
+    string const &amp; recordName,
+    epics::pvData::ScalarType scalarType,
+    double minValue,
+    double maxValue,
+    double stepSize)
+{
+    FieldCreatePtr fieldCreate = getFieldCreate();
+    PVDataCreatePtr pvDataCreate = getPVDataCreate();
+    StandardFieldPtr standardField = getStandardField();
+    StructureConstPtr  topStructure = fieldCreate->createFieldBuilder()->
+        add("value",scalarType) ->
+        add("timeStamp",standardField->timeStamp()) ->
+        createStructure();
+    PVStructurePtr pvStructure = pvDataCreate->createPVStructure(topStructure);
+    ScalarRecordPtr pvRecord(
+        new ScalarRecord(recordName,pvStructure,minValue,maxValue,stepSize));
+    if(!pvRecord->init()) pvRecord.reset();
+    return pvRecord;
+}
+</pre>
+<p>The init method is:</p>
+<pre>
+bool ScalarRecord::init()
+{
+    initPVRecord();
+    pvValue = getPVStructure()->getSubField&lt;PVScalar&gt;("value");
+    if(!pvValue) return false;
+    return true;
+}
+</pre>
+<p>The process method is:</p>
+<pre>
+void ScalarRecord::process()
+{
+    ConvertPtr convert = getConvert();
+    double value = convert->toDouble(pvValue);
+    if(stepPositive) {
+        value = value + stepSize;
+        if(value>maxValue) {
+           stepPositive = false;
+           value = maxValue;
+        }
+    } else {
+        value = value - stepSize;
+        if(value&lt;minValue) {
+             stepPositive = true;
+             value = minValue;
+        }
+    }
+    convert->fromDouble(pvValue,value);
+    PVRecord::process();
+}
+</pre>
+
+
+<h4>scalarRecordRegister.dbd</h4>
+<p>This has the single statement:</p>
+<pre>
+registrar("scalarRecordRegister")
+</pre>
+<p>This is used along with the following source file to allow the st.cmd file
+to create scalarRecord instances.
+</p>
+<h4>scalarRecordRegister.cpp</h4>
+<pre>
+static const iocshArg testArg0 = { "recordName", iocshArgString };
+static const iocshArg testArg1 = { "scalarType", iocshArgString };
+static const iocshArg testArg2 = { "minValue", iocshArgDouble };
+static const iocshArg testArg3 = { "maxValue", iocshArgDouble };
+static const iocshArg testArg4 = { "stepSize", iocshArgDouble };
+static const iocshArg *testArgs[] = {
+    &amp;testArg0,&amp;testArg1,&amp;testArg2,&amp;testArg3,&amp;testArg4};
+
+static const iocshFuncDef scalarRecordFuncDef = {"scalarRecordCreate", 5,testArgs};
+
+static void scalarRecordCallFunc(const iocshArgBuf *args)
+{
+    char *recordName = args[0].sval;
+    if(!recordName) {
+        throw std::runtime_error("scalarRecordCreate invalid number of arguments");
+    }
+    char *stype = args[1].sval;
+    epics::pvData::ScalarType scalarType  = epics::pvData::pvDouble;
+    if(stype) {
+        string val(stype);
+        if(val.compare("pvByte")==0) {
+            scalarType = epics::pvData::pvByte;
+        } else if(val.compare("pvShort")==0) {
+            scalarType = epics::pvData::pvShort;
+        } else if(val.compare("pvInt")==0) {
+            scalarType = epics::pvData::pvInt;
+        } else if(val.compare("pvLong")==0) {
+            scalarType = epics::pvData::pvLong;
+        } else if(val.compare("pvFloat")==0) {
+            scalarType = epics::pvData::pvFloat;
+        } else if(val.compare("pvDouble")==0) {
+            scalarType = epics::pvData::pvDouble;
+        } else if(val.compare("pvUByte")==0) {
+            scalarType = epics::pvData::pvUByte;
+        } else if(val.compare("pvUShort")==0) {
+            scalarType = epics::pvData::pvUShort;
+        } else if(val.compare("pvUInt")==0) {
+            scalarType = epics::pvData::pvUInt;
+        } else if(val.compare("pvULong")==0) {
+            scalarType = epics::pvData::pvULong;
+        } else if(val.compare("pvString")==0) {
+            scalarType = epics::pvData::pvString;
+        } else if(val.compare("pvBoolean")==0) {
+            scalarType = epics::pvData::pvBoolean;
+        } else {
+             cout &lt;&lt; val &lt;&lt; " is not a scalar type\n";
+             return; 
+        }
+    }
+    double minValue = args[2].dval;
+    double maxValue = args[3].dval;
+    double stepSize = args[4].dval;
+    ScalarRecordPtr record = ScalarRecord::create(
+        recordName,scalarType,minValue,maxValue,stepSize);
+    bool result = PVDatabase::getMaster()->addRecord(record);
+    if(!result) cout &lt;&lt; "recordname" &lt;&lt; " not added" &lt;&lt; endl;
+}
+
+static void scalarRecordRegister(void)
+{
+    static int firstTime = 1;
+    if (firstTime) {
+        firstTime = 0;
+        iocshRegister(&amp;scalarRecordFuncDef, scalarRecordCallFunc);
+    }
+}
+
+extern "C" {
+    epicsExportRegistrar(scalarRecordRegister);
+}
+</pre>
+<h4>Makefile</h4>
+<p>The Makefile is:</p>
+<pre>
+TOP=..
+include $(TOP)/configure/CONFIG
+supportSRC = $(TOP)/src
+
+EPICS_BASE_PVA_CORE_LIBS = pvDatabase pvAccess pvAccessCA pvData ca Com
+INC += pv/supportRecord.h
+DBD += supportRecordRegister.dbd
+LIBRARY = support
+LIBSRCS += supportRecord.cpp
+LIBSRCS += supportRecordRegister.cpp
+support_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
+
+# shared library ABI version.
+SHRLIB_VERSION ?= 4.3.0
+
+PROD_HOST += supportMain
+supportMain_SRCS += supportMain.cpp
+supportMain_LIBS += support
+supportMain_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
+
+PROD_SYS_LIBS_WIN32 += ws2_32
+include $(TOP)/configure/RULES
+</pre>
+where
+<dl>
+   <dt>EPICS_BASE_PVA_CORE_LIBS</dt>
+    <dd>
+    This defines all the object libraries required from other sources.
+    </dd>
+   <dt>INC</dt>
+    <dd>
+    These define the *.h files that should be installed into <b>include/pv</b>.
+    </dd>
+   <dt>DBD</dt>
+    <dd>
+     These define the *.dbd files that should be installed into <b>dbd</b>.
+    </dd>
+   <dt>LIBRARY</dt>
+    <dd>
+     This defines the object library to create.
+    </dd>
+   <dt>LIBSRCS</dt>
+     <dd>These define the source modules for the LIBRARY.
+     </dd>
+   <dt>PROD_HOST</dt>
+    <dd>
+     This creates supportMain.
+    </dd>
+</dl>
+<h3>support/ioc</h3>
+<p>This directory creates the IOC code for this example.</p>
+<h4>Db</h4>
+<p>
+This creates a template for creating an ao DBRecord.
+Note that the control support from pvDatabase is modeled after the ao record.
+</p>
+<h4>src</h4>
+<p>The is where the code for the IOC is built.
+In particular look at supportInclude.dbd:
+</p>
+<pre>
+include "base.dbd"                          // standard for V4 
+include "PVAClientRegister.dbd"             // standard for V4              
+include "PVAServerRegister.dbd"             // standard for V4 
+include "registerChannelProviderLocal.dbd"  // standard for V4 
+include "qsrv.dbd"                          // standard for V4 
+include "traceRecordRegister.dbd"           // from pvDatabaseCPP
+include "removeRecordRegister.dbd"          // from pvDatabaseCPP
+include "processRecordRegister.dbd"         // from pvDatabaseCPP
+include "supportRecordRegister.dbd"         // from THIS example
+include "scalarArrayRecordRegister.dbd"     // from THIS example
+include "scalarRecordRegister.dbd"          // from THIS example
+</pre>
+<h3>support/iocBoot</h3>
+<h4>iocBoot/support</h4>
+<p>st.cmd is:</p>
+<pre>
+&lt; envPaths
+
+cd ${TOP}
+
+## Register all support components
+dbLoadDatabase("dbd/support.dbd")
+support_registerRecordDeviceDriver(pdbbase)
+
+## Load record instances
+dbLoadRecords("db/ao.db","name=DBRsupportAo");
+
+cd ${TOP}/iocBoot/${IOC}
+iocInit()
+traceRecordCreate PVRtraceRecord
+removeRecordCreate PVRremoveRecord
+processRecordCreate PVRprocessRecord .5
+supportRecordCreate PVRsupportDouble
+supportRecordCreate PVRsupportUByte pvUByte
+scalarArrayRecordCreate PVRscalarArrayDouble pvDouble
+scalarArrayRecordCreate PVRscalarArrayUByte pvUByte
+scalarArrayRecordCreate PVRscalarArrayString pvString
+scalarArrayRecordCreate PVRscalarArrayBoolean pvBoolean
+scalarRecordCreate PVRscalarDouble pvDouble -10 10 .5
+scalarRecordCreate PVRscalarUByte pvUByte 0 20 1
+</pre>
+</div>
+</body>
+</html>
