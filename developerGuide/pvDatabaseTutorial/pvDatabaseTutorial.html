@@ -36,7 +36,7 @@
 <div class="head">
 <h1>pvDatabase Tutorial</h1>
 
-<h2 class="nocount">2019.06.27</h2>
+<h2 class="nocount">2019.06.28</h2>
 <dl>
   <dt>Editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -60,6 +60,16 @@ href="../../LICENSE">open source license
 <div id="contents" class="contents">
 
 <h2>Overview</h2>
+<p>This tutorial has two main objectives:</p>
+<dl>
+   <dt>pvDatabase features</dt>
+     <dd>Shows various features including pluginSupport, recordSupport, and specialRecords</dd>
+   <dt>Implementing a PVRecord</dt>
+     <dd>Explains how the support example is organized.
+      It can be used as a model for implementing services based on PVRecords.
+     </dd>
+</dl>
+
 <p>This tutorial is based on example <b>support</b>, which is one of the examples that is
 part of
 <br />
@@ -67,6 +77,8 @@ part of
 </p>
 <p>This tutorial assumes that you are familar with pvDatabaseCPP.
 There is documentation provided in "pvDatabaseCPP/documentation/pvDatabaseCPP.html".
+</p>
+<p>This tutorial assume that you have built pvDatabaseCPP and exampleCPP.
 </p>
 <p>In addition this tutorial assumes you are familiar with the following components of pvDatabaseCPP.
 </p>
@@ -81,18 +93,7 @@ There is documentation provided in "pvDatabaseCPP/documentation/pvDatabaseCPP.ht
      <a href="../specialRecord/specialRecord.html">specialRecord</a>
    </li>
 </ol>
-<p>This tutorial has two main objectives:</p>
-<dl>
-   <dt>pvDatabase features</dt>
-     <dd>It shows various features. In particular pluginSupport, recordSupport, and specialRecords</dd>
-   <dt>Implementing a PVRecord</dt>
-     <dd>Explains how the support example is organized.
-      It can be used as a model for implementing services based on PVRecords.
-     </dd>
-</dl>
-<p>This tutorial assume that you have cloned exampleCPP from github
-and built it.
-</p>
+
 
 <h2>Starting The example</h2>
 
@@ -545,8 +546,7 @@ Convenience script for unsigned scalarAlarm limits.
 #!/bin/sh
 ./configScalarAlarm PVRsupportUByte 2 4 16 18 1
 </pre>
-<h3>configAlconfigAll
-l</h3>
+<h3>configAll</h3>
 <p>Use of this was shown above.</p>
 <pre>
 #!/bin/bash
