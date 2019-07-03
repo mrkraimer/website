@@ -36,7 +36,7 @@
 <div class="head">
 <h1>pvDatabase Tutorial</h1>
 
-<h2 class="nocount">2019.06.28</h2>
+<h2 class="nocount">2019.07.02</h2>
 <dl>
   <dt>Editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -45,7 +45,7 @@
 <b>WARNING</b>
 This tutorial requires recent versions of pvDatabaseCPP and exampleCPP
 that are not in any official release as of EPICS 7.0.2.
-Until a later release is available, code must be cloned from <b>https://github.com/epics-base</b>
+Until a later release is available, code must be cloned from "https://github.com/epics-base"
 </p>
 
 <p>This product is available via an <a
@@ -69,15 +69,24 @@ href="../../LICENSE">open source license
       It can be used as a model for implementing services based on PVRecords.
      </dd>
 </dl>
-
+<p>This tutorial assumes that you are familar with the following:</p>
+<h4>developerGuide</h4>
+<a href="../developerGuide.html">developerGuide</a>
+Is an introducion to the various components of EPICS V4
+<h4>exampleCPP</h4>
 <p>This tutorial is based on example <b>support</b>, which is one of the examples that is
 part of
 <br />
 <a href="https://github.com/epics-base/exampleCPP">exampleCPP</a>
 </p>
+<h4>pvDatabaseCPP</h4>
 <p>This tutorial assumes that you are familar with pvDatabaseCPP.
-There is documentation provided in "pvDatabaseCPP/documentation/pvDatabaseCPP.html".
 </p>
+<a href="https://github.com/epics-base/pvDatabaseCPP">pvDatabaseCPP</a>
+<p>
+Documentation is provided in "pvDatabaseCPP/documentation/pvDatabaseCPP.html".
+</p>
+<h4>building</h4>
 <p>This tutorial assume that you have built pvDatabaseCPP and exampleCPP.
 </p>
 <p>In addition this tutorial assumes you are familiar with the following components of pvDatabaseCPP.
@@ -293,7 +302,7 @@ example usage appears later in this tutorial.
 
 <h4>scalarArrayRecordCreate</h4>
 <p>Support for this record is provided in exampleCPP/support.
-It creates a record that has a scalarArray value field and a timeStamp field.
+It creates a record that has value field, which  has type scalar array, and a timeStamp field.
 It is used to the demonstrate use of the array plugin.
 </p>
 <p>A created record  has the following structure:</p>
@@ -303,16 +312,22 @@ PVRscalarArrayDouble
 Server: 10.0.0.9:5075
 Type:
     structure
-        double[] value
+        double[] value 
         time_t timeStamp
             long secondsPastEpoch
             int nanoseconds
             int userTag
 </pre>
+<p>
+<b>NOTE:</b> The type can be any scalar type,
+i.e. boolean,byte,short,int,long,ubyte,ushort,uint,ulong,float,double,string.
+</p>
 
 <h4>scalarRecordCreate</h4>
 <p>Support for this record is provided in exampleCPP/support.
-It is used and described later in the tutorial.
+It creates a record that has value field, which  has type scalar, and a timeStamp field.
+The process routine generates a sawtooth.
+It is described later in this tutorial.
 </p>
 <p>A created record  has the following structure:</p>
 <pre>
@@ -327,6 +342,10 @@ Type:
             int nanoseconds
             int userTag
 </pre>
+<p>
+<b>NOTE:</b> The type can be any numeric scalar type,
+i.e. byte,short,int,long,ubyte,ushort,uint,ulong, float, or double.
+</p>
 <h3>Use clients to configure records</h3>
 <p>Run the following:</p>
 <pre>
@@ -348,19 +367,71 @@ mrk> ./configAll
    </li>
 </ul>
 <h3>Run an example client</h3>
-<p>
-In one window enter:
-</p>
+<h4>Look at the following</h4>
+<pre>
+mrk> pvget -r "control,scalarAlarm" PVRsupportDouble
+PVRsupportDouble structure 
+    control_t control
+        double limitLow -10
+        double limitHigh 10
+        double minStep 0.5
+        double outputValue 10
+    scalarAlarm_t scalarAlarm
+        double lowAlarmLimit -8
+        double lowWarningLimit -6
+        double highWarningLimit 6
+        double highAlarmLimit 8
+        double hysteresis 0.1
+</pre>
+<h4>In one window enter</h4>
 <pre>
 pvget -m -r "value,control.outputValue,alarm,timeStamp" -v PVRsupportDouble
 </pre>
-Look at the output from this window after you enter the next command.
-<p>
-Enter:
-</p>
+The output from this window will be described after you enter the next command.
+<h4>Enter:</h4>
 <pre>
 pvput PVRsupportDouble  20
 </pre>
+<h4>Results</h4>
+In the window where you issued pvget you will first see:
+<pre>
+PVRsupportDouble structure 
+    double value 10
+    structure control
+        double outputValue 0.5
+    alarm_t alarm MAJOR RECORD major high alarm 
+        int severity 2
+        int status 3
+        string message major high alarm
+    time_t timeStamp 2019-07-01 09:32:51.793  
+        long secondsPastEpoch 1561987971
+        int nanoseconds 792512003
+</pre>
+<p>
+<b>value</b> only went to 10 because that is the control limit.
+<b>alarm</b> shows the values determined by scalarAlarm .
+<b>outputValue</b> is .5 because of minStep.
+</p>
+<p>Next you will see output like:</p>
+<pre>
+PVRsupportDouble structure 
+    structure control
+        double outputValue 1
+    time_t timeStamp 2019-07-01 09:32:51.968  
+        int nanoseconds 968025553
+</pre>
+<p>This will continue until You see:</p>
+<pre>
+PVRsupportDouble structure 
+    structure control
+        double outputValue 10
+    time_t timeStamp 2019-07-01 09:33:00.974  
+        int nanoseconds 973958435
+</pre>
+<p>No more output occurs because <b>outputValue</b> is now equal to <b>value</b>.
+</p>
+<p>Later in the tutorial there is a similar example except for channel <b>PVRsupportUByte</b>.
+</p>
 <h2>scripts</h2>
 <p>The scripts all appear in:
 </p>
@@ -496,7 +567,7 @@ mrk>
 </pre>
 <p>It can also be invoked with arguments.</p>
 <p>
-The same can be done via:
+The following also works:
 </p>
 <pre>
 mrk> pvput -r "argument,result" PVRprocessRecord argument='{"command":"add","recordName":"PVRscalarDouble"}'
@@ -566,23 +637,16 @@ Convenience script for unsigned scalarAlarm limits.
 <p>Records PVRsupportDouble and PVRsupportUByte both use the <b>control</b>
 and <b>scalarAlarm</b>
 record support from pvDatabaseCPP.
-After starting the database and running configAll The records have:
+</p>
+<p>Previously there was an example accessing PVRsupportDouble.
+Now lets look at an example accessing PVRsupportUByte.
+</p>
+<p>
+After starting the database and running configAll, look at:
 </p>
 <pre>
-mrk> pvget -r "control,scalarAlarm" -v PVRsupportDouble PVRsupportUByte
-PVRsupportDouble structure 
-    control_t control
-        double limitLow -10
-        double limitHigh 10
-        double minStep 0.5
-        double outputValue 0
-    scalarAlarm_t scalarAlarm
-        double lowAlarmLimit -8
-        double lowWarningLimit -6
-        double highWarningLimit 6
-        double highAlarmLimit 8
-        double hysteresis 0.1
-PVRsupportUByte  structure 
+mrk> pvget -r "control,scalarAlarm" PVRsupportUByte
+PVRsupportUByte structure 
     control_t control
         double limitLow 1
         double limitHigh 20
@@ -599,22 +663,22 @@ Look at the control and scalarAlarm settings.
 <p>In one window:
 </p>
 <pre>
-mrk> pvget -r "value,alarm,timeStamp,control.outputValue" -v -m PVRsupportDouble
+mrk> pvget -r "value,alarm,timeStamp,control.outputValue" -v -m PVRsupportUByte
 </pre>
 <p>Keep this window and see what happens when you run the following in another window:
 </p>
 <pre>
-mrk> pvput PVRsupportDouble 20
+mrk> pvput PVRsupportUByte 40
 </pre>
-<p>In the first window you will see that <b>value</b> goes to 10 and the alarm changes.
-It did NOT go to 20 because <b>control.limitHigh</b> is 10.
-But <b>control.outputValue</b> changes by .5 each time the record processes.
+<p>In the first window you will see that <b>value</b> goes to 20 and the alarm changes.
+It did NOT go to 40 because <b>control.limitHigh</b> is 20.
+But <b>control.outputValue</b> changes by 1 each time the record processes.
 On each process except the first only <b>timeStamp</b> and <b>control.outputValue</b>
 change value.
-This continues until <b>control.outputValue</b> is 10.
+This continues until <b>control.outputValue</b> is 20.
 Then no more monitors occur.
 </p>
-<p>Now issue some more pvputs. For example to 9 then 8 then 5 then 0.
+<p>Now issue some more pvputs. For example to 19 then 15 then 5 then 0.
 </p>
 <h3>Plugin Examples</h3>
 
@@ -669,6 +733,33 @@ pvget PVRscalarArrayBoolean
 <pre>
 mrk> ./exampleArrayPlugin
 </pre>
+<p>The following are some additional examples just using pvput and pvget:</p>
+<pre>
+mrk> pvput PVRscalarArrayUByte value='[1,2,3,4,5,6,7,8,9,10]'
+Old : ...
+New : 2019-07-01 10:08:49.163  [1,2,3,4,5,6,7,8,9,10]
+mrk> pvget -r "value[array=2:4]" PVRscalarArrayUByte
+PVRscalarArrayUByte [3,4,5]
+mrk> pvput -r "value[array=2:4]" PVRscalarArrayUByte value='[10,20,30]'
+Old : [3,4,5]
+New : [10,20,30]
+mrk> pvget -r "value[array=2:4]" PVRscalarArrayUByte
+PVRscalarArrayUByte [10,20,30]
+mrk> pvget  PVRscalarArrayUByte
+PVRscalarArrayUByte 2019-07-01 10:10:49.341  [1,2,10,20,30,6,7,8,9,10]
+</pre>
+<p>
+<b>NOTE:</b>
+The syntax for setting value, i. e.</p>
+<pre>
+value='[10,20,30]'
+</pre>
+Also could be:
+<pre>
+value='["10","20","30"]'
+</pre>
+In fact if the element values are anything except an integer,
+each element must be enclosed in quotes.
 <h4>deadband and ignore</h4>
 <p>The records PVRscalarDouble and PVRscalarUByte are both created to show usage of
 the deadband and ignore plugins.
@@ -679,7 +770,7 @@ Each time it processes it makes a step.
 There is an example script:
 </p>
 <pre>
-rk> pwd
+mrk> pwd
 /home/epicsv4/masterCPP/exampleCPP/support/client/scripts
 mrk> ./exampleDeadbandPlugin
 recordName?
@@ -707,7 +798,8 @@ Now try different values for deadband.
 <h2>Building support</h2>
 <p>This section describes the files that appear in <b>exampleCPP/support</b>.
 This example is a good way to help understand how to build a service based
-on PVRecords running along side DBRecords.
+on PVRecords. The PVRecords can be in a standalone pvDatabase or can be in
+an IOC that also contains DBRecords.
 </p>
 <p>After executing make, exampleCPP/support has the following subdirectories:
 </p>
@@ -724,7 +816,7 @@ lib           // generated by make
 Makefile      // see below
 README.md
 src           // see below
-testClient    // was described in previous section
+client        // was described in previous section
 </pre>
 <h3>support/src</h3>
 <p>
@@ -764,10 +856,11 @@ Note the public methods are <b>create</b>, <b>init</b>, and <b>process</b>.
 <p>
 This statement is for building DLL shared libraries on windows.
 All other includes must appear before this include.
-Later it is explained what supportRecord.cpp must do.
+Next it is explained what supportRecord.cpp must do.
 Any code that is creating an object module library should follow these rules.
 </p>
 <h4>supportRecord.cpp</h4>
+<h5>includes</h5>
 <p>Before defining any methods the following appears:
 </p>
 <pre>
@@ -784,10 +877,10 @@ Any code that is creating an object module library should follow these rules.
    All includes required by this module must appear before the following statement.
    </li>
    <li>
-   <b>define epicsExportSharedSymbols</b> must appear before any code.
+   define epicsExportSharedSymbols must appear before any code.
    </li>
    <li>
-    <b>#include "pv/supportRecord.h"</b> must appear.
+    #include "pv/supportRecord.h" must appear.
      Note that it uses "" instead of &lt;&gt;.
      No other include should appear after this statement.
    </li>
@@ -801,6 +894,7 @@ mrk> cat O.linux-x86_64/scalarRecord.d
  ../pv/scalarRecord.h  // THIS SHOULD APPEAR LAST
 mrk> 
 </pre>
+<h5>create</h5>
 <p>The create method is:</p>
 <pre>
 SupportRecordPtr SupportRecord::create(
@@ -838,6 +932,7 @@ SupportRecordPtr SupportRecord::create(
     Calls the init method.
    </li>
 </ul>
+<h5>init</h5>
 <p>The init method is:</p>
 <pre>
 bool SupportRecord::init()
@@ -877,6 +972,7 @@ where
       by pvDatabaseCPP.
       </dd>
 </dl>
+<h5>process</h5>
 <p>The process method is:</p>
 <pre>
 void SupportRecord::process()
@@ -928,6 +1024,9 @@ This is used along with the following source file to allow the
 st.cmd file to create SupportRecord instances.
 
 <h4>supportRecordRegister.cpp</h4>
+<p>
+<b>NOTE:</b> This must follow the same include file rules as supportRecord.cpp.
+</p>
 <p>This creates an iocshell command to create SupportRecord instances.
 It is what is called for the following lines in the st.cmd file.
 </p>
@@ -1299,10 +1398,20 @@ supportSRC = $(TOP)/src
 
 EPICS_BASE_PVA_CORE_LIBS = pvDatabase pvAccess pvAccessCA pvData ca Com
 INC += pv/supportRecord.h
+INC += pv/scalarArrayRecord.h
+INC += pv/scalarRecord.h
+
 DBD += supportRecordRegister.dbd
+DBD += scalarArrayRecordRegister.dbd
+DBD += scalarRecordRegister.dbd
+
 LIBRARY = support
 LIBSRCS += supportRecord.cpp
 LIBSRCS += supportRecordRegister.cpp
+LIBSRCS += scalarArrayRecord.cpp
+LIBSRCS += scalarArrayRecordRegister.cpp
+LIBSRCS += scalarRecord.cpp
+LIBSRCS += scalarRecordRegister.cpp
 support_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
 
 # shared library ABI version.
@@ -1314,7 +1423,10 @@ supportMain_LIBS += support
 supportMain_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
 
 PROD_SYS_LIBS_WIN32 += ws2_32
+
+
 include $(TOP)/configure/RULES
+
 </pre>
 where
 <dl>
