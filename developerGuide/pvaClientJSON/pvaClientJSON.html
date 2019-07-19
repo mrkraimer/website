@@ -1,0 +1,533 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>pvaClient JSON support</title>
+  <link rel="stylesheet" type="text/css"
+  href="../../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../../css/epicsv4.css" />
+  <style type="text/css">
+  /*<![CDATA[*/
+     .about { margin-left: 3em; margin-right: 3em; font-size: .83em}
+     table { margin-left: auto; margin-right: auto }
+     .diagram { text-align: center; margin: 2.5em 0 }
+     span.opt { color: grey }
+     span.nterm { font-style:italic }
+     span.term { font-family:courier }
+     span.user { font-family:courier }
+     span.user:before { content:"<" }
+     span.user:after { content:">" }
+     .nonnorm { font-style:italic }
+     p.ed { color: #AA0000 }
+     span.ed { color: #AA0000 }
+     p.ed.priv { display: inline; }
+     span.ed.priv { display: inline; }
+  /*]]>*/</style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../../css/tocgen.js">
+  </script>
+</head>
+<body>
+
+<div class="head">
+<h1>pvaClient JSON support</h1>
+
+<h2 class="nocount">2019.07.19</h2>
+<dl>
+  <dt>Editors:</dt>
+    <dd>Marty Kraimer</dd>
+</dl>
+<p>
+<b>NOTES:</b>
+</p>
+<ul>
+  <li>The following describes work in progress.
+    It requires both pvaClientCPP and exampleCPP.
+    <br />
+    For now the versions in the github repository for mrkraimer
+    must be cloned.
+  </li>
+  <li>
+   pvaClientCPP only has JSON support for putting data into pvFields.
+   <br />
+   Should it also have support providing JSON syntax for displaying pvFields?
+   </li>
+  <li>
+     Only the C++ implementation is available.
+  </li>
+  <li>
+    The epics base version must be 3.15 or later.
+  </li>
+</ul>
+
+<p>This product is available via an <a
+href="../../LICENSE">open source license
+</a></p>
+
+</div>
+
+
+<div id="toc">
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+<div id="contents" class="contents">
+
+<h2>Overview</h2>
+<p>This document provides a description of the JSON support provided by pvaClientCPP.
+The put support is modeled on the JSON syntax for
+<b>pvput</b>, the command line tool comes with pvAccessCPP.
+The get support is modeled on the JSON syntax for
+<b>pvget</b>
+</p>
+<p>
+The following are some examples:
+</p>
+<pre>
+mrk> pvput PVRdouble '{"value":"10"}'
+Old : &lt;undefined&gt;              0 
+New : 2019-07-18 13:23:52.973  10 
+mrk> pvput PVRdoubleArray '{"value":["10","20"]}'
+Old : &lt;undefined&gt;              []
+New : 2019-07-18 13:24:01.187  [10,20]
+mrk> pvput -r "value,alarm"  PVRdouble '{"alarm":{"severity":"1","status":"2","message":"I did this"}}'
+Old : 10 
+New : 10 MINOR DRIVER I did this
+mrk> pvget -M json -r "value,alarm" PVRlong
+PVRlong {"value": 0,"alarm": {"severity": 0,"status": 0,"message": ""}}
+</pre>
+<p>
+The following is the  JSON syntax.
+</p>
+<pre>
+"name":"value"                    // name is a scalar field
+or
+"name":["value","value"...]       // name is a scalarArray field
+or
+"name":{...}                      // name is a structure field
+or
+{"name":value,"name",value,...}    // value is "value" for a scalar
+                                   // or ["value","value"...] for a scalarArray
+                                   // or {...} if field is a structure
+</pre>
+
+<p>
+The JSON support implemented by pvaClientCPP uses similar syntax.
+This is what is described in this document.
+</p>
+
+
+<h2>Theory Of Operation</h2>
+
+<h3>epics-base json</h3>
+<p>
+Starting with the 3.15 releases of epics base,
+a JSON parser is provided.
+</p>
+<p>
+For this document it is not necessary to describe the parser
+other than to say that
+it is required because it is used by pvDataCPP.
+</p>
+<h3>pvDataCPP json</h3>
+<p>
+pvDataCPP provides JSON support for pvData objects.
+The user interface is described in <b>json.h</b>.
+One of the methods is:
+</p>
+<pre>
+void parseJSON(std::istream&amp; strm,
+               PVField&amp; dest,
+               BitSet *assigned=0);
+</pre>
+<p>
+For a PVField it provides the following:
+</p>
+<dl>
+   <dt>scalar</dt>
+     <dd>
+     All the scalar types are supported.
+     <dl>
+       <dt>boolean</dt>
+        <dd>
+         value can be <b>true</b> or <b>false</b>
+        </dd>
+       <dt>integer</dt>
+        <dd>
+        signed and unsigned integers of length  8, 16, 32, and 64 bits are supported.
+        </dd>
+       <dt>float</dt>
+        <dd>
+          IEEE 32 bit floating point.
+        </dd>
+       <dt>double</dt>
+        <dd>
+          IEEE 64 bit floating point.
+        </dd> 
+       <dt>string</dt>
+        <dd>
+         std::string
+        </dd> 
+     </dl>
+     </dd>
+   <dt>scalarArray</dt>
+     <dd>
+     Supported for all scalar types.
+     <br />
+     <b>Note:</b> new values are appended to existing value.
+     </dd>
+   <dt>structure</dt>
+     <dd>
+     Support for all fields that have type scalar, scalarArray, or structure.
+     </dd>
+   <dt>union</dt>
+     <dd>
+      No support.
+     </dd>
+   <dt>structureArray</dt>
+     <dd>
+     No support.
+     </dd>
+   <dt>unionArray</dt>
+     <dd>
+     No support.
+     </dd>
+</dl>
+<p>Another method is:
+</p>
+<pre>
+void printJSON(std::ostream&amp; strm,
+               const PVStructure&amp; val,
+               const BitSet&amp; mask,
+               const JSONPrintOptions&amp; opts = JSONPrintOptions());
+</pre>
+<p>pvaClientCPP uses this method.</p>
+
+<h3>pvDataCPP json</h3>
+<p>
+class <b>PvaClientData</b>
+has the following methods for JSON:
+</p>
+<pre>
+void parse(const std::vector&lt;std::string&gt; &amp;args);
+void streamJSON(
+               std::ostream&amp; strm,
+               bool ignoreUnprintable = true,
+               bool multiLine = false);
+void zeroArrayLength();
+</pre>
+where
+<dl>
+   <dt>parse</dt>
+     <dd>
+        This is used to change fields in the pvStructure in PvaClientData.
+     </dd>
+   <dt>streamJSON</dt>
+      <dd>
+       This streams JSON syntax for the data in pvStructure.
+      </dd>
+   <dt>zeroArrayLength</dt>
+      <dd>
+      parseJSON shown above appends scalarArray values to the current value.
+      This is usually not what the client wants.
+      This can be called before calling parse.
+      <br />
+      But for enumerated structures the choices will be changed.
+      In this case this must not be called.
+      </dd>
+</dl>
+<p>Since <b>PvaClientData</b> is the base data class for channelGet,
+channelPut, and channelPutGet, it is available for use by each.
+The example shown below uses it for channelPut and channelPutGet.
+</p>
+<h4>Syntax for parse</h4>
+<p>
+Each argument provides data for fields in the current PVStructure.
+The syntax for each argument is one of the following:
+</p>
+<pre>
+json
+or
+field=json
+or
+field=value           // enumerated
+or
+field=value=type=json // restricted union
+</pre>
+<dl>
+   <dt>json</dt>
+    <dd>
+     This means pure json syntax as defined by pvDataCPP.
+     The Overview above provides examples that are also valid for parse.
+    </dd>
+   <dt>field=json</dt>
+    <dd>
+     field must be <b>name.name..</b>. It selects a subfield
+     of the PVStructure. If the subfield does not exist an exception 
+     is thrown.
+     The json syntax is for the selected subfield.
+    </dd>
+   <dt>field=value</dt>
+    <dd>
+     This is a special case for an enumerated structure.
+     The value specifies a valid choice.
+      The index is what changes.
+    </dd>
+   <dt>field=value=type=json</dt>
+    <dd>
+     field must select a restricted union field.
+     type selects the restriced union type.
+     An instance is created and the json syntax writes to the new instance.
+     <br />
+     Note that if type again selects a restricted union recursion is supported.
+     For example <b>field=value=type=type=json</b>
+    </dd>
+</dl>       
+<h2>exampleCPP/json</h2>
+<p>
+This contains examples that use the JSON methods provided with PvaClientData.
+</p>
+<h3>command line tools</h3>
+<h4>parsePut</h4>
+<p>
+This is a command that allows a client to perform a channelPut,
+with JSON format arguments.
+<br />
+The command provides:
+</p>
+<pre>
+parsePut -help
+ -h -p provider -r request  -z zeroarray - d debug channelName args 
+</pre>
+
+<p>
+The source contains the following code:
+</p>
+<pre>
+PvaClientPtr pva= PvaClient::get(provider);
+PvaClientChannelPtr channel = pva->channel(channelName,provider,2.0);
+PvaClientPutPtr put = channel->put(request);
+PvaClientPutDataPtr putData(put->getData());
+if(zeroarray) putData->zeroArrayLength();
+putData->getChangedBitSet()->clear();
+putData->parse(args);
+put->put();
+</pre>
+<p>
+Examples are shown below.
+</p>
+<h4>parsePutGet</h4>
+<p>
+This is similar to parsePut except the it uses channelPutGet.
+</p>
+<h4>jsonGet</h4>
+<p>This is a command that display data obtained via channelGet with JSON syntax.
+<br/>
+The command provides:
+</p>
+<pre>
+jsonGet -help
+ -h -p provider -r request -m multiline - d debug channelName 
+</pre>
+<p>An example is:
+</p>
+<pre>
+jsonGet -r "value,alarm" PVRstring
+_____parsePut channelPVRstring provider pva request value,alarm multiline false debug false
+{"value": "three","alarm": {"severity": 0,"status": 0,"message": ""}}
+</pre>
+<p>
+The source contains the following code:
+</p>
+<pre>
+PvaClientPtr pva(PvaClient::get(provider));
+PvaClientGetDataPtr pvData =
+    pva->channel(channelName,provider,2.0)->get(request)->getData();
+std::ostringstream os;
+pvData->streamJSON(os,true,multiline);
+cout &lt;&lt; os.str() &lt;&lt; "\n";
+</pre>
+<h3>client scripts</h3>
+<p>
+<b>json/client/scripts</b>
+has example that use the command line tools.
+</p>
+<h2>Running the examples</h2>
+<h3>Start the IOC for the examples</h3>
+<p>
+In a window start the IOC:
+</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/exampleCPP/database/iocBoot/exampleDatabase
+mrk> ../../bin/linux-x86_64/exampleDatabase st.cmd 
+...
+epics> 
+</pre>echo
+<p>There are scripts for the examples in:
+</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/exampleCPP/parse/client/scripts
+mrk> ls
+exampleBigRecord  exampleEnum  exampleScalar  exampleScalarArray  exampleUnion  setEnv
+</pre>
+<h3>exampleScalar</h3>
+<p>This contains;</p>
+<pre>
+source ./setEnv
+${PARSE}/parsePut -r "value" PVRdouble value='"1"'
+sleep .5
+${PARSE}/parsePut -r "value" PVRdouble '{"value":"2"}'
+sleep .5
+${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRdouble value='"10"'
+sleep .5
+${PARSE}/parsePut -r "value" PVRstring value='"one"'
+sleep .5
+${PARSE}/parsePut -r "value" PVRstring '{"value":"two"}'
+sleep .5
+${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRstring value='"three"'
+sleep .5
+${PARSE}/parsePut  -r "value" PVRboolean value='"true"'
+sleep .5
+${PARSE}/parsePut  -r "value" PVRboolean '{"value":"false"}'
+sleep .5
+${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRboolean value='"true"'
+sleep .5
+${PARSE}/parsePut -r "value" DBRdouble value='"1"'
+sleep .5
+${PARSE}/parsePut -r "value" -p ca DBRdouble value='"5"'
+sleep .5
+${PARSE}/parsePut -r "value" DBRstring00 value='"one"'
+sleep .5
+${PARSE}/parsePut -r "value" -p ca DBRstring00 value='"two"'
+</pre>
+<p>Running it produces:
+</p>
+<pre>
+./exampleScalar
+_____parsePut channelPVRdouble provider pva request value zeroarray true debug false
+_____parsePut channelPVRdouble provider pva request value zeroarray true debug false
+_____parsePutGet channelPVRdouble provider pva request putField(value)getField(value) zeroarray true debug false
+structure 
+    double value 10
+
+_____parsePut channelPVRstring provider pva request value zeroarray true debug false
+_____parsePut channelPVRstring provider pva request value zeroarray true debug false
+_____parsePutGet channelPVRstring provider pva request putField(value)getField(value) zeroarray true debug false
+structure 
+    string value three
+
+_____parsePut channelPVRboolean provider pva request value zeroarray true debug false
+_____parsePut channelPVRboolean provider pva request value zeroarray true debug false
+_____parsePutGet channelPVRboolean provider pva request putField(value)getField(value) zeroarray true debug false
+structure 
+    boolean value true
+
+_____parsePut channelDBRdouble provider pva request value zeroarray true debug false
+_____parsePut channelDBRdouble provider ca request value zeroarray true debug false
+_____parsePut channelDBRstring00 provider pva request value zeroarray true debug false
+_____parsePut channelDBRstring00 provider ca request value zeroarray true debug false
+</pre>
+<h3>exampleScalarArray</h3>
+<p>
+This contains:
+</p>
+<pre>
+#!/bin/sh
+source ./setEnv
+${PARSE}/parsePut -r "" PVRdoubleArray value='["1","2","3"]'
+sleep .5
+${PARSE}/parsePut -r "" PVRdoubleArray '{"value":["10","20","30"]}'
+sleep .5
+${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRdoubleArray value='["100","200","300"]'
+sleep .5
+${PARSE}/parsePut -r "" PVRstringArray value='["one","two","three"]'
+sleep .5
+${PARSE}/parsePut -r "" PVRstringArray '{"value":["one again","two again","three again"]}'
+sleep .5
+${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRstringArray value='["once more","two again","three again"]'
+sleep .5
+${PARSE}/parsePut  -r "" PVRbooleanArray value='["true","false","true"]'
+sleep .5
+${PARSE}/parsePut  -r "" PVRbooleanArray '{"value":["false","true","false"]}'
+sleep .5
+${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRbooleanArray value='["true","false","true"]'
+</pre>
+<h3>exampleEnum</h3>
+<p>
+This contains:
+</p>
+<pre>
+#!/bin/sh
+source ./setEnv
+${PARSE}/parsePut -z false PVRenum value=one
+sleep .5
+${PARSE}/parsePut -z false DBRenum01 value=one
+sleep .5
+${PARSE}/parsePutGet -z false -r "putField(value)getField(value)" PVRenum value=zero
+sleep .5
+${PARSE}/parsePut -z false -p ca DBRenum01 value=zero
+sleep .5
+${PARSE}/parsePut PVRenum '{"value":{"index":"1"}}'
+</pre>
+<h3>exampleUnion</h3>
+<p>
+This contains:
+</p>
+<pre>
+#!/bin/sh
+source ./setEnv
+${PARSE}/parsePut PVRrestrictedUnion value='string="test string"'
+sleep .5
+${PARSE}/parsePut PVRrestrictedUnion value='stringArray=["test string","two"]'
+sleep .5
+${PARSE}/parsePut PVRrestrictedUnion value='point={"x":".1","y":".2"}'
+sleep .5
+${PARSE}/parsePut PVRrestrictedUnion value='union_t=string="test"'
+sleep .5
+${PARSE}/parsePut PVRrestrictedUnion value='union_t=point={"x":".1","y":".2"}'
+</pre>
+<h3>exampleEnum</h3>
+<p>
+This contains:
+</p>
+<pre>
+#!/bin/sh
+source ./setEnv
+${PARSE}/parsePut -z false PVRenum value=one
+sleep .5
+${PARSE}/parsePut -z false DBRenum01 value=one
+sleep .5
+${PARSE}/parsePutGet -z false -r "putField(value)getField(value)" PVRenum value=zero
+sleep .5
+${PARSE}/parsePut -z false -p ca DBRenum01 value=zero
+sleep .5
+${PARSE}/parsePut PVRenum '{"value":{"index":"1"}}'
+</pre>
+<h3>exampleBigRecord</h3>
+<p>
+This contains:
+</p>
+<pre>
+#!/bin/sh
+source ./setEnv
+${PARSE}/parsePut 
+sleep .5
+${PARSE}/parsePut -r "" PVRBigRecord scalar.double.value='"10"' scalarArray.double.value='["100","200"]'
+sleep .5
+${PARSE}/parsePut -r "" PVRBigRecord '{"scalar":{"double":{"value":"20"}}}' '{"scalarArray":{"double":{"value":["1000","2000"]}}}'
+sleep .5
+${PARSE}/parsePut -r "" PVRBigRecord scalar.double.value='"10"' scalar.string.value='" this is a string"'
+sleep .5
+${PARSE}/parsePut -r "" PVRBigRecord '{"scalar":{"double":{"value":"20"},"string":{"value":"this is also a string"}}}'
+sleep .5
+${PARSE}/parsePutGet -r "putField(),getField(scalar.double,scalarArray.double)" PVRBigRecord scalar.double.value='"10"' scalarArray.double.value='["100","200"]'
+</pre>
+
+</div>
+</body>
+</html>
