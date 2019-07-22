@@ -241,9 +241,8 @@ void printJSON(std::ostream&amp; strm,
 
 <h3>pvaClientCPP json</h3>
 <p>
-One of the classes implemented by pvaClientCPP is
-class <b>PvaClientData</b>.
-The following are methods for JSON:
+One of the classes implemented by pvaClientCPP is <b>PvaClientData</b>,
+which has the following methods:
 </p>
 <pre>
 void parse(const std::vector&lt;std::string&gt; &amp;args);
@@ -261,7 +260,7 @@ where
      </dd>
    <dt>streamJSON</dt>
       <dd>
-       This streams JSON syntax for the data in pvStructure.
+       This produces JSON syntax for the data in pvStructure.
       </dd>
    <dt>zeroArrayLength</dt>
       <dd>
@@ -269,19 +268,19 @@ where
       This is usually not what the client wants.
       This can be called before calling parse.
       <br />
-      But for enumerated structures the choices will be changed.
-      In this case this must not be called.
+      This should NOT be called if parse is being called with the special enumerated
+      syntax shown below.
       </dd>
 </dl>
 <p>Since <b>PvaClientData</b> is the base data class for channelGet,
-channelPut, and channelPutGet, it is available for use by each.
+channelPut, channelPutGet, and channelMonitor, it is available for use by each.
 The example shown below uses it for channelPut and channelPutGet.
 </p>
 <h4>Syntax for parse</h4>
 <p>
 <b>NOTE:</b>
 In the following <b>json</b> means JSON syntax.
-The rest describes extra syntax provided by <b>parse</b>.
+The other syntax is provided by <b>parse</b>.
 </p>
 <p>
 Each argument provides data for fields in the current PVStructure.
