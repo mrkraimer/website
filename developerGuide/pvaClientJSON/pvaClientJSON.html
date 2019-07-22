@@ -36,7 +36,7 @@
 <div class="head">
 <h1>pvaClient JSON support</h1>
 
-<h2 class="nocount">2019.07.19</h2>
+<h2 class="nocount">2019.07.22</h2>
 <dl>
   <dt>Editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -77,9 +77,10 @@ href="../../LICENSE">open source license
 <div id="contents" class="contents">
 
 <h2>Overview</h2>
+<h3>Background</h3>
 <p>This document provides a description of the JSON support provided by pvaClientCPP.
 The put support is modeled on the JSON syntax for
-<b>pvput</b>, the command line tool comes with pvAccessCPP.
+<b>pvput</b>.
 The get support is modeled on the JSON syntax for
 <b>pvget</b>
 </p>
@@ -90,6 +91,9 @@ The following are some examples:
 mrk> pvput PVRdouble '{"value":"10"}'
 Old : &lt;undefined&gt;              0 
 New : 2019-07-18 13:23:52.973  10 
+mrk> pvput PVRdouble value=10.5
+Old : 2019-07-22 10:02:40.140 10 
+New : 2019-07-22 14:20:47.197  20 10.5 
 mrk> pvput PVRdoubleArray '{"value":["10","20"]}'
 Old : &lt;undefined&gt;              []
 New : 2019-07-18 13:24:01.187  [10,20]
@@ -99,19 +103,38 @@ New : 10 MINOR DRIVER I did this
 mrk> pvget -M json -r "value,alarm" PVRlong
 PVRlong {"value": 0,"alarm": {"severity": 0,"status": 0,"message": ""}}
 </pre>
+<h3>JSON syntax brief description</h3>
 <p>
-The following is the  JSON syntax.
+The following is a brief description of the JSON syntax for pvData.
+See <a href="https://json.org">json</a> for a more complete description.
+</p>
+<p>A PVStructure is represented by:
 </p>
 <pre>
-"name":"value"                    // name is a scalar field
+{...} 
+</pre> 
+where <b>...</b> is a comma separated set of name,value pairs;
+One pair for each subfield in the PVStructure.    
+<p>The name,value pair for each each PVData field is:
+</p>
+<pre>
+"name":&lt;value&gt;
+</pre>
+where
+<b>name</b> is the PVField name.
+and <b>&lt;value&gt;</b> is :
+<pre>
+"value"    // field must be scalar. value is the field value.
 or
-"name":["value","value"...]       // name is a scalarArray field
+value      // field must be numeric scalar
 or
-"name":{...}                      // name is a structure field
+true       // field must be boolean
 or
-{"name":value,"name",value,...}    // value is "value" for a scalar
-                                   // or ["value","value"...] for a scalarArray
-                                   // or {...} if field is a structure
+false      // field must be boolean
+or
+[&lt;value&gt;,&lt;value&gt;...]  // field must be a scalarArray 
+or
+{...}     // field must be a structure
 </pre>
 
 <p>
@@ -119,6 +142,16 @@ The JSON support implemented by pvaClientCPP uses similar syntax.
 This is what is described in this document.
 </p>
 
+<p>Some examples are:</p>
+<pre>
+pvput PVRstring '{"value":"this is a string"}'
+pvput PVRdouble '{"value":"10"}'
+pvput PVRdouble '{"value":2.3}'
+pvput PVRboolean '{"value":"true"}'
+pvput PVRboolean '{"value":false}'
+pvput PVRdoubleArray '{"value":[1.2,4,9.34]}'
+pvput -r "value,timeStamp" PVRdouble '{"value":10,"timeStamp":{"userTag":20}}'
+</pre>
 
 <h2>Theory Of Operation</h2>
 
@@ -177,7 +210,7 @@ For a PVField it provides the following:
      <dd>
      Supported for all scalar types.
      <br />
-     <b>Note:</b> new values are appended to existing value.
+     <b>Note:</b> new values are appended to existing values.
      </dd>
    <dt>structure</dt>
      <dd>
@@ -206,10 +239,11 @@ void printJSON(std::ostream&amp; strm,
 </pre>
 <p>pvaClientCPP uses this method.</p>
 
-<h3>pvDataCPP json</h3>
+<h3>pvaClientCPP json</h3>
 <p>
-class <b>PvaClientData</b>
-has the following methods for JSON:
+One of the classes implemented by pvaClientCPP is
+class <b>PvaClientData</b>.
+The following are methods for JSON:
 </p>
 <pre>
 void parse(const std::vector&lt;std::string&gt; &amp;args);
@@ -245,6 +279,11 @@ The example shown below uses it for channelPut and channelPutGet.
 </p>
 <h4>Syntax for parse</h4>
 <p>
+<b>NOTE:</b>
+In the following <b>json</b> means JSON syntax.
+The rest describes extra syntax provided by <b>parse</b>.
+</p>
+<p>
 Each argument provides data for fields in the current PVStructure.
 The syntax for each argument is one of the following:
 </p>
@@ -261,7 +300,10 @@ field=value=type=json // restricted union
    <dt>json</dt>
     <dd>
      This means pure json syntax as defined by pvDataCPP.
-     The Overview above provides examples that are also valid for parse.
+     An example is:
+<pre>
+parsePut PVRdouble '{"value":"10"}'
+</pre>
     </dd>
    <dt>field=json</dt>
     <dd>
@@ -269,12 +311,20 @@ field=value=type=json // restricted union
      of the PVStructure. If the subfield does not exist an exception 
      is thrown.
      The json syntax is for the selected subfield.
+     An example is:
+<pre>
+parsePut PVRBigRecord scalar.string.value='"this is a string"'
+</pre>
     </dd>
    <dt>field=value</dt>
     <dd>
      This is a special case for an enumerated structure.
      The value specifies a valid choice.
       The index is what changes.
+     An example is:
+<pre>
+ parsePut -z false PVRenum value=one
+</pre>
     </dd>
    <dt>field=value=type=json</dt>
     <dd>
@@ -284,8 +334,13 @@ field=value=type=json // restricted union
      <br />
      Note that if type again selects a restricted union recursion is supported.
      For example <b>field=value=type=type=json</b>
+    Examples are:
+<pre>
+parsePut PVRrestrictedUnion value='string="test string"'
+parsePut PVRrestrictedUnion value='union_t=point={"x":".1","y":".2"}'
+</pre>
     </dd>
-</dl>       
+</dl>   
 <h2>exampleCPP/json</h2>
 <p>
 This contains examples that use the JSON methods provided with PvaClientData.
@@ -321,7 +376,7 @@ Examples are shown below.
 </p>
 <h4>parsePutGet</h4>
 <p>
-This is similar to parsePut except the it uses channelPutGet.
+This is similar to parsePut except that it uses channelPutGet.
 </p>
 <h4>jsonGet</h4>
 <p>This is a command that display data obtained via channelGet with JSON syntax.
@@ -336,7 +391,7 @@ jsonGet -help
 </p>
 <pre>
 jsonGet -r "value,alarm" PVRstring
-_____parsePut channelPVRstring provider pva request value,alarm multiline false debug false
+_____jsonGet channel PVRstring provider pva request value,alarm multiline false debug false
 {"value": "three","alarm": {"severity": 0,"status": 0,"message": ""}}
 </pre>
 <p>
@@ -353,7 +408,7 @@ cout &lt;&lt; os.str() &lt;&lt; "\n";
 <h3>client scripts</h3>
 <p>
 <b>json/client/scripts</b>
-has example that use the command line tools.
+has examples that use the command line tools.
 </p>
 <h2>Running the examples</h2>
 <h3>Start the IOC for the examples</h3>
@@ -367,15 +422,16 @@ mrk> ../../bin/linux-x86_64/exampleDatabase st.cmd
 ...
 epics> 
 </pre>
-<h3>exampleScalar</h3>
+<h3>exampleCPP/json/client/scripts/exampleScalar</h3>
 <p>This contains;</p>
 <pre>
+#!/bin/sh
 source ./setEnv
-${PARSE}/parsePut -r "value" PVRdouble value='"1"'
+${PARSE}/parsePut -r "value" PVRdouble value=1
 sleep .5
-${PARSE}/parsePut -r "value" PVRdouble '{"value":"2"}'
+${PARSE}/parsePut -r "value" PVRdouble '{"value":2}'
 sleep .5
-${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRdouble value='"10"'
+${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRdouble value=10
 sleep .5
 ${PARSE}/parsePut -r "value" PVRstring value='"one"'
 sleep .5
@@ -383,15 +439,15 @@ ${PARSE}/parsePut -r "value" PVRstring '{"value":"two"}'
 sleep .5
 ${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRstring value='"three"'
 sleep .5
-${PARSE}/parsePut  -r "value" PVRboolean value='"true"'
+${PARSE}/parsePut  -r "value" PVRboolean value=true
 sleep .5
-${PARSE}/parsePut  -r "value" PVRboolean '{"value":"false"}'
+${PARSE}/parsePut  -r "value" PVRboolean '{"value":false}'
 sleep .5
-${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRboolean value='"true"'
+${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRboolean value=true
 sleep .5
-${PARSE}/parsePut -r "value" DBRdouble value='"1"'
+${PARSE}/parsePut -r "value" DBRdouble value=1
 sleep .5
-${PARSE}/parsePut -r "value" -p ca DBRdouble value='"5"'
+${PARSE}/parsePut -r "value" -p ca DBRdouble value=5
 sleep .5
 ${PARSE}/parsePut -r "value" DBRstring00 value='"one"'
 sleep .5
@@ -401,55 +457,58 @@ ${PARSE}/parsePut -r "value" -p ca DBRstring00 value='"two"'
 </p>
 <pre>
 ./exampleScalar
-_____parsePut channelPVRdouble provider pva request value zeroarray true debug false
-_____parsePut channelPVRdouble provider pva request value zeroarray true debug false
-_____parsePutGet channelPVRdouble provider pva request putField(value)getField(value) zeroarray true debug false
+_____parsePut channel PVRdouble provider pva request value zeroarray true debug false
+_____parsePut channel PVRdouble provider pva request value zeroarray true debug false
+_____parsePutGet channel PVRdouble provider pva request putField(value)getField(value) zeroarray true debug false
 structure 
     double value 10
 
-_____parsePut channelPVRstring provider pva request value zeroarray true debug false
-_____parsePut channelPVRstring provider pva request value zeroarray true debug false
-_____parsePutGet channelPVRstring provider pva request putField(value)getField(value) zeroarray true debug false
+_____parsePut channel PVRstring provider pva request value zeroarray true debug false
+_____parsePut channel PVRstring provider pva request value zeroarray true debug false
+_____parsePutGet channel PVRstring provider pva request putField(value)getField(value) zeroarray true debug false
 structure 
     string value three
 
-_____parsePut channelPVRboolean provider pva request value zeroarray true debug false
-_____parsePut channelPVRboolean provider pva request value zeroarray true debug false
-_____parsePutGet channelPVRboolean provider pva request putField(value)getField(value) zeroarray true debug false
+_____parsePut channel PVRboolean provider pva request value zeroarray true debug false
+_____parsePut channel PVRboolean provider pva request value zeroarray true debug false
+_____parsePutGet channel PVRboolean provider pva request putField(value)getField(value) zeroarray true debug false
 structure 
     boolean value true
 
-_____parsePut channelDBRdouble provider pva request value zeroarray true debug false
-_____parsePut channelDBRdouble provider ca request value zeroarray true debug false
-_____parsePut channelDBRstring00 provider pva request value zeroarray true debug false
-_____parsePut channelDBRstring00 provider ca request value zeroarray true debug false
+_____parsePut channel  DBRdouble provider pva request value zeroarray true debug false
+_____parsePut channel  DBRdouble provider ca request value zeroarray true debug false
+_____parsePut channel  DBRstring00 provider pva request value zeroarray true debug false
+_____parsePut channel  DBRstring00 provider ca request value zeroarray true debug false
 </pre>
-<h3>exampleScalarArray</h3>
+<h3>exampleCPP/json/client/scripts/exampleScalarArray</h3>
 <p>
 This contains:
 </p>
 <pre>
-#!/bin/sh
 source ./setEnv
-${PARSE}/parsePut -r "" PVRdoubleArray value='["1","2","3"]'
+${PARSE}/parsePut -r "" PVRdoubleArray value='[1,2,3]'
 sleep .5
-${PARSE}/parsePut -r "" PVRdoubleArray '{"value":["10","20","30"]}'
+${PARSE}/parsePut -r "" DBRdoubleArray value='[1,2,3]'
 sleep .5
-${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRdoubleArray value='["100","200","300"]'
+${PARSE}/parsePut -r "" PVRdoubleArray '{"value":[10,20,30]}'
+sleep .5
+${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRdoubleArray value='[100,200,300]'
 sleep .5
 ${PARSE}/parsePut -r "" PVRstringArray value='["one","two","three"]'
+sleep .5
+${PARSE}/parsePut -r "" DBRstringArray01 value='["one","two","three"]'
 sleep .5
 ${PARSE}/parsePut -r "" PVRstringArray '{"value":["one again","two again","three again"]}'
 sleep .5
 ${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRstringArray value='["once more","two again","three again"]'
 sleep .5
-${PARSE}/parsePut  -r "" PVRbooleanArray value='["true","false","true"]'
+${PARSE}/parsePut  -r "" PVRbooleanArray value='[true,false,true]'
 sleep .5
-${PARSE}/parsePut  -r "" PVRbooleanArray '{"value":["false","true","false"]}'
+${PARSE}/parsePut  -r "" PVRbooleanArray '{"value":[false,true,false]}'
 sleep .5
-${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRbooleanArray value='["true","false","true"]'
+${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRbooleanArray value='[true,false,true]'
 </pre>
-<h3>exampleEnum</h3>
+<h3>exampleCPP/json/client/scripts/exampleEnum</h3>
 <p>
 This contains:
 </p>
@@ -464,9 +523,9 @@ ${PARSE}/parsePutGet -z false -r "putField(value)getField(value)" PVRenum value=
 sleep .5
 ${PARSE}/parsePut -z false -p ca DBRenum01 value=zero
 sleep .5
-${PARSE}/parsePut PVRenum '{"value":{"index":"1"}}'
+${PARSE}/parsePut PVRenum '{"value":{"index":1}}'
 </pre>
-<h3>exampleUnion</h3>
+<h3>exampleCPP/json/client/scripts/exampleUnion</h3>
 <p>
 This contains:
 </p>
@@ -483,24 +542,7 @@ ${PARSE}/parsePut PVRrestrictedUnion value='union_t=string="test"'
 sleep .5
 ${PARSE}/parsePut PVRrestrictedUnion value='union_t=point={"x":".1","y":".2"}'
 </pre>
-<h3>exampleEnum</h3>
-<p>
-This contains:
-</p>
-<pre>
-#!/bin/sh
-source ./setEnv
-${PARSE}/parsePut -z false PVRenum value=one
-sleep .5
-${PARSE}/parsePut -z false DBRenum01 value=one
-sleep .5
-${PARSE}/parsePutGet -z false -r "putField(value)getField(value)" PVRenum value=zero
-sleep .5
-${PARSE}/parsePut -z false -p ca DBRenum01 value=zero
-sleep .5
-${PARSE}/parsePut PVRenum '{"value":{"index":"1"}}'
-</pre>
-<h3>exampleBigRecord</h3>
+<h3>exampleCPP/json/client/scripts/exampleBigRecord</h3>
 <p>
 This contains:
 </p>
@@ -509,15 +551,15 @@ This contains:
 source ./setEnv
 ${PARSE}/parsePut 
 sleep .5
-${PARSE}/parsePut -r "" PVRBigRecord scalar.double.value='"10"' scalarArray.double.value='["100","200"]'
+${PARSE}/parsePut -r "" PVRBigRecord scalar.double.value=10 scalarArray.double.value='[100,200]'
 sleep .5
-${PARSE}/parsePut -r "" PVRBigRecord '{"scalar":{"double":{"value":"20"}}}' '{"scalarArray":{"double":{"value":["1000","2000"]}}}'
+${PARSE}/parsePut -r "" PVRBigRecord '{"scalar":{"double":{"value":20}}}' '{"scalarArray":{"double":{"value":[1000,2000]}}}'
 sleep .5
-${PARSE}/parsePut -r "" PVRBigRecord scalar.double.value='"10"' scalar.string.value='" this is a string"'
+${PARSE}/parsePut -r "" PVRBigRecord scalar.double.value=10 scalar.string.value='" this is a string"'
 sleep .5
-${PARSE}/parsePut -r "" PVRBigRecord '{"scalar":{"double":{"value":"20"},"string":{"value":"this is also a string"}}}'
+${PARSE}/parsePut -r "" PVRBigRecord '{"scalar":{"double":{"value":20},"string":{"value":"this is also a string"}}}'
 sleep .5
-${PARSE}/parsePutGet -r "putField(),getField(scalar.double,scalarArray.double)" PVRBigRecord scalar.double.value='"10"' scalarArray.double.value='["100","200"]'
+${PARSE}/parsePutGet -r "putField(),getField(scalar.double,scalarArray.double)" PVRBigRecord scalar.double.value=10 scalarArray.double.value='[100,200]'
 </pre>
 
 </div>
