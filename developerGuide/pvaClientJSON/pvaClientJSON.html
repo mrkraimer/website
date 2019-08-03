@@ -36,7 +36,7 @@
 <div class="head">
 <h1>pvaClient JSON support</h1>
 
-<h2 class="nocount">2019.08.01</h2>
+<h2 class="nocount">2019.08.03</h2>
 <dl>
   <dt>Editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -421,7 +421,193 @@ mrk> ../../bin/linux-x86_64/exampleDatabase st.cmd
 ...
 epics> 
 </pre>
-<h3>exampleCPP/json/client/scripts/exampleScalar</h3>
+<h3>Some Suggestions</h3>
+<h4>Set Path</h4>
+<p>For example I have added the following to my path.
+</p>
+<pre>
+export PATH=$PATH:/home/epicsv4/masterCPP/exampleCPP/json/bin/${EPICS_HOST_ARCH}
+</pre>
+<h4>Other tools</h4>
+<p>
+Don't forget about pvlist, pvinfo, and pvget.
+For example:
+</p>
+<pre>
+mrk> pvinfo PVRrestrictedUnion
+PVRrestrictedUnion
+Server: 10.0.0.48:5075
+Type:
+    epics:nt/NTUnion:1.0
+        union value
+            string string
+            string[] stringArray
+            structure point
+                double x
+                double y
+            union union_t
+                string string
+                string[] stringArray
+                structure point
+                    double x
+                    double y
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+mrk> pvget -r ""  PVRrestrictedUnion
+PVRrestrictedUnion epics:nt/NTUnion:1.0 
+    union value
+        (none)
+    time_t timeStamp &lt;undefined&gt;              
+        long secondsPastEpoch 0
+        int nanoseconds 0
+        int userTag 0
+mrk> parsePut PVRrestrictedUnion value='string="test string"'
+_____parsePut channel PVRrestrictedUnion provider pva request  zeroarray true debug false
+mrk> pvget -r ""  PVRrestrictedUnion
+PVRrestrictedUnion epics:nt/NTUnion:1.0 
+    union value
+        string  test string
+    time_t timeStamp 2019-08-03 07:00:12.608  
+        long secondsPastEpoch 1564830012
+        int nanoseconds 607894337
+        int userTag 0
+mrk> 
+mrk> pvlist
+GUID 0x2569455D000000007930A800 version 2: tcp@[10.0.0.48:5075, 192.168.124.1:5075]
+mrk> pvlist 0x2569455D000000007930A800
+DBRint00
+DBRint01
+DBRstring00
+...
+DBRdouble
+DBRdouble00
+...
+DBRao01
+DBRenum01
+DBRmbbo00
+DBRmbbo01
+DBRcounter01
+DBRcalc00
+DBRmbbiwierd
+DBRstringArray01
+DBRdoubleArray
+DBRbyteArray01
+DBRshortArray01
+DBRintArray01
+DBRfloatArray01
+DBRdoubleArray01
+DBRbo00
+DBRbo01
+PVRBigRecord
+PVRboolean
+PVRbooleanArray
+PVRbyte
+PVRbyteArray
+PVRdouble
+PVRdouble01
+PVRdouble01Array
+PVRdouble02
+PVRdouble02Array
+PVRdouble03
+PVRdouble03Array
+PVRdouble04
+PVRdouble04Array
+PVRdouble05
+PVRdouble05Array
+PVRdoubleArray
+PVRdumbPowerSupply
+PVRenum
+PVRfloat
+PVRfloatArray
+PVRhelloPutGet
+PVRhelloRPC
+PVRint
+PVRintArray
+PVRlong
+PVRlongArray
+PVRremoveRecord
+PVRrestrictedUnion
+PVRrestrictedUnionArray
+PVRshort
+PVRshortArray
+PVRsoft
+PVRstring
+PVRstringArray
+PVRstructureArray
+PVRtraceRecord
+PVRubyte
+PVRubyteArray
+PVRuint
+PVRuintArray
+PVRulong
+PVRulongArray
+PVRushort
+PVRushortArray
+PVRvariantUnion
+PVRvariantUnionArray
+</pre>
+<p>Also monitoring changes is usefull for seeing the result of running the examples.
+For example in one window run:
+</p>
+<pre>
+mrk> pvget -m -r "" PVRrestrictedUnion
+PVRrestrictedUnion epics:nt/NTUnion:1.0 
+    union value
+        (none)
+    time_t timeStamp &lt;undefined&gt;              
+        long secondsPastEpoch 0
+        int nanoseconds 0
+        int userTag 0
+</pre>
+<p>Then in another window run:
+</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/exampleCPP/json/client/scripts
+mrk> ./exampleUnion
+
+</pre>
+<p>In the monitor window you will see:
+</p>
+<pre>
+PVRrestrictedUnion epics:nt/NTUnion:1.0 
+    union value
+        string  test string
+    time_t timeStamp 2019-08-03 10:53:40.260  
+        long secondsPastEpoch 1564844020
+        int nanoseconds 260336547
+PVRrestrictedUnion epics:nt/NTUnion:1.0 
+    union value
+        string[]  ["test string", "two"]
+    time_t timeStamp 2019-08-03 10:53:40.804  
+        int nanoseconds 803675341
+PVRrestrictedUnion epics:nt/NTUnion:1.0 
+    union value
+        structure 
+            double x 0.1
+            double y 0.2
+    time_t timeStamp 2019-08-03 10:53:41.324  
+        long secondsPastEpoch 1564844021
+        int nanoseconds 324152690
+PVRrestrictedUnion epics:nt/NTUnion:1.0 
+    union value
+        union 
+            string  test
+    time_t timeStamp 2019-08-03 10:53:41.843  
+        int nanoseconds 843287469
+PVRrestrictedUnion epics:nt/NTUnion:1.0 
+    union value
+        union 
+            structure 
+                double x 0.1
+                double y 0.2
+    time_t timeStamp 2019-08-03 10:53:42.361  
+        long secondsPastEpoch 1564844022
+        int nanoseconds 360729910
+</pre>
+<h2>exampleCPP/json/client/scripts/exampleScalar</h2>
 <p>This contains;</p>
 <pre>
 #!/bin/sh
@@ -479,7 +665,7 @@ _____parsePut channel  DBRdouble provider ca request value zeroarray true debug 
 _____parsePut channel  DBRstring00 provider pva request value zeroarray true debug false
 _____parsePut channel  DBRstring00 provider ca request value zeroarray true debug false
 </pre>
-<h3>exampleCPP/json/client/scripts/exampleScalarArray</h3>
+<h2>exampleCPP/json/client/scripts/exampleScalarArray</h2>
 <p>
 This contains:
 </p>
@@ -507,7 +693,7 @@ ${PARSE}/parsePut  -r "" PVRbooleanArray '{"value":[false,true,false]}'
 sleep .5
 ${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRbooleanArray value='[true,false,true]'
 </pre>
-<h3>exampleCPP/json/client/scripts/exampleEnum</h3>
+<h2>exampleCPP/json/client/scripts/exampleEnum</h2>
 <p>
 This contains:
 </p>
@@ -524,7 +710,7 @@ ${PARSE}/parsePut -z false -p ca DBRenum01 value=zero
 sleep .5
 ${PARSE}/parsePut PVRenum '{"value":{"index":1}}'
 </pre>
-<h3>exampleCPP/json/client/scripts/exampleUnion</h3>
+<h2>exampleCPP/json/client/scripts/exampleUnion</h2>
 <p>
 This contains:
 </p>
@@ -541,7 +727,7 @@ ${PARSE}/parsePut PVRrestrictedUnion value='union_t=string="test"'
 sleep .5
 ${PARSE}/parsePut PVRrestrictedUnion value='union_t=point={"x":".1","y":".2"}'
 </pre>
-<h3>exampleCPP/json/client/scripts/exampleBigRecord</h3>
+<h2>exampleCPP/json/client/scripts/exampleBigRecord</h2>
 <p>
 This contains:
 </p>
