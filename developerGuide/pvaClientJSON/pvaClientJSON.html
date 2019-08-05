@@ -36,7 +36,7 @@
 <div class="head">
 <h1>pvaClient JSON support</h1>
 
-<h2 class="nocount">2019.08.03</h2>
+<h2 class="nocount">2019.08.05</h2>
 <dl>
   <dt>Editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -55,9 +55,6 @@
 and
 <a href = "https://github.com/epics-base/exampleCPP">exampleCPP
 </a>
-  </li>
-  <li>
-     Only the C++ implementation is available.
   </li>
   <li>
     The epics base version must be 3.15 or later.
@@ -103,10 +100,22 @@ New : 10 MINOR DRIVER I did this
 mrk> pvget -M json -r "value,alarm" PVRlong
 PVRlong {"value": 0,"alarm": {"severity": 0,"status": 0,"message": ""}}
 </pre>
+<p>
+<b>pvput</b> also provides extra support for a top level field named <b>value</b> that
+is a scalar or scalarArray. For example:
+</p>
+<pre>
+mrk> pvput PVRdouble 8
+Old : 2019-07-18 13:23:52.973  10 
+New : 2019-08-04 06:24:41.856  8 
+mrk> pvput PVRdoubleArray [100,200,300]
+Old :  2019-07-18 13:24:01.187  [10,20]
+New : 2019-08-04 06:25:23.686  [100,200,300]
+</pre>
 <h3>JSON syntax brief description</h3>
 <p>
 The following is a brief description of the JSON syntax for pvData.
-See <a href="https://json.org">json</a> for a more complete description.
+See <a href="https://json.org">json</a> for a more complete description of the JSON syntax.
 </p>
 <p>A PVStructure is represented by:
 </p>
@@ -141,17 +150,6 @@ or
 The JSON support implemented by pvaClientCPP uses similar syntax.
 This is what is described in this document.
 </p>
-
-<p>Some examples are:</p>
-<pre>
-pvput PVRstring '{"value":"this is a string"}'
-pvput PVRdouble '{"value":"10"}'
-pvput PVRdouble '{"value":2.3}'
-pvput PVRboolean '{"value":"true"}'
-pvput PVRboolean '{"value":false}'
-pvput PVRdoubleArray '{"value":[1.2,4,9.34]}'
-pvput -r "value,timeStamp" PVRdouble '{"value":10,"timeStamp":{"userTag":20}}'
-</pre>
 
 <h2>Theory Of Operation</h2>
 
@@ -237,12 +235,12 @@ void printJSON(std::ostream&amp; strm,
                const BitSet&amp; mask,
                const JSONPrintOptions&amp; opts = JSONPrintOptions());
 </pre>
-<p>pvaClientCPP uses this method.</p>
+<p>pvaClientCPP uses both of the above methods.</p>
 
 <h3>pvaClientCPP json</h3>
 <p>
 One of the classes implemented by pvaClientCPP is <b>PvaClientData</b>,
-which has the following methods:
+which has the following new methods:
 </p>
 <pre>
 void parse(const std::vector&lt;std::string&gt; &amp;args);
@@ -256,7 +254,7 @@ where
 <dl>
    <dt>parse</dt>
      <dd>
-        This is used to change fields in the pvStructure in PvaClientData.
+        This is used to change fields in the pvStructure in PvaClientData via JSON syntax.
      </dd>
    <dt>streamJSON</dt>
       <dd>
@@ -266,15 +264,15 @@ where
       <dd>
       parseJSON shown above appends scalarArray values to the current value.
       This is usually not what the client wants.
-      This can be called before calling parse.
+      <b>zeroArrayLength</b> can be called before calling parse.
       <br />
       This should NOT be called if parse is being called with the special enumerated
-      syntax shown below.
+      syntax shown below, because it will set <b>choices</b> to an empty array.
       </dd>
 </dl>
 <p>Since <b>PvaClientData</b> is the base data class for channelGet,
 channelPut, channelPutGet, and channelMonitor, it is available for use by each.
-The example shown below uses it for channelPut and channelPutGet.
+The examples shown below use it for channelPut and channelPutGet.
 </p>
 <h4>Syntax for parse</h4>
 <p>
@@ -608,7 +606,26 @@ PVRrestrictedUnion epics:nt/NTUnion:1.0
         int nanoseconds 360729910
 </pre>
 <h2>exampleCPP/json/client/scripts/exampleScalar</h2>
-<p>This contains;</p>
+<p>This example is for records like the following:
+</p>
+<pre>
+mrk> pvinfo PVRdouble
+PVRdouble
+Server: 10.0.0.48:5075
+Type:
+    epics:nt/NTScalar:1.0
+        double value
+        alarm_t alarm
+            int severity
+            int status
+            string message
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+</pre>
+For each record <b>value</b> ls a scalar.
+<p>exampleScalar is</p>
 <pre>
 #!/bin/sh
 source ./setEnv
@@ -666,8 +683,26 @@ _____parsePut channel  DBRstring00 provider pva request value zeroarray true deb
 _____parsePut channel  DBRstring00 provider ca request value zeroarray true debug false
 </pre>
 <h2>exampleCPP/json/client/scripts/exampleScalarArray</h2>
-<p>
-This contains:
+<p>This example is for records like the following:
+</p>
+<pre>
+mrk> pvinfo PVRdoubleArray
+PVRdoubleArray
+Server: 10.0.0.48:5075
+Type:
+    epics:nt/NTScalarArray:1.0
+        double[] value
+        alarm_t alarm
+            int severity
+            int status
+            string message
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+</pre>
+For each record <b>value</b> ls a scalarArray.
+<p>exampleScalarArray is:
 </p>
 <pre>
 source ./setEnv
@@ -694,8 +729,28 @@ sleep .5
 ${PARSE}/parsePutGet -r "putField(value)getField(value)" PVRbooleanArray value='[true,false,true]'
 </pre>
 <h2>exampleCPP/json/client/scripts/exampleEnum</h2>
+<p>This example is for records like the following:
+</p>
+<pre>
+mrk> pvinfo PVRenum
+PVRenum
+Server: 10.0.0.48:5075
+Type:
+    epics:nt/NTEnum:1.0
+        enum_t value
+            int index
+            string[] choices
+        alarm_t alarm
+            int severity
+            int status
+            string message
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+</pre>
 <p>
-This contains:
+exampleEnum is:
 </p>
 <pre>
 #!/bin/sh
@@ -711,8 +766,33 @@ sleep .5
 ${PARSE}/parsePut PVRenum '{"value":{"index":1}}'
 </pre>
 <h2>exampleCPP/json/client/scripts/exampleUnion</h2>
+<p>This example is for the following record:
+</p>
+<pre>
+mrk> pvinfo PVRrestrictedUnion
+PVRrestrictedUnion
+Server: 10.0.0.48:5075
+Type:
+    epics:nt/NTUnion:1.0
+        union value
+            string string
+            string[] stringArray
+            structure point
+                double x
+                double y
+            union union_t
+                string string
+                string[] stringArray
+                structure point
+                    double x
+                    double y
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+</pre>
 <p>
-This contains:
+exampleUnion is:
 </p>
 <pre>
 #!/bin/sh
@@ -728,8 +808,51 @@ sleep .5
 ${PARSE}/parsePut PVRrestrictedUnion value='union_t=point={"x":".1","y":".2"}'
 </pre>
 <h2>exampleCPP/json/client/scripts/exampleBigRecord</h2>
+<p>This example is for the following record:
+</p>
+<pre>
+mrk> pvinfo PVRBigRecord
+PVRBigRecord
+Server: 10.0.0.48:5075
+Type:
+    structure
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+        structure scalar
+            structure boolean
+                boolean value
+            structure byte
+                byte value
+            structure long
+                long value
+            structure double
+                double value
+            structure string
+                string value
+        structure scalarArray
+            structure boolean
+                boolean[] value
+            structure byte
+                byte[] value
+            structure long
+                long[] value
+            structure double
+                double[] value
+            structure string
+                string[] value
+        structure[] structureArray
+            structure
+                string name
+                string value
+        union restrictedUnion
+            string string
+            string[] stringArray
+        any variantUnion
+</pre>
 <p>
-This contains:
+exampleBigRecord is:
 </p>
 <pre>
 #!/bin/sh
