@@ -36,7 +36,7 @@
 <div class="head">
 <h1>pvaClient JSON support</h1>
 
-<h2 class="nocount">2019.08.05</h2>
+<h2 class="nocount">2019.08.09</h2>
 <dl>
   <dt>Editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -265,12 +265,20 @@ where
       </dd>
    <dt>zeroArrayLength</dt>
       <dd>
-      parseJSON shown above appends scalarArray values to the current value.
+      <p>
+      This method recursively locates all array fields in the <b>PVStructure</b>
+      attached to <b>PvaClientData</b> and sets the array length to 0.
+      </p><p>
+      <b>parseJSON</b> shown above appends scalarArray values to the current value.
       This is usually not what the client wants.
-      <b>zeroArrayLength</b> can be called before calling parse.
-      <br />
+      A common way that a client uses parse is to first get the current value
+      of the <b>PVStructure</b> attached to <b>PvaClientData</b> and then to set new values.
+      <b>zeroArrayLength</b> can be called before calling parse if the client wants
+       to set new values to array fields.
+      </p><p>
       This should NOT be called if parse is being called with the special enumerated
       syntax shown below, because it will set <b>choices</b> to an empty array.
+      </p>
       </dd>
 </dl>
 <p>Since <b>PvaClientData</b> is the base data class for channelGet,
@@ -279,10 +287,18 @@ The examples shown below use it for channelPut and channelPutGet.
 </p>
 <h4>Syntax for parse</h4>
 <p>
-<b>NOTE:</b>
-In the following <b>json</b> means JSON syntax.
-The other syntax is provided by <b>parse</b>.
+<b>NOTES:</b>
 </p>
+<ul>
+   <li>
+    In the following <b>json</b> means JSON syntax.
+    The other syntax is provided by <b>parse</b>.
+   </li>
+   <li>
+    The <b>parsePut</b> examples are provided by <b>exampleCPP/json</b>,
+    which is described in the next section.
+    </li>
+</ul>
 <p>
 Each argument provides data for fields in the current PVStructure.
 The syntax for each argument is one of the following:
