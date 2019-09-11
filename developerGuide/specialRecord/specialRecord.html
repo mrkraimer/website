@@ -36,7 +36,7 @@
 <div class="head">
 <h1>pvDatabase Special Record</h1>
 
-<h2 class="nocount">2019.06.14</h2>
+<h2 class="nocount">2019.09.11</h2>
 <dl>
   <dt>Editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -85,6 +85,39 @@ where
        The result of the request.
       </dd>
 </dl>
+
+<h2>AddRecord</h2>
+<p>
+This is a record that adds a record to the same pvDatabase.
+This can only be used to generate "soft" records, i. e. the only process support is that
+provided by PVRecord. 
+This means timeStamp support.
+</p>
+<pre>
+structure 
+    structure argument
+        string recordName 
+        any union
+    structure result
+        string status 
+</pre>
+where
+<dl>
+   <dt>recordName</dt>
+     <dd>
+       The name of the new record to add to the same pvDatabase.
+     </dd>
+   <dt>union</dt>
+      <dd>
+      The caller must give this a PVStructure value, which will be used to generate the top
+       level PVStructure for the new record.
+      </dd>
+   <dt>status</dt>
+      <dd>
+       The result of the request.
+      </dd>
+</dl>
+
 <h2>RemoveRecord</h2>
 <p>
 This is a record that removes another record in the same pvDatabase.
@@ -125,7 +158,8 @@ where
 <dl>
    <dt>command</dt>
      <dd>
-      The command can be <b>add</b> or <b>remove</b> 
+      The command can be <b>add</b> or <b>remove</b>
+     </dd>
    <dt>recordName</dt>
      <dd>
        The name of another record in the same pvDatabase.
@@ -135,10 +169,7 @@ where
        The result of the request.
       </dd>
 </dl>
-<h2>AddRecord</h2>
-<p>
-<b>Proposed</b> but not implemented.
-</p>
+
 <h2>Configuring Special Records</h2>
 <p>In the source file where You build your IOC the appInclude.dbd file must
 have statements like:
@@ -148,12 +179,14 @@ include "PVAServerRegister.dbd"
 include "registerChannelProviderLocal.dbd"
 include "qsrv.dbd"
 include "traceRecordRegister.dbd"
+include "addRecordRegister.dbd"
 include "removeRecordRegister.dbd"
 include "processRecordRegister.dbd"
 </pre>
 <p>Then your st.cmd file can have statements like:</p>
 <pre>
 traceRecordCreate PVRsupportTraceRecord
+addRecordCreate PVRsupportAddRecord
 removeRecordCreate PVRsupportRemoveRecord
 processRecordCreate PVRsupportProcessRecord .5  // NOTE .5 second process rate
 </pre>
