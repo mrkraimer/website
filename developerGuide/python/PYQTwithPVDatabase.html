@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>PYQTwithPVDatabase.h</title>
+  <link rel="stylesheet" type="text/css"
+  href="../../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../../css/epicsv4.css" />
+  <style type="text/css">
+  /*<![CDATA[*/
+     .about { margin-left: 3em; margin-right: 3em; font-size: .83em}
+     table { margin-left: auto; margin-right: auto }
+     .diagram { text-align: center; margin: 2.5em 0 }
+     span.opt { color: grey }
+     span.nterm { font-style:italic }
+     span.term { font-family:courier }
+     span.user { font-family:courier }
+     span.user:before { content:"<" }
+     span.user:after { content:">" }
+     .nonnorm { font-style:italic }
+     p.ed { color: #AA0000 }
+     span.ed { color: #AA0000 }
+     p.ed.priv { display: inline; }
+     span.ed.priv { display: inline; }
+  /*]]>*/</style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../../css/tocgen.js">
+  </script>
+</head>
+<body>
+
+<div class="head">
+<h1>PYQTwithPVDatabase.h</h1>
+
+<h2 class="nocount">2020.04.29</h2>
+<dl>
+  <dt>Author:</dt>
+    <dd>Marty Kraimer</dd>
+  <dt>Contributors</dt>
+     <dd>Sinisa Veseli
+       <br /> provided help with pvapy.
+       He also added support for connection changes.
+     </dd>
+  <dt>WARNING</dt>
+     <dd>
+      This is a work in progress.
+     </dd>
+</dl>
+
+<p>This product is available via an <a
+href="../../LICENSE">open source license
+</a></p>
+
+</div>
+
+
+<div id="toc">
+
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+<div id="contents" class="contents">
+
+
+<h2>Introduction</h2>
+<p>This document describes the following:</p>
+<h3>mandelbrot example</h3>
+<p>This is an example of a Python Image Viewer that issues channelPutGet requests to a PVRecord that
+ creates a  mandelbrot image.
+</p>
+<p>See:
+<a href="https://en.wikipedia.org/wiki/Mandelbrot_set">Mandelbrot set</a>
+for a descripton of mandelbrot images.
+</p>
+<p>
+When the viewer is started the following appears:
+<img src="mandelbrotViewer.png" alt="" />
+</p>
+<p>
+When start is clicked the following appear:
+<img src="mandelbrotImage.png"  alt="" />
+</p>
+
+<h3>plot2dcurves example</h3>
+<p>This is an example of a Python Image Viewer that monitors data from a PVRecord.
+Other python clients create 2d curves and issue channelPuts to the PVRecord 
+</p>
+<p>
+<img src="plot2dcurvesViewer.png"  alt=""  />
+</p>
+<p>
+<img src="plot2dcurvesImage.png" alt=""  />
+</p>
+
+<h3>database example</h3>
+<p>
+This discusses the IOC database used by <b>mandelbrot</b> and <b>plot2dcurves</b>
+</p>
+
+
+<h2>Installation</h2>
+
+<h3>Python</h3>
+<p>Python3 is required as well as using pip to install the following:</p>
+<pre>
+numpy
+PyQt5
+PyQt5-sip
+QtPy
+p4p
+pvapy
+pyqtgraph
+</pre>
+
+<h3>EPICS7</h3>
+<p>An EPICS7 release is required.
+See:
+<a href="https://epics.anl.gov/download/base/index.php">EPICS7</a>
+</p>
+
+<h3>testPython</h3>
+<p>After EPICS7 has been built then in any directory you choose execute the following</p>
+<pre>
+git clone https://github.com/mrkraimer/testPython.git
+cd testPython/database
+EDIT RELEASE.local SEE BELOW
+make
+cd iocBoot/mandelbrotDatabase
+../../bin/linux-x86_64/mandelbrotDatabase st.cmd 
+</pre>
+<p>You are now ready to run the examples</p>
+<p><b>RELEASE.local</b> must be changed so that 
+the definition of <b>EPICS7_DIR</b> is the location where You built EPICS7.
+</p>
+
+<h2>mandelbrot</h2>
+<h3>Python Code</h3>
+<p>Go to testPython/mandelbrot and you will see the following files:</p>
+<dl>
+   <dt>DisplayImagePVAPY.py</dt>
+      <dd>
+       This normally started first as follows:
+<pre>
+python DisplayImagePVAPY.py
+</pre>
+       This is the version that communicates with record <b>TPYmandelbrotRecord</b>
+       in the database.
+      </dd>
+   <dt>DisplayImage.py</dt>
+      <dd>
+       This is the python code that creates and manages the Viewer window.
+       It is used by both DisplayImagePVAPY and DisplayImagePython.
+      </dd>
+   <dt>DisplayImagePython.py</dt>
+      <dd>
+       This is a version that uses Python to create the images.
+      </dd>
+   <dt>MandelbrotCreatePython.py</dt>
+      <dd>
+       This is the Python code that creates mandelbrot images.
+      </dd>
+</dl>
+<h3>Starting the Viewer</h3>
+<p>When the viewer is started as follows:
+</p>
+<pre>
+mrk> pwd
+/home/epics7/testPython/mandelbrot
+mrk> python DisplayImagePVAPY.py
+</pre>
+<p>
+The following appears:
+<img src="mandelbrotViewer.png"  alt="" />
+</p>
+<p>The top row of the Viewer window has the following:
+</p>
+<dl>
+   <dt>start</dt>
+     <dd>
+     When clicked the first time it displays the image shown above.
+     <br />
+     <br />
+     After an image is displayed,
+     a subimage can be selected by dragging your mouse, inside the image, in an upper left
+     to a lower right direction. When the mouse is released the selected
+     subimage is displayed and becomes the current image.
+     <br />
+     <br />
+     This process can be repeated multiple times.
+     </dd>
+   <dt>reset</dt>
+     <dd>
+     When clicked it reverts to the opening image.
+     </dd>
+   <dt>time</dt>
+     <dd>
+      This shows the time to create and display the latest image.
+      This is how the performance of the pure python impelmentation can 
+      be compared with the version the uses the PVRecord.
+      On my computer the time for the pure Python version was 5 seconds and the version
+      that uses the PVRecord was .07 seconds. Thus the C++ version is about
+      70 times faster.
+     </dd>
+   <dt>color</dt>
+     <dd>
+     This is a toggle button that switches between <b>color</b> and <b>mono</b>.
+     Click on it and then click start for an example.
+     </dd>
+   <dt>zoom</dt>
+     <dd>
+      Clicking this starts zooming in used the current nimages, ratio, and rate
+      settings from the lower row of the viewer.
+     </dd>
+   <dt>stopZoom</dt>
+     <dd>
+      Clicking this stops the current zoom.
+      After the current zoom stops the last image displayed becomes the current image.
+      
+     </dd>
+   <dt>clear</dt>
+     <dd>
+      This is followed by a status widget that provides info about current status
+      or error messages. Clicking clear clears the current status.
+     </dd>
+</dl>
+<p>The lower row of the Viewer window has the folllowing:
+</p>
+<dl>
+   <dt>nimages</dt>
+     <dd>
+      The number of images that will be displayed when <b>zoom</b>
+      is clicked.
+     </dd>
+   <dt>ratio</dt>
+     <dd>
+      This is the ratio (both width and height) of the final image vs the current image.
+     </dd>
+   <dt>rate</dt>
+     <dd>
+     The is the fastest rate, in images per second, that images will be displayed.
+     </dd>
+   <dt>xmin,xmax,ymin,ymax</dt>
+     <dd>
+      These show the x,y limits for the current image.
+     </dd>
+</dl>
+
+<h2>plot2dcurves</h2>
+<h3>Python code</h3>
+<p>Go to testPython/plot2dcurves and you will see the following files:</p>
+<dl>
+   <dt>PVAPY_Dynamic_Viewer.py and P4P_Dynamic_Viewer.py</dt>
+      <dd>
+       You will normally start one of these as follows:
+<pre>
+python PVAPY_Dynamic_Viewer.py
+</pre>
+       One uses pvapy and the other uses p4p for communication with the IOC.
+      </dd>
+   <dt>PVAPYaddDynamicRecord.py and P4PaddDynamicRecord.py</dt>
+      <dd>One of these must be run in order to create the PVRecord required
+       by this application. For example:
+<pre>
+python PVAPYaddDynamicRecord.py
+</pre>
+       Again one uses pvapy and the other uses p4p for communication with the IOC.
+      </dd>
+   <dt>PVAPYgenerateCurve.py and P4PgenerateCurve.py</dt>
+      <dd>Either of these can be used to generate a 2d curve.
+        See below for details.
+      </dd>
+</dl>
+<h3>Starting a Viewer</h3>
+<p>
+The following:
+</p>
+<pre>
+python PVAPY_Dynamic_Viewer.py
+</pre>
+<p>displays the following viewer:
+<img src="plot2dcurvesViewer.png"  alt=""  />
+</p>
+
+<h3>Creating record TPY_2dcurve</h3>
+<p>The following creates the PVRecord required by this application.
+</p>
+<pre>
+python PVAPYaddDynamicRecord.py
+</pre>
+
+At this point you can click start on the viewer window.
+A blank image will appear until you run a curve generation program.
+
+<h3>Curve generation</h3>
+<p>
+The following
+</p>
+<pre>
+mrk> python PVAPYgenerateCurve.py
+argument must be one of:  ('line', 'circle', 'ellipse', 'clover', 'heart', 'lissajous', 'figureight')
+mrk> python PVAPYgenerateCurve.py circle
+name= circle  xmin= -1.0  xmax= 1.0  ymin= -1.0  ymax= 1.0
+putrate= 468  per second
+mrk> 
+</pre>
+<p>
+Generates a circle.
+You should now see the folllowing image:
+<img src="circleImage.png"  alt="" />
+</p>
+<p>
+If you look at the image while PVAPYgenerateCurve is running you
+will see the curve being dynamically created.
+</p>
+<p>Now try generarating some of the other 2d curves.
+</p>
+
+<h2>database</h2>
+<h3>Overview</h3>
+<p>
+<b>testPython/database</b>
+creates an IOC database that can have DBRecords for any of the record types
+provided  by EPICS base.
+In addition it has PVRecords required by maldebrot and plot2dcurves.
+</p>
+<p>
+When the database is started as follows:
+</p>
+<pre>
+mrk> pwd
+/home/epics7/testPython/database/iocBoot/mandelbrotDatabase
+mrk> ../../bin/linux-x86_64/mandelbrotDatabase st.cmd 
+</pre>
+<p>
+It has the following records:
+</p>
+<pre>
+epics> dbl
+TPYcounter01
+epics> pvdbl
+TPYaddRecord
+TPYmandelbrotRecord
+TPYremoveRecord
+TPYtraceRecord
+epics> 
+</pre>
+<p>
+<b>testPython/database</b>
+is designed for two purposes:
+</p>
+<dl>
+   <dt>testPython</dt>
+      <dd>
+       The record TPYmandelbrotRecord is the record that creates maldebrot images.
+       <br />
+       <br />
+       The record TPYaddRecord is used by plot2dcurves to create record named
+       <b>TPY_2dcurve</b>
+      </dd>
+   <dt>example</dt>
+      <dd>
+       This can be a model for creating other IOC databases that has a combination
+       of DBRecords and PVRecords.
+       <br />
+       To use it for another application just recursively copy database to
+       another location and make necessary modifications.
+      </dd>
+</dl>
+
+<h3>Brief description of testPython/database</h3>
+<p>This section describes all the files in database.
+It describes them from the point of view of someone who creates a copy
+in order to create another IOC database.
+</p>
+
+<h4>database</h4>
+<dl>
+   <dt>RELEASE.local</dt>
+      <dd>
+      This is the only file in this directory that needs modification.
+      <br />
+      The only thing that is normaally changed is
+       <b>EPICS7_DIR=/home/epics7/base-7.0.3.1</b>
+       It must be changed to access your EPICS7 system. 
+      </dd>
+   <dt>CONFIG_SITE.local</dt>
+      <dd>
+      This should not need any changes.
+      </dd>
+   <dt>Makefile</dt>
+      <dd>
+       This should not need any changes.
+      </dd>
+   <dt>configure/*</dt>
+      <dd>
+       None of these files need any changes.
+      </dd>
+</dl>
+
+<h4>database/src</h4>
+<dl>
+   <dt>Makefile</dt>
+      <dd>
+       This needs changes.
+      </dd>
+   <dt>pv/mandelbrotRecord.h</dt>
+      <dd>
+       This and the following C++ file implement code
+        that creates a maldebrot image.
+      It can be used as a model of how to create your own PVRecords.
+      </dd>
+   <dt>mandelbrotRecord.cpp</dt>
+      <dd>
+       This is the implementation.
+      </dd>
+   <dt>mandelbrotRecordRegister.cpp</dt>
+      <dd>
+      This implements the code that is called via the iocshell
+      to create mandelbrot records.
+      </dd>
+   <dt>mandelbrotRecordRegister.dbd</dt>
+      <dd>
+      This is the definition that makes the iocshell aware of mandelbrotRecordRegister.
+      </dd>
+</dl>
+
+<h4>database/dbSrc</h4>
+<dl>
+   <dt>Makefile</dt>
+      <dd>
+      </dd>
+   <dt>dbCounter.db</dt>
+      <dd>
+      </dd>
+</dl>
+<h4>database/iocSrc</h4>
+<p>
+This is where code for an IOC database is created.
+It is the standard way to build an IOC database.
+</p>
+
+<dl>
+   <dt>MakeFile</dt>
+      <dd>
+       This needs modification for other databases.
+      </dd>
+   <dt>mandelbrotDatabaseInclude.dbd</dt>
+      <dd>
+      Other than the definition for <b>mandelbrotRecordRegister.dbd</b>
+      this does not need modification.
+      </dd>
+   <dt>mandelbrotDatabaseMain.cpp</dt>
+      <dd>
+      This does not need an change except the name itself.
+      </dd>
+</dl>
+<h4>database/iocBoot</h4>
+<dl>
+   <dt>Makefile</dt>
+      <dd>
+      Change this to add definitions for each subdirectory.
+      </dd>
+</dl>
+<h4>database/iocBoot/mandelbrotDatabase</h4>
+<dl>
+   <dt>Makefile</dt>
+      <dd>
+       Should not need change.
+      </dd>
+   <dt>st.cmd</dt>
+      <dd>
+       This needs changes.
+      </dd>
+</dl>
+</div>
+</body>
+</html>
