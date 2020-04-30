@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>mandelbrot</title>
+  <link rel="stylesheet" type="text/css"
+  href="../../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../../css/epicsv4.css" />
+  <style type="text/css">
+  /*<![CDATA[*/
+     .about { margin-left: 3em; margin-right: 3em; font-size: .83em}
+     table { margin-left: auto; margin-right: auto }
+     .diagram { text-align: center; margin: 2.5em 0 }
+     span.opt { color: grey }
+     span.nterm { font-style:italic }
+     span.term { font-family:courier }
+     span.user { font-family:courier }
+     span.user:before { content:"<" }
+     span.user:after { content:">" }
+     .nonnorm { font-style:italic }
+     p.ed { color: #AA0000 }
+     span.ed { color: #AA0000 }
+     p.ed.priv { display: inline; }
+     span.ed.priv { display: inline; }
+  /*]]>*/</style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../../css/tocgen.js">
+  </script>
+</head>
+<body>
+
+<div class="head">
+<h1>mandelbrot</h1>
+
+<h2 class="nocount">2020.04.29</h2>
+<dl>
+  <dt>Author:</dt>
+    <dd>Marty Kraimer</dd>
+  <dt>WARNING</dt>
+     <dd>
+      This is a work in progress.
+     </dd>
+</dl>
+
+<p>This product is available via an <a
+href="../../LICENSE">open source license
+</a></p>
+
+</div>
+
+
+<div id="toc">
+
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+<div id="contents" class="contents">
+
+
+<h2>Introduction</h2>
+<p>This document describes a Python Image Viewer that issues channelPutGet requests to a
+PVRecord that creates a  mandelbrot image.
+</p>
+<p>See:
+<a href="https://en.wikipedia.org/wiki/Mandelbrot_set">Mandelbrot set</a>
+for a descripton of mandelbrot images.
+</p>
+<p>
+When the viewer is started the following appears:
+</p>
+<img src="mandelbrotViewer.png" alt="" />
+<p>
+When start is clicked the following appears:
+</p>
+<img src="mandelbrotImage.png"  alt="" />
+
+<p>See
+<a href="index.html">index</a>
+For installation instructions.
+</p>
+<p>
+After installation you are ready the run the example,
+which is located in directory <b>testPython/mandelbrot</b>
+</p>
+
+
+<h2>mandelbrot</h2>
+<h3>Python Code</h3>
+<p>Go to testPython/mandelbrot and you will see the following files:</p>
+<dl>
+   <dt>DisplayImagePVAPY.py</dt>
+      <dd>
+       This normally started first as follows:
+<pre>
+python DisplayImagePVAPY.py
+</pre>
+       This is the version that communicates with record <b>TPYmandelbrotRecord</b>
+       in the database.
+      </dd>
+   <dt>DisplayImage.py</dt>
+      <dd>
+       This is the python code that creates and manages the Viewer window.
+       It is used by both DisplayImagePVAPY and DisplayImagePython.
+      </dd>
+   <dt>DisplayImagePython.py</dt>
+      <dd>
+       This is a version that uses Python to create the images.
+      </dd>
+   <dt>MandelbrotCreatePython.py</dt>
+      <dd>
+       This is the Python code that creates mandelbrot images.
+      </dd>
+</dl>
+<h3>Starting the Viewer</h3>
+<p>When the viewer is started as follows:
+</p>
+<pre>
+mrk> pwd
+/home/epics7/testPython/mandelbrot
+mrk> python DisplayImagePVAPY.py
+</pre>
+<p>
+The following appears:
+<img src="mandelbrotViewer.png"  alt="" />
+</p>
+<p>The top row of the Viewer window has the following:
+</p>
+<dl>
+   <dt>start</dt>
+     <dd>
+     When clicked the first time it displays the image shown above.
+     <br />
+     <br />
+     After an image is displayed,
+     a subimage can be selected by dragging your mouse, inside the image, in an upper left
+     to a lower right direction. When the mouse is released the selected
+     subimage is displayed and becomes the current image.
+     <br />
+     <br />
+     This process can be repeated multiple times.
+     </dd>
+   <dt>reset</dt>
+     <dd>
+     When clicked it reverts to the opening image.
+     </dd>
+   <dt>time</dt>
+     <dd>
+      This shows the time to create and display the latest image.
+      This is how the performance of the pure python impelmentation can 
+      be compared with the version the uses the PVRecord.
+      On my computer the time for the pure Python version was 5 seconds and the version
+      that uses the PVRecord was .07 seconds. Thus the C++ version is about
+      70 times faster.
+     </dd>
+   <dt>color</dt>
+     <dd>
+     This is a toggle button that switches between <b>color</b> and <b>mono</b>.
+     Click on it and then click start for an example.
+     </dd>
+   <dt>zoom</dt>
+     <dd>
+      Clicking this starts zooming in used the current nimages, ratio, and rate
+      settings from the lower row of the viewer.
+     </dd>
+   <dt>stopZoom</dt>
+     <dd>
+      Clicking this stops the current zoom.
+      After the current zoom stops the last image displayed becomes the current image.
+      
+     </dd>
+   <dt>clear</dt>
+     <dd>
+      This is followed by a status widget that provides info about current status
+      or error messages. Clicking clear clears the current status.
+     </dd>
+</dl>
+<p>The lower row of the Viewer window has the folllowing:
+</p>
+<dl>
+   <dt>nimages</dt>
+     <dd>
+      The number of images that will be displayed when <b>zoom</b>
+      is clicked.
+     </dd>
+   <dt>ratio</dt>
+     <dd>
+      This is the ratio (both width and height) of the final image vs the current image.
+     </dd>
+   <dt>rate</dt>
+     <dd>
+     The is the fastest rate, in images per second, that images will be displayed.
+     </dd>
+   <dt>xmin,xmax,ymin,ymax</dt>
+     <dd>
+      These show the x,y limits for the current image.
+     </dd>
+</dl>
+
+
+</div>
+</body>
+</html>

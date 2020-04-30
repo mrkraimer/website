@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>plot2dcurve</title>
+  <link rel="stylesheet" type="text/css"
+  href="../../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../../css/epicsv4.css" />
+  <style type="text/css">
+  /*<![CDATA[*/
+     .about { margin-left: 3em; margin-right: 3em; font-size: .83em}
+     table { margin-left: auto; margin-right: auto }
+     .diagram { text-align: center; margin: 2.5em 0 }
+     span.opt { color: grey }
+     span.nterm { font-style:italic }
+     span.term { font-family:courier }
+     span.user { font-family:courier }
+     span.user:before { content:"<" }
+     span.user:after { content:">" }
+     .nonnorm { font-style:italic }
+     p.ed { color: #AA0000 }
+     span.ed { color: #AA0000 }
+     p.ed.priv { display: inline; }
+     span.ed.priv { display: inline; }
+  /*]]>*/</style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../../css/tocgen.js">
+  </script>
+</head>
+<body>
+
+<div class="head">
+<h1>plot2dcurve</h1>
+
+<h2 class="nocount">2020.04.29</h2>
+<dl>
+  <dt>Author:</dt>
+    <dd>Marty Kraimer</dd>
+  <dt>WARNING</dt>
+     <dd>
+      This is a work in progress.
+     </dd>
+</dl>
+
+<p>This product is available via an <a
+href="../../LICENSE">open source license
+</a></p>
+
+</div>
+
+
+<div id="toc">
+
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+<div id="contents" class="contents">
+
+
+<h2>Introduction</h2>
+<p>This document describes a Python Image Viewer that monitors data from a PVRecord.
+Other python clients create 2d curves and issue channelPuts to the PVRecord 
+</p>
+<p>
+When the viewer is started the following appears:
+</p>
+<img src="plot2dcurveViewer.png"  alt=""  />
+<p>
+When start is clicked the following appears:
+</p>
+<img src="plot2dcurveImage.png" alt=""  />
+
+<p>See
+<a href="index.html">index</a>
+For installation instructions.
+</p>
+<p>
+After installation you are ready the run the example,
+which is located in directory <b>testPython/mandelbrot</b>
+</p>
+
+<h2>plot2dcurves</h2>
+<h3>Python code</h3>
+<p>Go to testPython/plot2dcurve and you will see the following files:</p>
+<dl>
+   <dt>PVAPY_Dynamic_Viewer.py and P4P_Dynamic_Viewer.py</dt>
+      <dd>
+       You will normally start one of these as follows:
+<pre>
+python PVAPY_Dynamic_Viewer.py
+</pre>
+       One uses pvapy and the other uses p4p for communication with the IOC.
+      </dd>
+   <dt>PVAPYaddDynamicRecord.py and P4PaddDynamicRecord.py</dt>
+      <dd>One of these must be run in order to create the PVRecord required
+       by this application. For example:
+<pre>
+python PVAPYaddDynamicRecord.py
+</pre>
+       Again one uses pvapy and the other uses p4p for communication with the IOC.
+      </dd>
+   <dt>PVAPYgenerateCurve.py and P4PgenerateCurve.py</dt>
+      <dd>Either of these can be used to generate a 2d curve.
+        See below for details.
+      </dd>
+</dl>
+<h3>Starting a Viewer</h3>
+<p>
+The following:
+</p>
+<pre>
+python PVAPY_Dynamic_Viewer.py
+</pre>
+<p>displays the following viewer:
+<img src="plot2dcurveViewer.png"  alt=""  />
+</p>
+
+<h3>Creating record TPY_2dcurve</h3>
+<p>The following creates the PVRecord required by this application.
+</p>
+<pre>
+python PVAPYaddDynamicRecord.py
+</pre>
+
+At this point you can click start on the viewer window.
+A blank image will appear until you run a curve generation program.
+
+<h3>Curve generation</h3>
+<p>
+The following
+</p>
+<pre>
+mrk> python PVAPYgenerateCurve.py
+argument must be one of:  ('line', 'circle', 'ellipse', 'clover', 'heart', 'lissajous', 'figureight')
+mrk> python PVAPYgenerateCurve.py circle
+name= circle  xmin= -1.0  xmax= 1.0  ymin= -1.0  ymax= 1.0
+putrate= 468  per second
+mrk> 
+</pre>
+<p>
+Generates a circle.
+You should now see the folllowing image:
+<img src="circleImage.png"  alt="" />
+</p>
+<p>
+If you look at the image while PVAPYgenerateCurve is running you
+will see the curve being dynamically created.
+</p>
+<p>Now try generarating some of the other 2d curves.
+</p>
+
+</div>
+</body>
+</html>

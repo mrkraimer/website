@@ -1,0 +1,281 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>Python with PVRecords</title>
+  <link rel="stylesheet" type="text/css"
+  href="../../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../../css/epicsv4.css" />
+  <style type="text/css">
+  /*<![CDATA[*/
+     .about { margin-left: 3em; margin-right: 3em; font-size: .83em}
+     table { margin-left: auto; margin-right: auto }
+     .diagram { text-align: center; margin: 2.5em 0 }
+     span.opt { color: grey }
+     span.nterm { font-style:italic }
+     span.term { font-family:courier }
+     span.user { font-family:courier }
+     span.user:before { content:"<" }
+     span.user:after { content:">" }
+     .nonnorm { font-style:italic }
+     p.ed { color: #AA0000 }
+     span.ed { color: #AA0000 }
+     p.ed.priv { display: inline; }
+     span.ed.priv { display: inline; }
+  /*]]>*/</style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../../css/tocgen.js">
+  </script>
+</head>
+<body>
+
+<div class="head">
+<h1>Python with PVRecords</h1>
+<h2 class="nocount">2020.04.30</h2>
+<dl>
+  <dt>Author:</dt>
+    <dd>Marty Kraimer</dd>
+  <dt>Contributors</dt>
+     <dd>Sinisa Veseli
+       <br /> provided help with pvapy.
+       He also added support for connection changes.
+     </dd>
+  <dt>WARNING</dt>
+     <dd>
+      This is a work in progress.
+     </dd>
+</dl>
+
+<p>This product is available via an <a
+href="../../LICENSE">open source license
+</a></p>
+
+</div>
+
+
+<div id="toc">
+
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+
+<div id="contents" class="contents">
+
+<h2>Introduction</h2>
+<p>
+This describes two Python examples that use pvDatabase records. 
+</p>
+<p>
+The first is:
+<a
+href="mandelbrot.html">mandelbrot
+</a>
+</p>
+<p>
+The second is:
+<a
+href="plot2dcurve.html">plot2dcurve
+</a>
+</p>
+<p>
+The database used by the examples is also described:
+<a
+href="database.html">database
+</a>
+</p>
+
+<h2>Installation</h2>
+
+<h3>Python</h3>
+<p>Python3 is required as well as using pip to install the following:</p>
+<pre>
+numpy
+PyQt5
+PyQt5-sip
+QtPy
+p4p
+pvapy
+pyqtgraph
+</pre>
+
+<h3>EPICS7</h3>
+<p>An EPICS7 release is required.
+See:
+<a href="https://epics.anl.gov/download/base/index.php">EPICS7</a>
+</p>
+
+<h3>testPython</h3>
+<p>After EPICS7 has been built then in any directory you choose execute the following</p>
+<pre>
+git clone https://github.com/mrkraimer/testPython.git
+cd testPython/database
+cp  ExampleRELEASE.local RELEASE.local
+EDIT RELEASE.local SEE BELOW
+make
+cd iocBoot/mandelbrotDatabase
+../../bin/linux-x86_64/mandelbrotDatabase st.cmd 
+</pre>
+<p>You are now ready to run the examples</p>
+<p><b>RELEASE.local</b> must be changed so that 
+the definition of <b>EPICS7_DIR</b> is the location where You built EPICS7.
+</p>
+
+<h2>PyQt with PVAPY or P4P</h2>
+
+<h3>Introduction</h3>
+
+<p>
+Both of the example Python applications use PyQt for the viewer windows.
+The viewer is always started via:
+</p>
+<pre>
+if __name__ == '__main__':
+    app = QApplication(list())
+</pre>
+<p>
+Each example has three types of python objects:
+</p>
+<ol>
+   <li>The application itself</li>
+   <li>PyQt5 code</li>
+   <li>Server code, i.e. PVAPY or P4P</li>
+</ol>
+
+<h2>Threading rules for Python client working with PyQt5</h2>
+<p>
+The rules for accessing data are:
+</p>
+<ol>
+   <li>Server data can only be manipulated via the server thread.</li>
+   <li>PyQt5 data can only be manipulated via the QApplication thread</li>
+   <li>The application data can be manipulated from either the server or QApplication thread</li>
+</ol>
+
+<p>The only serious compications is callbacks from a Server.
+The client code must make sure that all PyQt5 onjects are manipulated
+via the QApplication thread.
+Lets look at some of the code in 
+</p>
+<pre>
+class PVAPYProvider(QObject) :
+    monitorCallbacksignal = pyqtSignal()
+    connectCallbacksignal = pyqtSignal()
+    def __init__(self):
+        QObject.__init__(self)
+...
+        self.init()
+    def init(self) :
+        self.connectCallbacksignal.connect(self.viewerconnectionCallback)
+        self.monitorCallbacksignal.connect(self.viewermonitorCallback)
+        self.callbackDoneEvent = Event()
+        self.callbackDoneEvent.set()
+        self.channel = Channel(getDynamicRecordName())
+        self.channel.setConnectionCallback(self.pvapyconnectioncallback)
+
+    def start(self) : 
+...
+        self.channel.monitor(self.pvapymonitorcallback,'field()')
+...
+    def viewerCallback(self,arg) :
+        self.viewer.callback(arg)
+
+    def pvapyconnectioncallback(self,arg) :
+        if self.firstStart :
+            self.isConnected = arg
+            return
+        data = dict()
+        if arg==True :
+            data["status"] = "connected"
+        elif arg==False :
+            data["status"] = "disconnected"
+        else :
+            data["exception"] = "bad pvapy connection callback =" + str(arg)
+        self.connectdata = data
+        self.callbackDoneEvent.clear()
+        self.connectCallbacksignal.emit()
+
+    def viewerconnectionCallback(self) :
+        while self.connectdata is not None:
+            try:
+                arg = self.connectdata
+                self.connectdata = None
+                self.viewerCallback(arg)
+            except Exception as error:
+                arg["exception"] = repr(error)
+                self.viewerCallback(arg)
+        self.callbackDoneEvent.set()
+
+    def pvapymonitorcallback(self,arg) :
+        data = DynamicRecordData()
+        data.name = arg['name']
+        data.x = np.copy(arg['x'])
+        data.y = np.copy(arg['y'])
+        data.xmin = arg['xmin']
+        data.xmax = arg['xmax']
+        data.ymin = arg['ymin']
+        data.ymax = arg['ymax']
+        if not self.monitordata:
+            self.monitordata = data
+            self.callbackDoneEvent.clear()
+            self.monitorCallbacksignal.emit()
+        else:
+            self.monitordata = data
+
+    def viewermonitorCallback(self) :
+        while self.monitordata is not None:
+            try:
+                arg = dict()
+                arg['value'] = self.monitordata
+                self.monitordata = None
+                self.viewerCallback(arg)
+            except Exception as error:
+                arg["exception"] = repr(error)
+                self.viewerCallback(arg)
+        self.callbackDoneEvent.set()
+
+if __name__ == '__main__':
+    app = QApplication(list())
+</pre>
+<p>Lets first consider the connection callback.
+In init the  client calls:
+</p>
+<pre>
+self.connectCallbacksignal.connect(self.viewerconnectionCallback)
+self.callbackDoneEvent = Event()
+self.callbackDoneEvent.set()
+self.channel = Channel(getDynamicRecordName())
+self.channel.setConnectionCallback(self.pvapyconnectioncallback)
+</pre>
+<p>
+Whenever the channel connection changes state pvapyconnectioncallback is called.
+It executes the statements:
+</p>
+<pre>
+self.connectdata = data
+self.callbackDoneEvent.clear()
+self.connectCallbacksignal.emit()
+</pre>
+<p>The last two statements causes viewerconnectionCallback
+to be called via the QApplication thread.
+viewerconnectionCallback calls:
+</p>
+<pre>
+self.viewerCallback(arg)
+</pre>
+<p>
+This is a call to a method in the PyQt viewer.
+</p>
+<h2>Rapid Callbacks to PyQt application</h2>
+<p>If a PyQt application is receiving rapid callbacks that result
+in updating widgets, the client might not see the widget update immediately.
+Calling:
+</p>
+<pre>
+QApplication.processEvents()
+</pre>
+Will causes the widgets changes to update immediately.
+
+</div>
+</body>
+</html>
