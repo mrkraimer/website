@@ -152,6 +152,110 @@ will see the curve being dynamically created.
 <p>Now try generarating some of the other 2d curves.
 </p>
 
+<h2>Brief Code Description</h2>
+
+<h3>Dynamic_Common.py</h3>
+<p>
+This has the following:
+</p>
+<pre>
+    def getDynamicRecordName()
+    def getAddRecordName() 
+    class DynamicRecordData(object)
+        def computeLimits(self)
+    class Dynamic_Channel_Provider(object)
+</pre>
+<dl>
+   <dt>getDynamicRecordName</dt>
+   <dd>
+    This gets the name of the record that holds the image data.
+     The default is 'TPY_2dcurve'.
+     An environment variable <b>PLOT2DCURVE_RECORDNAME</b> overrides the default.
+   </dd>
+   <dt>getAddRecordName</dt>
+    <dd>
+      This gets the name of a record that adds new records in the same PVDatabase.
+      The default is <b>TPYaddRecord</b>.
+      An environment variable <b>ADD_RECORDNAME</b> overrides the default.
+    </dd>
+   <dt>DynamicRecordData</dt>
+   <dd>
+     This describes the data in a dynamicRecord.
+     It has the following fields: name,x,y,xmin,xmax,ymin,ymax.
+     name is a string, x and y are double array,all other fields have type double.
+     <b>computeLimits</b> computes xmin,xmax,ymin,and ymax.
+   </dd>
+   <dt>Dynamic_Channel_Provider</dt>
+   <dd>
+     This describes methods that <b>P4P_Dynamic_Viewer</b> 
+     and <b>PVAPY_Dynamic_Viewer</b> must implement.
+   </dd>
+</dl>
+    
+
+<h3>GenerateCurve.py</h3>
+<p>
+This is the code that generates the x and y arrays for an image.
+It is called by <b>P4PgenerateCurve</b> and <b>PVAPYgenerateCurve</b>.
+It can also be called directly by python.
+In order to generate a curve, it requires an argument that is the name of the curve.
+Note that some of the code allows additional arguments.
+Look at the code for details.
+</p>
+
+<h3>Dynamic_Viewer.py</h3>
+<p>
+This is the code that provides the user interface and code that dynamically generates images.
+</p>
+
+<h3>P4PaddDynamicRecord.py and PVAPYaddDynamicRecord.py</h3>
+<p>
+This is code that creates a dynamicRecord.
+</p>
+<p>The record has the following structure
+</p>
+<pre>
+mrk> pvinfo TPY_2dcurve
+TPY_2dcurve
+Server: 10.0.0.11:5075
+Type:
+    structure
+        string name
+        double[] x
+        double[] y
+        double xmin
+        double xmax
+        double ymin
+        double ymax
+</pre>
+
+<h3>P4P_Dynamic_Viewer.py and PVAPY_Dynamic_Viewer.py</h3>
+<p>
+This is code that:
+</p>
+<ol>
+  <li>creates an instance of <b>Dynamic_Channel_Provider</b></li>
+  <li>creates an instance of <b>Dynamic_Viewer</b></li>
+  <li>connects to a dynamicRecord</li>
+  <li>monitors the dynamicRecord and passes each monitor event to <b>Dynamic_Viewer</b></li>
+
+</ol>
+
+<h3>P4PgenerateCurve.py and PVAPYgenerateCurve.py</h3>
+<p>
+This is code that:
+</p>
+<ol>
+  <li>calls <b>GenerateCurve</b></li>
+  <li>connects to dynamicRecord</li>
+  <li>Issues puts to dynamicRecord stating with a single x,y point, adding a new points, etc.
+    This continues until all points have been sent</li>
+</ol>
+<p>
+The code than terminates.
+</p>
+
+
 </div>
 </body>
 </html>
