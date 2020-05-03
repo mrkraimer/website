@@ -33,7 +33,7 @@
 
 <div class="head">
 <h1>Python with PVRecords</h1>
-<h2 class="nocount">2020.04.30</h2>
+<h2 class="nocount">2020.05.01</h2>
 <dl>
   <dt>Author:</dt>
     <dd>Marty Kraimer</dd>
@@ -54,7 +54,6 @@ href="../../LICENSE">open source license
 
 </div>
 
-
 <div id="toc">
 
 <h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
@@ -63,6 +62,7 @@ href="../../LICENSE">open source license
 <div id="contents" class="contents">
 
 <h2>Introduction</h2>
+
 <p>
 This describes two Python examples that use pvDatabase records. 
 </p>
@@ -84,6 +84,7 @@ The database used by the examples is also described:
 href="database.html">database
 </a>
 </p>
+
 
 <h2>Installation</h2>
 
@@ -266,7 +267,31 @@ self.viewerCallback(arg)
 <p>
 This is a call to a method in the PyQt viewer.
 </p>
-<h2>Rapid Callbacks to PyQt application</h2>
+
+<p>The monitor callback code is similar but note the code.
+</p>
+<pre>
+    def pvapymonitorcallback(self,arg) :
+        data = DynamicRecordData()
+        data.name = arg['name']
+        data.x = np.copy(arg['x'])
+        data.y = np.copy(arg['y'])
+        data.xmin = arg['xmin']
+        data.xmax = arg['xmax']
+        data.ymin = arg['ymin']
+        data.ymax = arg['ymax']
+        if not self.monitordata:
+            self.monitordata = data
+            self.callbackDoneEvent.clear()
+            self.monitorCallbacksignal.emit()
+        else:
+            self.monitordata = data
+</pre>
+<p>This code does not delay the callback thread while waiting for an image to be displayed.
+Instead it makes sure that the data for the latest callback will be displayed,
+but is willing to ignore monitor callbacks if it can not keep up.
+</p>
+<h2>Rapid Callbacks to a PyQt application</h2>
 <p>If a PyQt application is receiving rapid callbacks that result
 in updating widgets, the client might not see the widget update immediately.
 Calling:
