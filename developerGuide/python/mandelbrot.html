@@ -36,7 +36,7 @@
 <div class="head">
 <h1>mandelbrot</h1>
 
-<h2 class="nocount">2020.04.29</h2>
+<h2 class="nocount">2020.05.12</h2>
 <dl>
   <dt>Author:</dt>
     <dd>Marty Kraimer</dd>
@@ -61,7 +61,20 @@ href="../../LICENSE">open source license
 
 
 <h2>Introduction</h2>
-<p>This document describes a Python Image Viewer that issues channelPutGet requests to a
+<p>See
+<a href="index.html">index</a>
+For installation instructions.
+After installation you are ready the run the example.
+</p>
+<p>
+To start this exmple go to testPython/mandelbrot and execute:
+</p>
+<pre>
+python DisplayImagePVAPY.py
+</pre>
+
+
+<p>This example is a Python Image Viewer that issues channelPutGet requests to a
 PVRecord that creates a  mandelbrot image.
 </p>
 <p>See:
@@ -77,14 +90,7 @@ When start is clicked the following appears:
 </p>
 <img src="mandelbrotImage.png"  alt="" />
 
-<p>See
-<a href="index.html">index</a>
-For installation instructions.
-</p>
-<p>
-After installation you are ready the run the example,
-which is located in directory <b>testPython/mandelbrot</b>
-</p>
+
 
 
 <h2>mandelbrot</h2>
@@ -93,10 +99,7 @@ which is located in directory <b>testPython/mandelbrot</b>
 <dl>
    <dt>DisplayImagePVAPY.py</dt>
       <dd>
-       This normally started first as follows:
-<pre>
-python DisplayImagePVAPY.py
-</pre>
+       This is the version that You will normally want to start.
        This is the version that communicates with record <b>TPYmandelbrotRecord</b>
        in the database.
       </dd>

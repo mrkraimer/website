@@ -36,7 +36,7 @@
 <div class="head">
 <h1>plot2dcurve</h1>
 
-<h2 class="nocount">2020.05.06</h2>
+<h2 class="nocount">2020.05.12</h2>
 <dl>
   <dt>Author:</dt>
     <dd>Marty Kraimer</dd>
@@ -64,6 +64,21 @@ href="../../LICENSE">open source license
 <p>This document describes a Python Image Viewer that monitors data from a PVRecord.
 Other python clients create 2d curves and issue channelPuts to the PVRecord 
 </p>
+<p>See
+<a href="index.html">index</a>
+For installation instructions.
+</p>
+<p>
+After installation you are ready the run the example,
+which is located in directory <b>testPython/plot2dcurve</b>
+</p>
+<p>Run the following:
+</p>
+<pre>
+python PVAPYaddDynamicRecord.py
+python PVAPYgenerateCurve.py circle
+python PVAPY_Dynamic_Viewer.py
+</pre>
 <p>
 When the viewer is started the following appears:
 </p>
@@ -73,16 +88,8 @@ When start is clicked the following appears:
 </p>
 <img src="plot2dcurveImage.png" alt=""  />
 
-<p>See
-<a href="index.html">index</a>
-For installation instructions.
-</p>
-<p>
-After installation you are ready the run the example,
-which is located in directory <b>testPython/mandelbrot</b>
-</p>
 
-<h2>plot2dcurves</h2>
+<h2>plot2dcurve</h2>
 <h3>Python code</h3>
 <p>Go to testPython/plot2dcurve and you will see the following files:</p>
 <dl>
@@ -144,7 +151,7 @@ mrk>
 Generates a circle.
 You should now see the folllowing image:
 </p>
-<img src="circleImage.png"  alt="" />
+<img src="plot2dcurveImage.png"  alt="" />
 <p>
 If you look at the image while PVAPYgenerateCurve is running you
 will see the curve being dynamically created.
@@ -163,7 +170,6 @@ This has the following:
     def getAddRecordName() 
     class DynamicRecordData(object)
         def computeLimits(self)
-    class Dynamic_Channel_Provider(object)
 </pre>
 <dl>
    <dt>getDynamicRecordName</dt>
@@ -185,11 +191,6 @@ This has the following:
      name is a string, x and y are double array,all other fields have type double.
      <b>computeLimits</b> computes xmin,xmax,ymin,and ymax.
    </dd>
-   <dt>Dynamic_Channel_Provider</dt>
-   <dd>
-     This describes methods that <b>P4P_Dynamic_Viewer</b> 
-     and <b>PVAPY_Dynamic_Viewer</b> must implement.
-   </dd>
 </dl>
     
 
@@ -197,7 +198,6 @@ This has the following:
 <p>
 This is the code that generates the x and y arrays for an image.
 It is called by <b>P4PgenerateCurve</b> and <b>PVAPYgenerateCurve</b>.
-It can also be called directly by python.
 In order to generate a curve, it requires an argument that is the name of the curve.
 Note that some of the code allows additional arguments.
 Look at the code for details.
