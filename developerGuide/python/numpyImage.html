@@ -36,7 +36,7 @@
 <div class="head">
 <h1>numpyImage</h1>
 
-<h2 class="nocount">2020.05.12</h2>
+<h2 class="nocount">2020.06.03</h2>
 <dl>
   <dt>Author:</dt>
     <dd>Marty Kraimer</dd>
@@ -46,9 +46,11 @@
      </dd>
 </dl>
 
-<p>This product is available via an <a
+<p>This product is available via an
+<a
 href="../../LICENSE">open source license
-</a></p>
+</a>
+</p>
 
 </div>
 
@@ -69,7 +71,7 @@ href="../../LICENSE">open source license
 class NumpyImage(QWidget) :
     def __init__(self,windowTitle='no title',flipy=True):
 ...
-    def display(self,pixarray) :
+    def display(self,pixarray,Format=str('') :
 ...
     def clientReleaseEvent(self,clientCallback) :
 </pre>
@@ -82,7 +84,7 @@ where
      Note that a client is expected to have y increase from bottom to top,
      but QImage has height increase from top to bottom.
      </dd>
-   <dt>display(self,pixarray)</dt>
+   <dt>display(self,pixarray,Format=str('')</dt>
      <dd>
      This is called by the client to display an image.
      The first call returns immediately.
@@ -104,17 +106,38 @@ where
 The code starts with:
 </p>
 <pre>
-def toQImage(image):
+class ImageToQImage() :
+    def __init__(self):
 ...
+    def toQImage(self,image,Format = str('')) :
 </pre>
+<dl>
+  <dt>image</dt>
+  <dd>
+     <b>image</b> is an numpy array.
+  </dd>
+  <dt>Format</dt>
+  <dd>
+  Look for Format in
+  <a
+  href="https://doc.qt.io/qt-5/qimage.html">QImage
+  </a>
+  <br />
+  An example is:
+  <pre>
+  Format=QImage::Format_ARGB32
+  </pre>
+  </dd>
+</dl>
 <p>
-<b>image</b> is an numpy array.
 It returns a QImage.
 Currently it has the following limitations:
 </p>
 <ol>
-  <li>Each element of the array must have dtype uint8 or int8.
-  In the future 16, 32, and 64 bit integers will also be supported.
+  <li>If Format is specified then any <b>QImage::Format_*</b> can be specified.
+  The following only are used if Format is not specified.
+  </li>
+  <li>Each element of the array must have dtype uint8 or uint16.
   </li>
   <li>The array must be either 2d or 3d.</li>
   <li>The data for the first two dimension should be an (x,y) array.
@@ -132,8 +155,10 @@ Currently it has the following limitations:
     If the client wants present (x,y) so that y increases from top to bottom it can change the default. 
   </li>
   <li>If 2d then the image will be a gray scale image.</li>
-  <li>If 3d the shape of the third dimension must be 3 or 4.
-      The third dimension is color.</li>
+  <li>A 3d array is only supported for uint8. The shape of the third dimension must be 3 or 4.
+      The third dimension is color and is either <b>QImage.Format_RGB888</b>
+      or <b>QImage.Format_RGBA8888</b>
+  </li>
 </ol> 
 
 <p>The next code is:</p>
