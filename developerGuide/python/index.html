@@ -32,16 +32,11 @@
 <body>
 
 <div class="head">
-<h1>Python with PVRecords</h1>
-<h2 class="nocount">2020.06.10</h2>
+<h1>testPython</h1>
+<h2 class="nocount">2020.06.20</h2>
 <dl>
   <dt>Author:</dt>
     <dd>Marty Kraimer</dd>
-  <dt>Contributors</dt>
-     <dd>Sinisa Veseli
-       <br /> provided help with pvapy.
-       He also added support for connection changes.
-     </dd>
   <dt>WARNING</dt>
      <dd>
       This is a work in progress.
@@ -91,12 +86,39 @@ href="numpyImage.html">numpyImage
 </a>
 </p>
 <p>
-The database used by the examples is also described:
+The database used by the examples is:
 <a
 href="database.html">database
 </a>
 </p>
 
+<h2>Goals</h2>
+<p>The examples are designed with the following goals:
+</p
+<dl>
+   <dt>numpyImage</dt>
+   <dd>
+   Given a numpy array this code creates and displays a QImage.
+   </dd>
+   <dt>database</dt>
+   <dd>
+   This provides example PVRecords that are used by Python clients.
+   Each PVRecord performs calculations for the Python client.
+   Thus Python can have much better performance by unloading computations to the PVRecord.
+   </dd>
+</dl>
+<p>
+<b>numpy</b> documentation is available at:
+<a
+href="https://www.scipy.org">scipy
+</a>
+</p>
+<p>
+<b>QImage</b> documentation is available at:
+<a
+href="https://doc.qt.io/qt-5/qimage.html">QImage
+</a>
+</p>
 
 <h2>Installation</h2>
 
@@ -125,8 +147,8 @@ cd testPython/database
 cp  ExampleRELEASE.local RELEASE.local
 EDIT RELEASE.local SEE BELOW
 make
-cd iocBoot/mandelbrotDatabase
-../../bin/linux-x86_64/mandelbrotDatabase st.cmd 
+cd iocBoot/testPython
+../../bin/linux-x86_64/testPython st.cmd 
 </pre>
 <p>You are now ready to run the examples</p>
 <p><b>RELEASE.local</b> must be changed so that 

@@ -34,9 +34,9 @@
 <body>
 
 <div class="head">
-<h1>numpyImage</h1>
+<h1>testPython/numpyImage</h1>
 
-<h2 class="nocount">2020.06.03</h2>
+<h2 class="nocount">2020.06.20</h2>
 <dl>
   <dt>Author:</dt>
     <dd>Marty Kraimer</dd>
@@ -64,42 +64,76 @@ href="../../LICENSE">open source license
 
 <h2>Introduction</h2>
 <p>This document describes a Python class that displays an image generated from a numpy array.
+It uses <b>PyQt5.QtGui.QImage</b> to display the image.
+It is designed to support all the <b>Format</b> options of Qimage.
+</p>
+<p>
+<b>NOTE:</b> testPython only tests a small subset of the Format options.
+</p>
+<p>
+<b>QImage</b> documentation is available at:
+<a
+href="https://doc.qt.io/qt-5/qimage.html">QImage
+</a>
 </p>
 <p>The interface that a client sees is:
 </p>
 <pre>
 class NumpyImage(QWidget) :
-    def __init__(self,windowTitle='no title',flipy=True):
+    def __init__(self,windowTitle='no title',flipy=True,maxsize=800)
 ...
-    def display(self,pixarray,Format=str('') :
+    def display(self,pixarray,Format=0,colorTable=None)
 ...
-    def clientReleaseEvent(self,clientCallback) :
+    def setZoomCallback(self,clientCallback,clientZoom=False)
+...
+    def resetZoom(self)
 </pre>
 where
 <dl>
    <dt>__init__</dt>
      <dd>
-     The client can provide a title for the displayed image
-     and can ask for the order of y to be flipped.
-     Note that a client is expected to have y increase from bottom to top,
-     but QImage has height increase from top to bottom.
+     The client can 1) provide a title for the displayed image,
+     2) can ask for the order of y to be flipped,
+     and 3) can specify the maxsize ( for both height and width) of the displayed images.
+     <br />
+     <br />
+     By default the caller has y increasing from bottom to top.
+     QImage has height increasing from top to bottom.
      </dd>
-   <dt>display(self,pixarray,Format=str('')</dt>
+   <dt>display(self,pixarray,Format=0,colorTable=None)</dt>
      <dd>
      This is called by the client to display an image.
-     The first call returns immediately.
+     The client can optionally specify a Format and/or colorTable.
+     <br />
+    The first call returns immediately.
     Further calls will wait until the previous image is displayed.
     It uses a <b>QThread</b> to synchronize with PyQt5 code that displays the QImage.
+    
      </dd>
-   <dt>clientReleaseEvent(self,clientCallback)</dt>
+   <dt>setZoomCallback(self,clientCallback,clientZoom=False)</dt>
      <dd>
       This is provided so that that client can select, via the mouse, a subimage from
        the image currently displayed.
        When the mouse is pressed in the image, dragged to a new position,
-       and then realesed, the client callback will be called.
+       and then released, the client callback will be called.
+       If clientZoom is True then when the mouse is released, the client is called as follows:
+<pre>
+self.clientZoomCallback((xsize,ysize),(xmin,xmax,ymin,ymax))
+</pre>
+       and the client is responsible for determining
+       if future calls to <b>display</b> display a zoomed image.
+       <br />
+       <br />
+       If clientZoom is False then the client is called as follows:
+<pre>
+self.clientZoomCallback(xmin,xmax,ymin,ymax)
+</pre>
+      and future calls to <b>display</b> display the zoomed image.
      </dd>
+     <dt>resetZoom</dt>
+        <dd>Future calls to <b>display</b> display the full image.</dd>
 </dl>
-<h2>NumpyImage Brief Overview</h2>
+<h2>Brief Overview of NumpyImage</h2>
 <p>While reading this section please look at the code: <b>testPython/numpyImage/numpyImage.py</b>
 </p>
 <p>
@@ -109,12 +143,12 @@ The code starts with:
 class ImageToQImage() :
     def __init__(self):
 ...
-    def toQImage(self,image,Format = str('')) :
+    def toQImage(self,image,Format=0,colorTable=None)) :
 </pre>
 <dl>
   <dt>image</dt>
   <dd>
-     <b>image</b> is an numpy array.
+     <b>image</b> is a numpy array.
   </dd>
   <dt>Format</dt>
   <dd>
@@ -124,9 +158,21 @@ class ImageToQImage() :
   </a>
   <br />
   An example is:
-  <pre>
-  Format=QImage::Format_ARGB32
-  </pre>
+<pre>
+self.imageDisplay.display(image,Format=QImage.Format_Grayscale8)
+</pre>
+  </dd>
+  <dt>colorTable</dt>
+  <dd>
+    If the client specifies a format that requires a colorTable then
+    the client must also provide the colorTable.
+    <br />
+    An example is:
+<pre>
+color_table = [qRgb(i, i, i) for i in range(256)]
+self.imageDisplay.display(image,\
+    Format=QImage.Format_Indexed8,colorTable=self.rgbTable)
+</pre>
   </dd>
 </dl>
 <p>
@@ -135,7 +181,9 @@ Currently it has the following limitations:
 </p>
 <ol>
   <li>If Format is specified then any <b>QImage::Format_*</b> can be specified.
-  The following only are used if Format is not specified.
+  <br />
+  <br />
+  The following are used if Format is not specified.
   </li>
   <li>Each element of the array must have dtype uint8 or uint16.
   </li>
@@ -174,23 +222,11 @@ image to be generated by another thread and returns.
 Thus an unlimited number of images could be in progress at the same time.
 The worker thread makes sure that only one image at a time is being generated.
 </p>
-<p>
-The code the client sees is:
-</p>
-<pre>
-class NumpyImage(QWidget) :
-...
-    def display(self,pixarray) :
-...
-    def clientReleaseEvent(self,clientCallback) :
-...
-</pre>
-
 <h2>PyQt with PVAPY or P4P</h2>
 
 <h3>Introduction</h3>
 <p>
-Both of the example Python applications use PyQt for the viewer windows.
+The example Python applications use PyQt for the viewer windows.
 The viewer is always started via:
 </p>
 <pre>
@@ -219,7 +255,7 @@ The rules for accessing data are:
 <p>The only serious compications is callbacks from a Server.
 The client code must make sure that all PyQt5 objects are manipulated
 via the QApplication thread.
-Lets look at some of the code in 
+Lets look at some of the code in <b>testPython/qtimge/PVAPY_Qt_Viewer.py</b>.
 </p>
 <pre>
 class PVAPYProvider(QObject) :
@@ -228,74 +264,41 @@ class PVAPYProvider(QObject) :
     def __init__(self):
         QObject.__init__(self)
 ...
-        self.init()
-    def init(self) :
-        self.connectCallbacksignal.connect(self.viewerconnectionCallback)
-        self.monitorCallbacksignal.connect(self.viewermonitorCallback)
+        self.connectCallbacksignal.connect(self.connectionCallback)
+        self.monitorCallbacksignal.connect(self.monitorCallback)
         self.callbackDoneEvent = Event()
-        self.callbackDoneEvent.set()
-        self.channel = Channel(getDynamicRecordName())
-        self.channel.setConnectionCallback(self.pvapyconnectioncallback)
+        self.callbackDoneEvent.clear()
 
     def start(self) : 
+        if self.firstStart :
+             self.channel = Channel(self.channelName)
+             self.firstStart = False
+             self.channel.setConnectionCallback(self.pvapyconnectioncallback)
+        self.channel.monitor(self.pvapymonitorcallback\
 ...
-        self.channel.monitor(self.pvapymonitorcallback,'field()')
-...
+
     def viewerCallback(self,arg) :
         self.viewer.callback(arg)
 
     def pvapyconnectioncallback(self,arg) :
-        if self.firstStart :
-            self.isConnected = arg
-            return
-        data = dict()
-        if arg==True :
-            data["status"] = "connected"
-        elif arg==False :
-            data["status"] = "disconnected"
-        else :
-            data["exception"] = "bad pvapy connection callback =" + str(arg)
-        self.connectdata = data
-        self.callbackDoneEvent.clear()
+        ...
         self.connectCallbacksignal.emit()
+        self.callbackDoneEvent.wait()
+        self.callbackDoneEvent.clear()
 
-    def viewerconnectionCallback(self) :
-        while self.connectdata is not None:
-            try:
-                arg = self.connectdata
-                self.connectdata = None
-                self.viewerCallback(arg)
-            except Exception as error:
-                arg["exception"] = repr(error)
-                self.viewerCallback(arg)
+    def connectionCallback(self) :
+        ...
         self.callbackDoneEvent.set()
+        ...
 
     def pvapymonitorcallback(self,arg) :
-        data = DynamicRecordData()
-        data.name = arg['name']
-        data.x = np.copy(arg['x'])
-        data.y = np.copy(arg['y'])
-        data.xmin = arg['xmin']
-        data.xmax = arg['xmax']
-        data.ymin = arg['ymin']
-        data.ymax = arg['ymax']
-        if not self.monitordata:
-            self.monitordata = data
-            self.callbackDoneEvent.clear()
-            self.monitorCallbacksignal.emit()
-        else:
-            self.monitordata = data
+       ...
+           self.monitorCallbacksignal.emit()
+           self.callbackDoneEvent.wait()
+           self.callbackDoneEvent.clear()
 
-    def viewermonitorCallback(self) :
-        while self.monitordata is not None:
-            try:
-                arg = dict()
-                arg['value'] = self.monitordata
-                self.monitordata = None
-                self.viewerCallback(arg)
-            except Exception as error:
-                arg["exception"] = repr(error)
-                self.viewerCallback(arg)
+    def monitorCallback(self) :
+        ...
         self.callbackDoneEvent.set()
 
 if __name__ == '__main__':
@@ -305,54 +308,51 @@ if __name__ == '__main__':
 In init the  client calls:
 </p>
 <pre>
-self.connectCallbacksignal.connect(self.viewerconnectionCallback)
+self.connectCallbacksignal.connect(self.connectionCallback)
 self.callbackDoneEvent = Event()
 self.callbackDoneEvent.set()
-self.channel = Channel(getDynamicRecordName())
-self.channel.setConnectionCallback(self.pvapyconnectioncallback)
 </pre>
 <p>
 Whenever the channel connection changes state pvapyconnectioncallback is called.
 It executes the statements:
 </p>
 <pre>
-self.connectdata = data
-self.callbackDoneEvent.clear()
+...
 self.connectCallbacksignal.emit()
+self.callbackDoneEvent.wait()
+self.callbackDoneEvent.clear()
 </pre>
-<p>The last two statements causes viewerconnectionCallback
+<p>The emit causes connectionCallback
 to be called via the QApplication thread.
-viewerconnectionCallback calls:
+When connectionCallback executes:
 </p>
 <pre>
-self.viewerCallback(arg)
+self.callbackDoneEvent.set()
 </pre>
-<p>
-This is a call to a method in the PyQt viewer.
-</p>
+The wait statement retuns
 
 <p>The monitor callback code is similar but note the code.
 </p>
 <pre>
     def pvapymonitorcallback(self,arg) :
-        data = DynamicRecordData()
-        data.name = arg['name']
-        data.x = np.copy(arg['x'])
-        data.y = np.copy(arg['y'])
-        data.xmin = arg['xmin']
-        data.xmax = arg['xmax']
-        data.ymin = arg['ymin']
-        data.ymax = arg['ymax']
-        if not self.monitordata:
+        if self.monitordata==None:
+            data = {\
+                "format" : arg['argument.format'],\
+                "height": arg['argument.height'],\
+                "width": arg['argument.width'],\
+                "value": arg['result.value']\
+            }
             self.monitordata = data
-            self.callbackDoneEvent.clear()
             self.monitorCallbacksignal.emit()
+            self.callbackDoneEvent.wait()
+            self.callbackDoneEvent.clear()
         else:
             self.monitordata = data
 </pre>
-<p>This code does not delay the callback thread while waiting for an image to be displayed.
-Instead it makes sure that the data for the latest callback will be displayed,
-but is willing to ignore monitor callbacks if it can not keep up.
+<p>This code delays the callback thread while waiting for an image to be displayed.
+</p>
+<p>
+<b>Question</b> Should the wait statement be removed?
 </p>
 <h2>Rapid Callbacks to a PyQt application</h2>
 <p>If a PyQt application is receiving rapid callbacks that result

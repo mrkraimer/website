@@ -36,13 +36,13 @@
 <div class="head">
 <h1>qtimage</h1>
 
-<h2 class="nocount">2020.06.10</h2>
+<h2 class="nocount">2020.06.20</h2>
 <dl>
   <dt>Author:</dt>
     <dd>Marty Kraimer</dd>
   <dt>WARNING</dt>
      <dd>
-      THIS IS JUST THE START
+      This is a work in progress
      </dd>
 </dl>
 
@@ -65,7 +65,125 @@ href="../../LICENSE">open source license
 This document describes a Python Image Viewer that monitors data from a PVRecord.
 It uses the <b>Format</b> options from QImage.
 </p>
+<p>See
+<a href="index.html">index</a>
+For installation instructions.
+</p>
+<p>
+After installation you are ready the run the example,
+which is located in directory <b>testPython/qtimage</b>
+</p>
+<p>Run the following:
+</p>
+<pre>
+python PVAPY_Qt_Viewer.py &amp;
+python PVAPYchangePeak.py
+</pre>
+<p>
+When the viewer is started the following appears:
+</p>
+<img src="qtimageViewer.png"  alt=""  />
+<p>
+When start is clicked the following appears:
+</p>
+<img src="qtImage.png" alt=""  />
 
+<h2>Additional features</h2>
+<p>Each time the folllowing is executed:
+</p>
+<pre>
+python PVAPYchangePeak.py
+</pre>
+The white square on the image moves from bottom left to upper right
+and changes intensity as it moves.
+<p>
+Next change the <b>Format</b> as follows:
+</p>
+<ol>
+   <li>press stop</li>
+   <li>press setFormat</li>
+   <li>Select one of the formats</li>
+   <li>press start</li>
+</ol>
+
+<p>The image will be displayed via the selected format.
+</p>
+<p>The viewer also can be used record <b>TPYqt2dimageRecord</b>
+Do the following:
+</p>
+<ol>
+   <li>press stop</li>
+   <li>change the cnannelName to <b>TPYqt2dimageRecord</b></li>
+   <li>press start</li>
+   <li>Do the following:
+<pre>
+cd ../plot2dcurve
+source exportTPYqtimageRecord
+python PVAPYgenerateCurve.py circle
+</pre>
+   </li>
+</ol>
+<p>
+When start is clicked the following appears:
+</p>
+<img src="qtimage2dline.png" alt=""  />
+<h2>Python code</h2>
+
+<h3>qtpeakimageRecord.cpp</h3>
+<p>Record <b>TPYqtpeakimageRecord</b>  has the following fields:
+</p>
+<pre>
+    structure
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+        structure peak
+            double x
+            double xwidth
+            double y
+            double ywidth
+            double intensity
+        structure argument
+            structure format
+                int index
+                string[] choices
+            int height
+            int width
+        structure result
+            union value
+                ubyte[] uint8
+                ushort[] uint16
+                uint[] uint32
+</pre>
+The initial value of field argument is:
+<pre>
+    structure argument
+        structure format
+            int index 0
+            string[] choices ["Grayscale8", "Indexed8", "RGB888", "Grayscale16"]
+        int height 800
+        int width 800
+
+</pre>
+<h3>PVAPY_Qt_Viewer.py</h3>
+<p>Qt_Viewer acceses the fields argument and result.
+When <b>start</b> is clicked it creates a monitor.
+Each time a monitor callback occurs <b>numpyImage</b> is called to display an image.
+</p>
+<p>When <b>setFormat</b> is clicked and a choice made a put is issued to field <b>argument.format.index</b>
+This sets the format used when the record is processd.
+</p>
+<p>Note that record <b>TPYqt2dimageRecord</b> has identical <b>argument</b> and <b>result</b> fields.
+But instead of <b>peak</b> it has the fields required by <b>testPython/plot2dcurve/GenerateCurve</b>
+Thus QtViewer can also be used for this record.
+</p>
+<h3>PVAPYchangePeak.py</h3>
+<p>
+This does multiple puts to the record changing the fields peak.x, peak.y, and peak.intensity
+on each put.
+This is what makes the peak move from lower left to upper right.
+</p>
 </div>
 </body>
 </html>

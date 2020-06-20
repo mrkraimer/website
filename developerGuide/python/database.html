@@ -34,9 +34,9 @@
 <body>
 
 <div class="head">
-<h1>database</h1>
+<h1>testPython/database</h1>
 
-<h2 class="nocount">2020.04.29</h2>
+<h2 class="nocount">2020.06.20</h2>
 <dl>
   <dt>Author:</dt>
     <dd>Marty Kraimer</dd>
@@ -61,29 +61,26 @@ href="../../LICENSE">open source license
 
 
 <h2>Introduction</h2>
-<p>This document describes the the IOC database used by <b>mandelbrot</b> and <b>plot2dcurves</b>
+<p>This document describes the IOC database used by the Python examples.
 </p>
 <p>See
 <a href="index.html">index</a>
 For installation instructions.
 </p>
-
-
-<h2>database</h2>
-<h3>Overview</h3>
 <p>
 <b>testPython/database</b>
 creates an IOC database that can have DBRecords for any of the record types
 provided  by EPICS base.
-In addition it has PVRecords required by maldebrot and plot2dcurves.
+In addition it has PVRecords used by the Python code in
+examples qtimage, maldebrot and plot2dcurves.
 </p>
 <p>
 When the database is started as follows:
 </p>
 <pre>
 mrk> pwd
-/home/epics7/testPython/database/iocBoot/mandelbrotDatabase
-mrk> ../../bin/linux-x86_64/mandelbrotDatabase st.cmd 
+/home/epics7/testPython/database/iocBoot/testPython
+mrk> ../../bin/linux-x86_64/testPython st.cmd 
 </pre>
 <p>
 It has the following records:
@@ -94,40 +91,21 @@ TPYcounter01
 epics> pvdbl
 TPYaddRecord
 TPYmandelbrotRecord
+TPYqt2dimageRecord
+TPYqtpeakimageRecord
 TPYremoveRecord
 TPYtraceRecord
 epics> 
 </pre>
+<h2>Description of Build environmant</h2>
 <p>
-<b>testPython/database</b>
-is designed for two purposes:
+When make is executed in <b>testPython/database</b>,
+An IOC database is created that contains the records shown above.
+In addition this can be used as a model for creating other IOC databases that has a combination of DBRecords and PVRecords.
+It can create DBRecords of any type implemented by <b>epics-base</b>
+The following briefly describes the various subdirectorys of database.
 </p>
-<dl>
-   <dt>testPython</dt>
-      <dd>
-       The record TPYmandelbrotRecord is the record that creates maldebrot images.
-       <br />
-       <br />
-       The record TPYaddRecord is used by plot2dcurves to create record named
-       <b>TPY_2dcurve</b>
-      </dd>
-   <dt>example</dt>
-      <dd>
-       This can be a model for creating other IOC databases that has a combination
-       of DBRecords and PVRecords.
-       <br />
-       To use it for another application just recursively copy database to
-       another location and make necessary modifications.
-      </dd>
-</dl>
-
-<h3>Brief description of testPython/database</h3>
-<p>This section describes all the files in database.
-It describes them from the point of view of someone who creates a copy
-in order to create another IOC database.
-</p>
-
-<h4>database</h4>
+<h3>database</h3>
 <dl>
    <dt>RELEASE.local</dt>
       <dd>
@@ -150,12 +128,24 @@ in order to create another IOC database.
        None of these files need any changes.
       </dd>
 </dl>
-
-<h4>database/src</h4>
+<h3>database/src and database/src/pv</h3>
+<p>
+This is where code for special PVRecords are created.
+For each four files are required.
+For example <b>mandelbrotRecord</b>
+has the following files:
+</p>
+<pre>
+Makefile
+pv/mandelbrotRecord.h
+mandelbrotRecord.cpp
+mandelbrotRecordRegister.cpp
+mandelbrotRecordRegister.dbd
+</pre>
 <dl>
    <dt>Makefile</dt>
       <dd>
-       This needs changes.
+       Look at it to see what it does.
       </dd>
    <dt>pv/mandelbrotRecord.h</dt>
       <dd>
@@ -177,55 +167,127 @@ in order to create another IOC database.
       This is the definition that makes the iocshell aware of mandelbrotRecordRegister.
       </dd>
 </dl>
-
-<h4>database/dbSrc</h4>
-<dl>
-   <dt>Makefile</dt>
-      <dd>
-      </dd>
-   <dt>dbCounter.db</dt>
-      <dd>
-      </dd>
-</dl>
-<h4>database/iocSrc</h4>
+<h3>dbSrc</h3>
 <p>
-This is where code for an IOC database is created.
-It is the standard way to build an IOC database.
+This is where DBRecords are configured.
+</p>
+<h3>database/iocSrc</h3>
+<p>This is where the actual IOC code is built.
+Look at Makefile and testPythonInclude.dbd.
+</p>
+<h3>database/iocBoot</h3>
+<p>Just look at the files.
+Anyone who has built IOCs should be familar with the details.
+</p>
+<h2>Brief description of each PVRecord</h2>
+<h3>TPYmandelbrotRecord</h3>
+<p>This has fields:
+</p>
+<pre>
+    structure
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+        structure argument
+            double xmin
+            double xmax
+            double ymin
+            double ymax
+            int width
+            int height
+            int nz
+        structure result
+            ubyte[] value
+</pre>
+<p>
+This is used by <b>testPython/mandelbrot/DisplayImagePVAPY.py</b>
+<br />
+It computes mandelbrot images.
+<br />
+See :
+<a href="https://en.wikipedia.org/wiki/Mandelbrot_set">mandelbrot</a>
+for a description.
 </p>
 
-<dl>
-   <dt>MakeFile</dt>
-      <dd>
-       This needs modification for other databases.
-      </dd>
-   <dt>mandelbrotDatabaseInclude.dbd</dt>
-      <dd>
-      Other than the definition for <b>mandelbrotRecordRegister.dbd</b>
-      this does not need modification.
-      </dd>
-   <dt>mandelbrotDatabaseMain.cpp</dt>
-      <dd>
-      This does not need an change except the name itself.
-      </dd>
-</dl>
-<h4>database/iocBoot</h4>
-<dl>
-   <dt>Makefile</dt>
-      <dd>
-      Change this to add definitions for each subdirectory.
-      </dd>
-</dl>
-<h4>database/iocBoot/mandelbrotDatabase</h4>
-<dl>
-   <dt>Makefile</dt>
-      <dd>
-       Should not need change.
-      </dd>
-   <dt>st.cmd</dt>
-      <dd>
-       This needs changes.
-      </dd>
-</dl>
+<h3>TPYqt2dimageRecord</h3>
+<p>This has fields:
+</p>
+<pre>
+    structure
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+        string name
+        double[] x
+        double[] y
+        double xmin
+        double xmax
+        double ymin
+        double ymax
+        structure argument
+            structure format
+                int index
+                string[] choices
+            int height
+            int width
+        structure result
+            union value
+                ubyte[] uint8
+                ushort[] uint16
+                uint[] uint32
+</pre>
+<p>This is used by <b>testPython/plot2dcurve</b> and can also
+be used by <b>testPython/qtimage</b>.
+</p>
+<p>See
+<a href="plot2dcurve.html">plot2dcurve</a>
+and
+<a href="qtimage.html">qtimage</a>
+For details.
+</p>
+<h3>TPYqtpeakimageRecord</h3>
+<p>This has fields:
+</p>
+<pre>
+    structure
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+        structure peak
+            double x
+            double xwidth
+            double y
+            double ywidth
+            double intensity
+        structure argument
+            structure format
+                int index
+                string[] choices
+            int height
+            int width
+        structure result
+            union value
+                ubyte[] uint8
+                ushort[] uint16
+                uint[] uint32
+
+</pre>
+<p>This is used by <b>testPython/qtimage</b>.
+</p>
+<p>See
+<a href="qtimage.html">qtimage</a>
+For details.
+</p>
+<h3>TPYaddRecord,TPYremoveRecord, and TPYtraceRecord</h3>
+<p>These are implemented by <b>pvDatabaseCPP</b>.
+<br />
+<b>testPython/plot2dcurve</b> uses TPYaddRecord.
+The others are not used in this application
+but may be of interest to other applications.
+</p>
 </div>
 </body>
 </html>
