@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>testPython/PY_NTNDA_Viewer</title>
+  <link rel="stylesheet" type="text/css"
+  href="../../css/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="../../css/epicsv4.css" />
+  <style type="text/css">
+  /*<![CDATA[*/
+     .about { margin-left: 3em; margin-right: 3em; font-size: .83em}
+     table { margin-left: auto; margin-right: auto }
+     .diagram { text-align: center; margin: 2.5em 0 }
+     span.opt { color: grey }
+     span.nterm { font-style:italic }
+     span.term { font-family:courier }
+     span.user { font-family:courier }
+     span.user:before { content:"<" }
+     span.user:after { content:">" }
+     .nonnorm { font-style:italic }
+     p.ed { color: #AA0000 }
+     span.ed { color: #AA0000 }
+     p.ed.priv { display: inline; }
+     span.ed.priv { display: inline; }
+  /*]]>*/</style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="../../css/tocgen.js">
+  </script>
+</head>
+<body>
+
+<div class="head">
+<h1>testPython/PY_NTNDA_Viewer</h1>
+
+<h2 class="nocount">2020.06.22</h2>
+<dl>
+  <dt>Author:</dt>
+    <dd>Marty Kraimer</dd>
+  <dt>WARNING</dt>
+     <dd>
+      This is a work in progress
+     </dd>
+</dl>
+
+<p>This product is available via an <a
+href="../../LICENSE">open source license
+</a></p>
+
+</div>
+
+
+<div id="toc">
+
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+<div id="contents" class="contents">
+
+
+<h2>Introduction</h2>
+<p>
+This document describes an alternative version of the Python Image viewer that comes
+with areaDetector.
+</p>
+<p>See
+<a href="index.html">index</a>
+for installation instructions.
+</p>
+<p>The version that comes with areaDetector is
+<a href="https://github.com/areaDetector/ADViewers/tree/master/Python/PY_NTNDA_Viewer">PVAPY_NTNDA_Viewer</a>
+with documentation at:
+<a href="https://areadetector.github.io/master/ADViewers/PY_NTNDA_Viewer.html">PVAPY_NTNDA_Viewer.html</a>
+</p>
+<p>
+After starting ADSimDetector, as described in the previous link, you are ready the run the example,
+which is located in directory <b>testPython/PY_NTNDA_Viewer</b>
+</p>
+<p>Run the following:
+</p>
+<pre>
+python PVAPY_NTNDA_Viewer.py &amp;
+</pre>
+
+<h2>testPython/NTNDA_Viewer vs ADViewers/NTNDA_Viewer</h2>
+<h3>ADViewers/NTNDA_Viewer</h3>
+<p>
+ADViewer uses <b>pyqtgraph.widgets.RawImageWidget</b>
+</p>
+<p>The following code is used to display an image</p>
+<pre>
+class Image_Display(RawImageWidget,QWidget) :
+    def __init__(self,parent=None, **kargs):
+        RawImageWidget.__init__(self, parent=parent,scaled=True)
+ """ THIS COMMENT IS FROM RawImageWidget
+        Setting scaled=True will cause the entire image to be displayed within the boundaries of the widget.
+        This also greatly reduces the speed at which it will draw frames.
+"""
+...
+    def display(self,image,pixelLevels) :
+        self.setImage(image,levels=pixelLevels)
+"" THIS COMMENT IS FROM RawImageWidget
+        img must be ndarray of shape (x,y), (x,y,3), or (x,y,4).
+        Extra arguments are sent to functions.makeARGB
+"""
+...
+</pre>
+<p>setImage is a method in RawImage Widget that creates a pixarray that can be used to create a QImage.
+Some notes:
+</p>
+<dl>
+   <dt>scaled=True</dt>
+   <dd>
+   This results in a Python loop accessing the entire pixel array.
+   For example for (nx,ny,nz)=(800,800,3) this means 1,920,000 elements
+   </dd>
+   <dt>levels=pixelLevels</dt>
+   <dd>
+   This also results in a Python loop accessing the entire pixel array.
+   </dd>
+   <dt>image dtype</dt>
+   <dd>
+   numpy is used to convert the image to a numpy array with dtype ubyte.
+   Since this is done by numpy it is far more efficent than using a python for loop.
+   But no matter what type the original image has, it is converted to an image with ubyte pixels.
+   </dd>
+   <dt>Threads</dt>
+   <dd>
+   <b>setImage</b> is called via the QApplication thread.
+   The actual image is generated in another thread and by C/C++ code.
+   Thus there could potentially be multiple images being generated simultaneously.
+   But the two python for loops result in the images almost always being generated faster
+   than Python can ask for new images.
+   </dd>
+</dl>
+
+<h3>testPython/NTNDA_Viewer</h3>
+<p>
+ADViewer uses 
+<a href="numpyImage.html">numpyImage</a>
+Some Notes:
+</p>
+<dl>
+   <dt>performance</dt>
+   <dd>
+   There are no Python loops accessing the entire pixel array.
+   </dd>
+   <dt>pixelLevels</dt>
+   <dd>
+   This is not supported.
+   </dd>
+   <dt>image dtype</dt>
+   <dd>
+   If the image dtype is unit8 the image is not modified.
+   If the dtype is uint16 and Color mode is mono the image is not modified.
+   In all other cases numpy converts the image array to have dtype uint8.
+   </dd>
+   <dt>Threads</dt>
+   <dd>
+   The first request to display an image is done without waiting.
+   Further requests wait until the image for the previous request has been displayed. 
+   </dd>
+</dl>
+<h3>areaDetector/ADViewers/ImageJ/EPICS_areaDetector</h3>
+<p>
+Note that ImageJ can handle the following:
+</p>
+<pre>
+8-bit Images that can display 256 gray levels (integers only).
+16-bit Images that can display 65536 gray levels (integers only).
+32-bit Images that can display 4294967296 gray levels (real numbers).
+    In 32-bit images, pixels are described by floating point values and can have any intensity value.
+RGB Color Color Images that can display 256 values in the Red, Green and Blue channel.
+  These are 24-bit color images.
+  RGB color images can also be 32-bit color images (24-bit color images with additional eight bits coding alpha blending values,
+  i.e., transparency).
+</pre>
+<p>
+This seems to be similar to what QImage supports.
+</p>
+</div>
+</body>
+</html>
