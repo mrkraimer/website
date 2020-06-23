@@ -242,18 +242,25 @@ states the following:
 They also have similar codec support.
 </p>
 <h3>ADSimDetector</h3>
-<p>This has data types for signed and unsigned integers of length 6, 16, 32, and 64.
-It also has data type float and double.
-testPython/PY_NTNDA_Viewer appears to work well with all data types if simulation mode is LinearRamp
-When simulation mode is peaks the gain must be set to 255 for int8,
-65535 for int16, and who knows what for other datatypes.
+<p>This has data types for signed and unsigned integers of length 8, 16, 32, and 64.
+It also has data types float and double.
+</p>
+<p>
+When simulation mode is LinearRamp and gain is 1.0,
+testPython/PY_NTNDA_Viewer appears to work well with all data types. 
+</p>
+<p>
+When simulation mode is peaks the gain must be set to 255 for int8 and uint8,
+65535 for int16 and uint16, and who knows what for other datatypes.
 I think this is a problem with similation mode peaks.
 </p>
-<p>ADViewers/PY_NTNDA_Viewer works well only with datatype int8.
+<p>ADViewers/PY_NTNDA_Viewer works well only for int8 and uint8.
 </p>
 <h3>Question</h3>
-<p>Can PY_NTNDA_Viewer and the ImageJ viewer take advantage of additional features of
-QImage and ImageJ?
+<p>Can PY_NTNDA_Viewer take advantage of more features of QImage?
+</p>
+<p>
+Can the ImageJ viewer take advantage of more features of ImageJ?
 </p>
 </div>
 </body>
