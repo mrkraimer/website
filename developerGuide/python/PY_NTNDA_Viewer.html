@@ -36,7 +36,7 @@
 <div class="head">
 <h1>testPython/PY_NTNDA_Viewer</h1>
 
-<h2 class="nocount">2020.06.23</h2>
+<h2 class="nocount">2020.06.26</h2>
 <dl>
   <dt>Author:</dt>
     <dd>Marty Kraimer</dd>
@@ -142,12 +142,14 @@ Some notes:
 <p>
 ADViewer uses 
 <a href="numpyImage.html">numpyImage</a>
+<br />
 Some Notes:
 </p>
 <dl>
    <dt>performance</dt>
    <dd>
    There are no Python loops accessing the entire pixel array.
+   Thus it has much better performance than ADViewers/NTNDA_Viewer.
    </dd>
    <dt>pixelLevels</dt>
    <dd>
@@ -156,8 +158,10 @@ Some Notes:
    <dt>image dtype</dt>
    <dd>
    If the image dtype is unit8 the image is not modified.
-   If the dtype is uint16 and Color mode is mono the image is not modified.
    In all other cases numpy converts the image array to have dtype uint8.
+   <br />
+   <br />
+   <b>NOTE:</b> This seems to work well for ADSimDetector but what about real detectors.
    </dd>
    <dt>Threads</dt>
    <dd>
@@ -245,10 +249,13 @@ They also have similar codec support.
 <p>This has data types for signed and unsigned integers of length 8, 16, 32, and 64.
 It also has data types float and double.
 </p>
+<h4>testPython/PY_NTNDA_Viewer</h4>
 <p>
-When simulation mode is LinearRamp and gain is 1.0,
+When simulation mode is LinearRamp and gain is anything,
 testPython/PY_NTNDA_Viewer appears to work well with all data types. 
+When simulation mode is peaks the gain must be set to 255.
 </p>
+<h4>ADViewers/PY_NTNDA_Viewer</h4>
 <p>
 When simulation mode is peaks the gain must be set to 255 for int8 and uint8,
 65535 for int16 and uint16, and who knows what for other datatypes.
@@ -256,7 +263,7 @@ I think this is a problem with similation mode peaks.
 </p>
 <p>ADViewers/PY_NTNDA_Viewer works well only for int8 and uint8.
 </p>
-<h3>Question</h3>
+<h3>Questions</h3>
 <p>Can PY_NTNDA_Viewer take advantage of more features of QImage?
 </p>
 <p>
