@@ -36,7 +36,7 @@
 <div class="head">
 <h1>testPython/numpyImage</h1>
 
-<h2 class="nocount">2020.06.20</h2>
+<h2 class="nocount">2020.07.02</h2>
 <dl>
   <dt>Author:</dt>
     <dd>Marty Kraimer</dd>
@@ -80,7 +80,7 @@ href="https://doc.qt.io/qt-5/qimage.html">QImage
 </p>
 <pre>
 class NumpyImage(QWidget) :
-    def __init__(self,windowTitle='no title',flipy=True,maxsize=800)
+    def __init__(self,windowTitle='no title',flipy=False,maxsize=800)
 ...
     def display(self,pixarray,Format=0,colorTable=None)
 ...
@@ -97,8 +97,8 @@ where
      and 3) can specify the maxsize ( for both height and width) of the displayed images.
      <br />
      <br />
-     By default the caller has y increasing from bottom to top.
-     QImage has height increasing from top to bottom.
+     By default the caller has y increasing from top to bottom.
+     which matches QImage.
      </dd>
    <dt>display(self,pixarray,Format=0,colorTable=None)</dt>
      <dd>
