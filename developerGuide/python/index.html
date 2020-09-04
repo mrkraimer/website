@@ -33,7 +33,7 @@
 
 <div class="head">
 <h1>testPython</h1>
-<h2 class="nocount">2020.06.22</h2>
+<h2 class="nocount">2020.09.04</h2>
 <dl>
   <dt>Author:</dt>
     <dd>Marty Kraimer</dd>
@@ -88,11 +88,18 @@ href="plot2dcurve.html">plot2dcurve
 </a>
 </p>
 <p>
-Each example uses:
-<a
-href="numpyImage.html">numpyImage
-</a>
+Each example uses <b>numpyImage</b>.
+This has python documentation.
+To see it go to directory <b>testPython/numpyImage</b>
+and then enter:
 </p>
+<pre>
+ipython
+import sys                                                              
+sys.path.append('./numpyImage/')                                        
+from numpyImage import NumpyImage                                       
+help(NumpyImage)                                                        
+</pre>
 <p>
 The database used by the last three examples is:
 <a
