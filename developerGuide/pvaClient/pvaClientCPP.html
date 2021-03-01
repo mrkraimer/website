@@ -1,0 +1,803 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>PvaClient</title>
+  <link rel="stylesheet" type="text/css"
+  href="http://epics-pvdata.sourceforge.net/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="http://epics-pvdata.sourceforge.net/epicsv4.css" />
+  <style type="text/css">
+  /*<![CDATA[*/
+     .about { margin-left: 3em; margin-right: 3em; font-size: .83em}
+     table { margin-left: auto; margin-right: auto }
+     .diagram { text-align: center; margin: 2.5em 0 }
+     span.opt { color: grey }
+     span.nterm { font-style:italic }
+     span.term { font-family:courier }
+     span.user { font-family:courier }
+     span.user:before { content:"<" }
+     span.user:after { content:">" }
+     .nonnorm { font-style:italic }
+     p.ed { color: #AA0000 }
+     span.ed { color: #AA0000 }
+     p.ed.priv { display: inline; }
+     span.ed.priv { display: inline; }
+  /*]]>*/</style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="http://epics-pvdata.sourceforge.net/script/tocgen.js">
+  </script>
+</head>
+<body>
+
+<div class="head">
+<h1>pvaClient</h1>
+<h2 class="nocount">March 2021</h2>
+<dl>
+  <dt>Editors:</dt>
+    <dd>Marty Kraimer</dd>
+</dl>
+<p>This product is available via an <a
+href="../../LICENSE">open source license
+</a></p>
+<p><b>NOTE:</b> This is still a work in progress.</p>
+
+</div>
+
+<div id="toc">
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+
+<div id="contents" class="contents">
+
+<h2>Overview</h2>
+<p>
+This document is the guide for pvaClientCPP, which is one of the components of
+<a href="https://epics-controls.org/resources-and-support/base/epics-7/">
+EPICS-7
+</a>.
+<br/>
+It is intended for developers that want to use pvaClientCPP.
+A guide for developers is available at
+<a
+href="https://mrkraimer.github.io/website/developerGuide/developerGuide.html">
+developerGuide
+</a>
+</p>
+<p>
+pvaClient is a synchronous wrapper for the pvAccess API, which is a callback based API.
+Thus it is easier to use than pvAccess itself.
+In addition pvaClient provides many convenience methods.
+</p>
+<p>Doxgen for pvaClient is located at:
+<a
+href="./html/index.html">doxygen
+</a>.
+</p>
+
+
+<h2>PvaClient</h2>
+<h3>Brief Description</h3>
+<p><b>PvaClient</b> has methods:</p>
+<pre>
+get              get the single instance of PvaClient
+channel          creates a channel and connect. This blocks and can throw an exception.
+createChannel    create a channel without blocking.
+setRequester     set a message requester. Client can optionally call this.
+getRequesterName get the requester name,
+message          generate a message. Any code can call this.
+clearRequester   let pvaClient handle calls to message and getRequesterName
+showCache        show the current channels in the cache
+cacheSize        show the number of channels in the cache
+setDebug         set if debug messages should be generated.
+getDebug         get the current debug status
+</pre>
+<p>
+Class <b>PvaClient</b> is a class that is used by all the other pvaClient classes.
+An application that uses pvaClient must call:</p>
+<pre>
+PvaClientPtr pvaClient = PvaClient::get(providers);
+</pre>
+<p>
+before it uses any other pvaClient classes.
+</p>
+<p>
+This is a singleton method, i. e. only one instance of PvaClient is created.
+</p>
+<p>
+<b>pvaClient</b> must not be deleted until the client no longer wants to use any part
+of pvaClient.
+</p>
+<p>
+<b>providers</b> is a blank separated set of provider names.
+For example:</p>
+<pre>
+PvaClientPtr pvaClient = PvaClient::get("ca pva");
+</pre>
+<p>
+The providers <b>ca</b> and <b>pva</b> are special.
+For each of these a client context is created when the <b>PvaClient</b>
+is constructed and the context destroyed when <b>PvaClient</b> is deleted.
+</p>
+<h3>Requester</h3>
+<p>This is a class defined in <b>pvAccessCPP</b>.
+It's main method is <b>message</b>, which code calls when it wants to  pass messages to the client.
+A client that calls PvaClient::setRequester must implememt this class.
+</p>
+<p>
+It has two methods:
+</p>
+<dl>
+    <dt>getRequesterName</dt>
+      <dd>
+      The client must implement this method.
+      The value is up to the client.
+      </dd>
+    <dt>message</dt>
+      <dd>
+      This is called whenever any message is being generated.
+      If the client does not call PvaClient::setRequester then PvaClient displays the message on stdout.
+      </dd>    
+</dl>
+<h3>Channel Caching</h3>
+<p>
+<b>PvaClient</b> has a method:
+</p>
+<pre>
+PvaClientChannelPtr channel(
+    string const &amp; channelName,
+    string const &amp;providerName = "pva",
+    double timeOut = 5.0);
+</pre>
+<p>
+This method creates a
+<b>PvaClientChannel</b> and then connects to the channel.
+</p>
+<p>
+If a call is successful then multiple calls to the same channelName and providerName
+share the same PvaClientChannel, i. e. the PvaClientChannel is cached.
+</p>
+<p>
+<b>pvaClientChannelGet</b> and <b>pvaClientChannelPut</b> also implement caching.
+</p>
+<p>
+For example consider a client that makes multiple calls like:
+</p>
+<pre>
+double value;
+value =  pva->channel(channelName)->get()->getData()->getDouble();
+...
+value =  pva->channel(channelName)->get()->getData()->getDouble();
+</pre>
+<p>
+Only the first call creates a new PvaClientChannel and a new PvaClientGet.
+The second call reuses the cached PvaClientChannel and PvaClientGet.
+</p>
+<h4>PERFORMANCE NOTE:</h4>
+<p>
+If a client connects to many channels then the
+caching methods can cause poor network performance.
+</p>
+<h3>Non Cached Channels</h3>
+<p>
+<b>PvaClient</b> has a method:
+</p>
+<pre>
+PvaClientChannelPtr createChannel(
+    string const &amp; channelName,
+    string const &amp;providerName = "pva");
+</pre>
+<p>
+This method is just creates a new PvaClientChannel and returns it to the caller.
+The caller must call the PvaClientChannel connect methods.
+</p>
+
+<h2>PvaClientChannel</h2>
+<h3>Brief Description</h3>
+<p><b>PvaClientChannel</b> has methods:</p>
+<pre>
+The following are for connecting to a channel.
+connect      Calls issueConnect and then waitConnect.
+             This blocks and can throw an exception.
+issueConnect Issue a connection request and return.
+waitConnect  Wait until the channel connects.
+             It returns Status, wich shows if channel connects.
+
+The following are for getting data from a channel.
+Except for createGet, all can throw an exception.
+get             Get a PvaChannelGet from the cache or create a PvaChannelGet and connect.
+createGet       Create a PvaChannelGet.
+getDouble       Calls get and then get data as a double.
+getString       Calls get and then get data as a string.
+getDoubleArray  Calls get and then get data as a double array.
+getStringArray  Calls get and then get data as a string array.
+
+The following are for putting data to a channel.
+Except for createPut, all can throw an exception.
+put             Get a PvaChannelPut from the cache or create a PvaChannelPut and connect.
+createPut       Create a PvaChannelPut.
+putDouble       Put a double to the channel.
+putString       Put s string to the channel.
+putDoubleArray  Put an array of doubles to the channel.
+putStringArray  Put an array of strings to the channel.
+
+The following creates a PvaClientPutGet
+createPutGet    Create a PvaChannelPutGet.
+
+The following creates a PvaClientMonitor
+monitor        Create a PvaChannelMonitor. Can throw an exception.
+createMonitor  Create a PvaChannelMonitor.
+
+The following creates a PvaClientProcess
+createProcess  Create a PvaChannelProcess.
+
+The following are for remote procedure calls.
+rpc        creates a PvaClientRPC. Can throw an exception.
+createRPC  creates a PvaClientRPC. 
+
+The following are convience methods
+getChannelName  Get the name of the channel
+getChannel      This is the pvAccces channel
+showCache       Show what is in the channel cache.
+cacheSize       Show the number of channels in the cache.
+
+The following can optionally be called by the client to receive state changes
+setStateChangeRequester Specify the client callback.
+
+The following are methods of pvAccess:ChannelRequester
+getRequesterName    Get the name of the requester.
+message             Generate a message.
+channelCreated      Client should never call this.
+channelStateChange  Client should never call this.
+</pre>
+<p>
+pvaClientChannel is a synchronous wrapper for the pvAccess::Channel API, which is a callback based API.
+Thus it is easier to use than pvAccess::Channel itself.
+</p>
+<p>An instance of <b>PvaClientChannel</b> connects to a single channel.
+An instance can only be created via class <b>PvaClient</b> which has both synchronous methods, which block, and non blocking methods.
+The synchrouous methods block until a connection is made to the channel and throw an exception if a 
+timeout occurs while trying to make a connection.
+The non blocking methods leave connection to the caller.
+</p>
+
+<h3>Connect: Blocking vs Non-Blocking </h3>
+<p><b>PvaClientChannel</b> has methods:</p>
+<dl>
+    <dt>connect</dt>
+       <dd>
+        This calls issueConnect and then waitConnect.
+        If waitConnect fails an exception is thrown.
+        Since waitConnect is a blocking method so is this.
+       </dd>
+    <dt>issueConnect</dt>
+       <dd>
+         This is a request to connect to the channel. This is a non blocking call.
+       </dd>
+    <dt>waitConnect</dt>
+       <dd>
+         This waits for the server to respond to issueConnect.
+         It blocks until the server responds or a timeout occurs.
+       </dd>
+</dl>
+
+<h3>Get and Put Caching</h3>
+<p>
+<b>PvaClientChannel</b> has methods:
+</p>
+<pre>
+PvaClientGetPtr get(std::string const &amp; request);
+PvaClientPutPtr put(std::string const &amp; request);
+</pre>
+<p>
+Each of these caches.
+For example all calls to <b>get</b> with the same <b>request</b> will share the same
+<b>PvaChannelGet</b>
+</p>
+<p>
+For example consider a client that makes multiple calls like:
+</p>
+<pre>
+double value;
+value =  pva->channel(channelName)->get()->getData()->getDouble();
+...
+value =  pva->channel(channelName)->get()->getData()->getDouble();
+</pre>
+<p>
+Only the first call creates a new PvaClientChannel and a new PvaClientGet.
+The second call reuses the cached PvaClientChannel and PvaClientGet.
+</p>
+<h3>PvaClientChannelStateChangeRequester</h3>
+<p>
+<b>PvaClientChannel</b> has method <b>setStateChangeRequester</b>
+<b>PvaClientChannelStateChangeRequester</b> has the single method <b>channelStateChange</b>.
+It is called each time the channel connection status changes.
+</p>
+<p>
+<b>NOTE:</b>
+The implementation must not call a method that blocks waiting for a response from the server.
+It it does the client may be blocked forever.
+</p>
+<p>
+An example of illegal code is:
+</p>
+<pre>
+virtual void channelStateChange(PvaClientChannelPtr const &amp; channel, bool isConnected)
+{
+    if(isConnected&amp;&amp;!pvaClientPut)
+    {
+       pvaClientPut  = pvaClientChannel->createPut(request);
+       pvaClientPut->connect();
+    }
+}
+</pre>
+<p>
+This is illegal because the call to <b>connect</b> blocks.
+</p>
+<p>The following is an example of legal code:
+</p>
+<pre>
+virtual void channelStateChange(PvaClientChannelPtr const &amp; channel, bool isConnected)
+{
+    if(isConnected&amp;&amp;!pvaClientPut)
+    {
+       pvaClientPut  = pvaClientChannel->createPut(request);
+       pvaClientPut->issueConnect();
+    }
+}
+</pre>
+<p>This is legal code because neither <b>createPut</b> or <b>issueConnect</b>
+blocks.
+</p>
+
+<h2>pvaClientData</h2>
+<h3>PvaClientData</h3>
+<p>This is a base class for <b>pvaClientGetData</b>, <b>pvaClientPutData</b>, and <b>pvaClientMonitorData</b>
+</p>
+<p>This class provides methods:</p>
+<pre>
+getStructure          Get the introspection interface.
+getPVStructure        Get the data.
+getChangedBitSet      Get a bitset that shows which fields have changed.
+showChanged           Show the fields that have changed value.
+hasValue              Is the value field a scalar?
+NOTE: The following only apply if hasValue is true.
+isValueScalar         Is the value field a scalar?
+isValueScalarArray    Is the value field a scalar array?
+getValue              Get the value field.
+getScalarValue        Get a scalar value field.
+getArrayValue         Get an array value field.
+getScalarArrayValue   Get a scalar array value field.
+getDouble             Get scalar value field as a double.
+getString             Get value field as a string.
+getDoubleArray        Get value field as a double array.
+getStringArray        Get value field as a string array.
+getAlarm              Get the top level alarm field if it exists.
+getTimeStamp          Get the top level timeStamp field if it exists.
+parse                 Accepts arguments of the form json or field='value',
+                      where value is json syntax.
+streamJSON            Generates JSON output from the current PVStructure,
+                      and displays it on the output stream.
+zeroArrayLength       Sets the length of all array fields to 0.
+
+create                NOT called by client code
+setMessagePrefix      NOT called by client code.
+setData               NOT called by client.
+</pre>
+
+<h3>PvaClientGetData</h3>
+<p>This class provides access to the data returned by the server via <b>PvaChannelGet</b>
+or <b>PvaChannelPutGet</b>.
+Thus the client only gets access to an instance by getting it from <b>PvaChannelGet</b> or <b>PvaChannelPutGet</b>.
+</p>
+<p>
+It provides all the methods from the base class <b>PVaClientData</b> and does not add any methods.
+</p>.
+<h3>PvaClientPutData</h3>
+
+<p>This class provides access to data to send to the server via a <b>PvaChannelPut</b>.
+It is created by <b>PvaChannelPut</b> or <b>PvaChannelPutGet</b>.
+Thus the client only gets access to an instance by getting it from <b>PvaChannelPut</b> or <b>PvaChannelPutGet</b>.
+</p>
+<p>Note also that for all field types except <b>union</b> the <b>BitSet</b> for the data is updated
+by <b>PvaChannelPut</b> or <b>PvaChannelPutGet</b> whenever the client changes a field.
+For a <b>union</b> or <b>unionArray</b> field the client must update the <b>BitSet</b>.
+</p>
+
+<p>
+It provides all the methods from the base class <b>PVaClientData</b>.
+PvaClientPutData provides the additional methods:</p>
+<pre>
+putDouble             Put scalar value field as a double.
+putString             Put value field as a string.
+putDoubleArray        Put value field as a double array.
+putStringArray        Put value field as a string array.
+</pre>
+
+<h3>PvaClientMonitorData</h3>
+
+<p>This class provides access to the data returned by calls to get data via <b>PvaChannelMonitor</b>
+</p>
+<p>
+It provides all the methods from the base class <b>PVaClientData</b>.
+PvaClientMonitorData provides the additional methods:
+</p>
+
+<pre>
+getOverrunBitSet      How many fields have changed more than once since last monitor event.
+showOverrun           Show the fields that have changed more than once since the last monitor event.
+setData               NOT called by client.
+create                NOT called by client
+</pre>
+
+
+<h2>PvaClientGet</h2>
+<h3>Brief Description</h3>
+<p><b>PvaClientGet</b> has methods:</p>
+<pre>
+connect             Calls issueConnect and then waitConnect.
+issueConnect        Issues a request to the server to create the server side of ChannelGet.
+waitConnect         Blocks until server responds that it has created the ChannelGet.
+get                 Calls issueGet and then waitGet.
+issueGet            Issues a get request to the server.
+waitGet             Blocks until the server send a message that the get is complete.
+getData             Get the PvaClientGetData. Should only be called after get or waitGet.
+setRequester        Set a pvaClientGetRequester.
+getPvaClientChannel Get the PvaClientChannel.
+</pre>
+<p>An instance of PvaClientGet is created via a call to one of the following:</p>
+<pre>
+class PvaClientChannel
+...
+{
+...
+    PvaClientGetPtr get(std::string const &amp; request = "field(value,alarm,timeStamp)");
+    PvaClientGetPtr createGet(std::string const &amp; request = "");
+    PvaClientGetPtr createGet(epics::pvData::PVStructurePtr const &amp;  pvRequest);
+...
+};
+</pre>
+
+<h3>PvaClientGetRequester</h3>
+<p>This is a virtual class that can be implemented by a client that uses <b>PvaClientGet</b>.
+It has the methods:</p>
+<pre>
+virtual void channelGetConnect(
+    const Status&amp; status,
+    PvaClientGetPtr const &amp;&amp; clientGet) {}
+virtual void getDone(
+    const Status&amp; status,
+    PvaClientGetPtr const &amp; clientGet) = 0;
+</pre>
+
+<p>The client must call</p>
+<pre>
+pvaClientGet->setRequester(shared_from_this());
+</pre>
+<p>
+after creating an instance of PvaClientGet.
+</p>
+<h2>PvaClientPut</h2>
+<h3>Brief Description</h3>
+<p><b>PvaClientPut</b> has methods:</p>
+<pre>
+connect             Calls issueConnect and then waitConnect.
+issueConnect        Issues a request to the server to create the server side of ChannelPut.
+waitConnect         Blocks until server responds that it has created the ChannelPut.
+get                 Calls issueGet and then waitGet.
+issueGet            Issues a request to the server to get the latest data for a ChannelPut.
+waitGet             Blocks until the server send a message that the get is complete.
+put                 Calls issuePut and then waitPut.
+issuePut            Issues a put request to the server.
+waitPut             Blocks until the server sends a message that the put is complete.
+getData             Get the PvaClientPutData.
+setRequester        Set a pvaClientPutRequester.
+getPvaClientChannel Get the PvaClientChannel.
+</pre>
+
+<p>
+<b>NOTE:</b>
+Except for union fields pvaClientPut takes care of modifying the bitSet associated with
+the data sent to the server.
+</p>
+<p>An instance of PvaClientPut is created via a call to one of the followimg:</p>
+<pre>
+class PvaClientChannel
+...
+{
+...
+    PvaClientPutPtr put(std::string const &amp; request = "field(value,alarm,timeStamp)");
+    PvaClientPutPtr createPut(std::string const &amp; request = "");
+    PvaClientPutPtr createPut(epics::pvData::PVStructurePtr const &amp;  pvRequest);
+...
+};
+</pre>
+
+<h3>PvaClientPutRequester</h3>
+<p>This is a virtual class that can be implemented by a client that uses <b>PvaClientPut</b>.
+It has the methods:</p>
+<pre>
+virtual void channelPutConnect(
+    const Status&amp; status,
+    PvaClientPutPtr const &amp; clientPut) {}
+virtual void getDone(
+    const Status&amp; status,
+    PvaClientPutPtr const &amp; clientPut) {}
+virtual void putDone(
+    const Status&amp; status,
+    PvaClientPutPtr const &amp; clientPut) = 0;
+</pre>
+
+<p>The client must call</p>
+<pre>
+pvaClientPut->setRequester(shared_from_this());
+</pre>
+<p>
+after creating an instance of PvaClientPut.
+</p>
+
+
+<h2>PvaClientMonitor</h2>
+<h3>Brief Description</h3>
+<p><b>PvaClientMonitor</b> has methods:</p>
+<pre>
+connect             Calls issueConnect and then waitConnect.
+issueConnect        Issues a request to the server to create the server side of ChannelMonitor.
+waitConnect         Blocks until server responds that it has created the ChannelMonitor.
+start               Start monitoring.
+stop                Stop monitoring.
+poll                Poll for a monitor event. If return is true, call getData.
+waitEvent           Wait for event.
+releaseEvent        Release the monitorElement returned by poll.
+getData             Get the PvaClientMonitorData.
+setRequester        Set a pvaClientMonitorRequester.
+getPvaClientChannel Get the PvaClientChannel.
+</pre>
+<p>An instance of PvaClientPut is created via a call to one of the followimg:</p>
+<pre>
+class PvaClientChannel
+...
+{
+...
+    PvaClientMonitorPtr monitor(std::string const &amp; request = "field(value,alarm,timeStamp)");
+    PvaClientMonitorPtr monitor(PvaClientMonitorRequesterPtr const &amp; pvaClientMonitorRequester);
+    PvaClientMonitorPtr monitor(
+        std::string const &amp; request,
+        PvaClientMonitorRequesterPtr const &amp; pvaClientMonitorRequester);
+    PvaClientMonitorPtr createMonitor(std::string const &amp; request = "field(value,alarm,timeStamp)");
+    PvaClientMonitorPtr createMonitor(epics::pvData::PVStructurePtr const &amp;  pvRequest);
+...
+};
+</pre>
+<h3>PvaClientMonitorRequester</h3>
+<p>This is a virtual class that can be implemented by a client that uses <b>PvaClientMonitor</b>.
+It has the methods:</p>
+<pre>
+virtual void monitorConnect(epics::pvData::Status const &amp; status,
+        PvaClientMonitorPtr const &amp; monitor,
+        epics::pvData::StructureConstPtr const &amp; structure);
+virtual void event(PvaClientMonitorPtr const &amp; monitor) = 0;
+virtual void unlisten();
+</pre>
+
+<h2>PvaClientProcess</h2>
+
+<h3>Brief Description</h3>
+<p><b>PvaClientProcess</b> has methods:</p>
+<pre>
+connect             Calls issueConnect and then waitConnect.
+issueConnect        Issues a request to the server to create the server side of ChannelProcess.
+waitConnect         Blocks until server responds that it has created the ChannelProcess.
+process             Calls issueProcess and then waitProcess.
+issueProcess        Issues a process request to the server.
+waitProcess         Blocks until the server send a message that the process is complete.
+setRequester        Set a pvaClientProcessRequester.
+getPvaClientChannel Get the PvaClientChannel.
+</pre>
+
+<p>An instance of PvaClientProcess is created via a call to one of the followimg:</p>
+<pre>
+class PvaClientChannel
+...
+{
+...
+    PvaClientProcessPtr createProcess(std::string const &amp; request = "");
+    PvaClientProcessPtr createProcess(epics::pvData::PVStructurePtr const &amp;  pvRequest);
+...
+};
+</pre>
+<h3>PvaClientProcessRequester</h3>
+<p>This is a virtual class that can be implemented by a client that uses <b>PvaClientGet</b>.
+It has the methods:</p>
+<pre>
+virtual void channelProcessConnect(
+        const epics::pvData::Status&amp; status,
+        PvaClientProcessPtr const &amp; clientProcess){}
+virtual void processDone(
+        const epics::pvData::Status&amp; status,
+        PvaClientProcessPtr const &amp; clientProcess) = 0;
+</pre>
+<h2>PvaClientPutGet</h2>
+<h3>Brief Description</h3>
+<p><b>PvaClientPutGet</b> has methods:</p>
+<pre>
+connect             Calls issueConnect and then waitConnect.
+issueConnect        Issues a request to the server to create the server side of ChannelPut.
+waitConnect         Block until server responds that it has created the ChannelPut.
+putGet              Call issuePutGet and then waitPutGet.
+issuePutGet         Issue a putGet and return immediately.
+waitPutGet          Block until putGet completes.
+getGet              Calls issueGetGet and then waitGetGet.
+issueGetGet         Issues a request to the server to get the latest data for the get data.
+waitGetGet          Block until the server send a message that the getGet is complete.
+getPut              Calls issueGetPut and then waitGetPut.
+issueGetPut         Issues a request to the server to get the latest data for the put data.
+waitGetPut          Block until the server send a message that the getPut is complete.
+getPutData          Get PvaClientPutData
+getGetData          Get PvaClientGetData
+</pre>
+
+<p>
+<b>NOTE:</b>
+Except for union fields pvaClientPutGet takes care of modifying the bitSet associated with
+the data sent to the server.
+</p>
+<p>An instance of PvaClientPutGet is created via a call to one of the followimg:</p>
+<pre>
+class PvaClientChannel
+...
+{
+...
+    PvaClientPutGetPtr createPutGet(std::string const &amp; request);
+    PvaClientPutGetPtr createPutGet(epics::pvData::PVStructurePtr const &amp;  pvRequest);
+...
+};
+</pre>
+
+<h3>PvaClientPutGetRequester</h3>
+<p>This is a virtual class that can be implemented by a client that uses <b>PvaClientPut</b>.
+It has the methods:</p>
+<pre>
+virtual void channelPutGetConnect(
+    const Status&amp; status,
+    PvaClientPutGetPtr const &amp; clientPutGet) {}
+virtual void putGetDone(
+    const Status&amp; status,
+    PvaClientPutGetPtr const &amp; clientPutGet) {}
+virtual void getPutDone(
+    const Status&amp; status,
+    PvaClientPutGetPtr const &amp; clientPutGet) = 0;
+virtual void getGetDone(
+    const Status&amp; status,
+    PvaClientPutGetPtr const &amp; clientPutGet) = 0;
+</pre>
+
+<p>The client must call</p>
+<pre>
+pvaClientPutGet->setRequester(shared_from_this());
+</pre>
+<p>
+after creating an instance of PvaClientPutGet.
+</p>
+<h2>PvaClientRPC</h2>
+<h3>Brief Description</h3>
+<p><b>PvaClientRPC</b> has methods:</p>
+<pre>
+create             called by PvaClientChannel::rpc or PvaClientChannel::createRPC
+setResponseTimeout set timeout for waiting for a response
+getResponseTimeout get response timeout
+connect            call issueConnect and then waitConnect. exception if fail to connect        
+issueConnect       issue a connect request
+waitConnect        wait for connection
+request            issue a request
+</pre>
+<p>An instance of PvaClientRPC is created via a call to one of the following:</p>
+<pre>
+class PvaClientChannel
+...
+{
+...
+    PvaClientRPCPtr createRPC();
+    PvaClientRPCPtr createRPC(epics::pvData::PVStructurePtr const &amp;  pvRequest);
+...
+};
+</pre>
+<h3>PvaClientRPCRequester</h3>
+<p>This is a virtual class that must be implemented by a client that uses <b>PvaClientRPC</b>.
+It has the methods:</p>
+<pre>
+    virtual void requestDone(
+        const epics::pvData::Status&amp; status,
+        PvaClientRPCPtr const &amp; pvaClientRPC,
+        epics::pvData::PVStructure::shared_pointer const &amp; pvResponse)()
+</pre>
+
+<h2>pvaClientMultiChannel</h2>
+<p>
+<b>PvaMultiChannel</b> is a synchronous interface for accessing multiple channels.
+</p>
+ 
+<h3>PvaClientMultiChannel</h3>
+<p><b>PvaClientMultiChannel</b> has methods:</p>
+<pre>
+create                   Create.
+getChannelNames          Get the array of channel names.
+connect                  For each channel, create and issueConnect. Then for each channel waitConnect.
+allConnected             Are all channels connected>
+connectionChange         Is there a connection change since last call to getIsConnected?
+getIsConnected           Get an array of the connection state of each channel.
+getPvaClientChannelArray Get an array of pvaClientChannels.
+getPvaClient             Get the pvaClint.      
+createGet                Create a PvaClientMultiGetDouble.         
+createNTGet              Create a PvaClientNTMultiGet.
+createPut                Create a PvaClientMultiPut.
+createNTPut              Create a PvaClientNTMultiPut.
+createMonitor            Create a PvaClientMultiMonitorDouble.
+createNTMonitor          Create a PvaClientNTMultiMonitor.
+</pre>
+<h3>PvaClientMultiGetDouble</h3>
+<p><b>PvaClientMultiGetDouble</b> has methods:</p>
+<pre>
+create  Normally called by PvaClientMultiChannel.createGet
+connect Create a channelGet for each channel
+get     Get the data as a double array
+</pre>
+<h3>PvaClientNTMultiGet</h3>
+<p><b>PvaClientNTMultiGet</b> has methods:</p>
+<pre>
+create  Normally called by PvaClientMultiChannel.createNTGet
+connect Create a channel get for each channel
+get     Get the data.
+getData get the data as PvaClientNTMultiData
+</pre>
+<h3>PvaClientMultiPutDouble</h3>
+<p><b>PvaClientMultiPutDouble</b> has methods:</p>
+<pre>
+create     Normally called by PvaClientMultiChannel.createPut
+connect    Create a channelPut for each channel.
+put        Put the data via a double array
+</pre>
+<h3>PvaClientNTMultiPut</h3>
+<p><b>PvaClientNTMultiPut</b> has methods:</p>
+<pre>
+create    Normally called by PvaClientMultiChannel.createNTPut
+connect   Create a channelPut for each channel.
+getValues Get a PVUnion array that client uses to specify values for put.
+put       Put the data for each channel
+</pre>
+<h3>PvaClientMultiMonitorDouble</h3>
+<p><b>PvaClientMultiMonitorDouble</b> has methods:</p>
+<pre>
+create    Normally called by PvaClientMultiChannel.createMonitor
+connect   Create a channelMonitor for each channel.
+poll      Issue a poll request. Return (true,false) if new data available.
+waitEvent Wait until poll returns true
+get       Get the data for the last poll as an array of double
+</pre>
+<h3>PvaClientNTMultiMonitor</h3>
+<p><b>PvaClientNTMultiMonitor</b> has methods:</p>
+<pre>
+create                   Normally called by PvaClientMultiChannel.createNTMonitor
+connect   Create a channelMonitor for each channel.
+poll      Issue a poll request. Return (true,false) if new data available.
+waitEvent Wait until poll returns true
+getData   Get the data for the last poll as a PvaClientNTMultiData
+</pre>
+<h3>PvaClientNTMultiData</h3>
+<p><b>PvaClientNTMultiData</b> has methods:</p>
+<pre>
+getNTMultiChannel Get NTMulti 
+create          Called by PvaClientNTMultiGet or PvaClientNTMultiMonitor.
+getNumber       Get the number of channels.
+startDeltaTime  Called by PvaClientNTMultiGet or PvaClientNTMultiMonitor.
+endDeltaTime    Called by PvaClientNTMultiGet or PvaClientNTMultiMonitor.
+getTimeStamp
+</pre>
+
+</div>
+</body>
+</html>
+
