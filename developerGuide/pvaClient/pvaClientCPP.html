@@ -83,17 +83,18 @@ href="./html/index.html">doxygen
 <h3>Brief Description</h3>
 <p><b>PvaClient</b> has methods:</p>
 <pre>
-get              get the single instance of PvaClient
-channel          creates a channel and connect. This blocks and can throw an exception.
-createChannel    create a channel without blocking.
-setRequester     set a message requester. Client can optionally call this.
-getRequesterName get the requester name,
-message          generate a message. Any code can call this.
-clearRequester   let pvaClient handle calls to message and getRequesterName
-showCache        show the current channels in the cache
-cacheSize        show the number of channels in the cache
-setDebug         set if debug messages should be generated.
-getDebug         get the current debug status
+get              Get the single instance of PvaClient.
+channel          Creates a channel and connects.
+                 This blocks and can throw an exception.
+createChannel    Create a channel without blocking.
+setRequester     Set a message requester. Client can optionally call this.
+getRequesterName Get the requester name.
+message          Generate a message. Any code can call this.
+clearRequester   Let pvaClient handle calls to message and getRequesterName.
+showCache        Show the current channels in the cache.
+cacheSize        Show the number of channels in the cache.
+setDebug         Set if debug messages should be generated.
+getDebug         Get the current debug status.
 </pre>
 <p>
 Class <b>PvaClient</b> is a class that is used by all the other pvaClient classes.
@@ -228,15 +229,17 @@ The following creates a PvaClientPutGet
 createPutGet    Create a PvaChannelPutGet.
 
 The following creates a PvaClientMonitor
-monitor        Create a PvaChannelMonitor. Can throw an exception.
+monitor        Create a PvaChannelMonitor.
+               Can throw an exception.
 createMonitor  Create a PvaChannelMonitor.
 
 The following creates a PvaClientProcess
 createProcess  Create a PvaChannelProcess.
 
 The following are for remote procedure calls.
-rpc        creates a PvaClientRPC. Can throw an exception.
-createRPC  creates a PvaClientRPC. 
+rpc             Issues a PvaClientRPC request and returns result.
+                Can throw an exception.
+createRPC       Creates a PvaClientRPC. 
 
 The following are convience methods
 getChannelName  Get the name of the channel
@@ -258,6 +261,7 @@ pvaClientChannel is a synchronous wrapper for the pvAccess::Channel API, which i
 Thus it is easier to use than pvAccess::Channel itself.
 </p>
 <p>An instance of <b>PvaClientChannel</b> connects to a single channel.
+<br />
 An instance can only be created via class <b>PvaClient</b> which has both synchronous methods, which block, and non blocking methods.
 The synchrouous methods block until a connection is made to the channel and throw an exception if a 
 timeout occurs while trying to make a connection.
@@ -725,8 +729,9 @@ It has the methods:</p>
 <pre>
 create                   Create.
 getChannelNames          Get the array of channel names.
-connect                  For each channel, create and issueConnect. Then for each channel waitConnect.
-allConnected             Are all channels connected>
+connect                  For each channel, create and issueConnect.
+                         Then for each channel waitConnect.
+allConnected             Are all channels connected?
 connectionChange         Is there a connection change since last call to getIsConnected?
 getIsConnected           Get an array of the connection state of each channel.
 getPvaClientChannelArray Get an array of pvaClientChannels.
@@ -741,60 +746,51 @@ createNTMonitor          Create a PvaClientNTMultiMonitor.
 <h3>PvaClientMultiGetDouble</h3>
 <p><b>PvaClientMultiGetDouble</b> has methods:</p>
 <pre>
-create  Normally called by PvaClientMultiChannel.createGet
-connect Create a channelGet for each channel
-get     Get the data as a double array
+connect Create a channelGet for each channel.
+get     Get the data as a double array.
 </pre>
 <h3>PvaClientNTMultiGet</h3>
 <p><b>PvaClientNTMultiGet</b> has methods:</p>
 <pre>
-create  Normally called by PvaClientMultiChannel.createNTGet
-connect Create a channel get for each channel
-get     Get the data.
-getData get the data as PvaClientNTMultiData
+connect Connect to each chanel.
+get     Get the data from each channel.
+getData get the data as PvaClientNTMultiData.
 </pre>
 <h3>PvaClientMultiPutDouble</h3>
 <p><b>PvaClientMultiPutDouble</b> has methods:</p>
 <pre>
-create     Normally called by PvaClientMultiChannel.createPut
 connect    Create a channelPut for each channel.
 put        Put the data via a double array
 </pre>
 <h3>PvaClientNTMultiPut</h3>
 <p><b>PvaClientNTMultiPut</b> has methods:</p>
 <pre>
-create    Normally called by PvaClientMultiChannel.createNTPut
 connect   Create a channelPut for each channel.
 getValues Get a PVUnion array that client uses to specify values for put.
-put       Put the data for each channel
+put       Put the data for each channel.
 </pre>
 <h3>PvaClientMultiMonitorDouble</h3>
 <p><b>PvaClientMultiMonitorDouble</b> has methods:</p>
 <pre>
-create    Normally called by PvaClientMultiChannel.createMonitor
 connect   Create a channelMonitor for each channel.
 poll      Issue a poll request. Return (true,false) if new data available.
-waitEvent Wait until poll returns true
-get       Get the data for the last poll as an array of double
+waitEvent Wait until poll returns true.
+get       Get the data for the last poll as an array of double.
 </pre>
 <h3>PvaClientNTMultiMonitor</h3>
 <p><b>PvaClientNTMultiMonitor</b> has methods:</p>
 <pre>
-create                   Normally called by PvaClientMultiChannel.createNTMonitor
 connect   Create a channelMonitor for each channel.
 poll      Issue a poll request. Return (true,false) if new data available.
-waitEvent Wait until poll returns true
-getData   Get the data for the last poll as a PvaClientNTMultiData
+waitEvent Wait until poll returns true.
+getData   Get the data for the last poll as a PvaClientNTMultiData.
 </pre>
 <h3>PvaClientNTMultiData</h3>
 <p><b>PvaClientNTMultiData</b> has methods:</p>
 <pre>
-getNTMultiChannel Get NTMulti 
-create          Called by PvaClientNTMultiGet or PvaClientNTMultiMonitor.
-getNumber       Get the number of channels.
-startDeltaTime  Called by PvaClientNTMultiGet or PvaClientNTMultiMonitor.
-endDeltaTime    Called by PvaClientNTMultiGet or PvaClientNTMultiMonitor.
-getTimeStamp
+getNTMultiChannel Get NTMultiChannel.
+getNumber         Get the number of channels.
+getTimeStamp      Get the timestamp when the last update was made.
 </pre>
 
 </div>
