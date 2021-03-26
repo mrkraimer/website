@@ -36,7 +36,23 @@
 <div class="head">
 <h1>pvDatabase Special Record</h1>
 
-<h2 class="nocount">2019.09.11</h2>
+<h2 class="nocount"></h2>
+<dl>
+  <dt>Original: 2019.09.11</dt>
+   <dd>
+   traceRecord, addRecord, removeRecord, and processRecord were implement.
+   </dd>
+  <dt>Revised: 2021.03.26</dt>
+  <dd>
+  traceRecord, addRecord, removeRecord, and processRecord were replaced by
+  <br/>
+  pvdbcrTraceRecord, pvdbcrAddRecord, pvdbcrRemoveRecord, and pvdbcrProcessRecord.
+  <br/>
+  <br/>
+  pvdbcrScalar, and pvdbcrScalar are new.
+  </dd>
+</dl>
+
 <dl>
   <dt>Editors:</dt>
     <dd>Marty Kraimer</dd>
@@ -56,9 +72,64 @@ href="../../LICENSE">open source license
 
 <h2>Overview</h2>
 <p>PVDatabase implements a number of PVRecords that access other records in the
-same pvDatrabase instance.
-</p> 
-<h2>TraceRecord</h2>
+same pvDatabase instance.
+Record instances can be created via iocshell commands.
+</p>
+<p>In the source file where You build your IOC the appInclude.dbd file must
+include the following:
+</p>
+<pre>
+include "base.dbd"
+include "PVAServerRegister.dbd"
+include "PVAClientRegister.dbd"
+include "registerChannelProviderLocal.dbd"
+include "qsrv.dbd"
+include "pvdbSpecialRegister.dbd"
+#...
+</pre>
+<p>Then in the st.cmd file you can issue help for each of the shell commands
+implemented what is descibed below.
+<br/>
+You can also create PVRecord instances.
+<br/>
+For example:
+</p>
+<pre>
+epics> help pvdbcrScalar
+pvdbcrScalar recordName scalarType asLevel asGroup
+epics> pvdbcrScalar PVRscalarDouble double
+</pre>
+This creates a record:
+<pre>
+pvinfo PVRscalarDouble
+PVRscalarDouble
+Server: 10.0.0.194:5075
+Type:
+    structure
+        double value
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+        alarm_t alarm
+            int severity
+            int status
+            string message
+</pre>
+<h2>pvdbcrScalar and pvdbcrScalarArray</h2>
+<p>Both create a record that has fields <b>value</b>, <b>timeStamp</b>, and <b>alarm</b>.
+</p>
+<p>
+For pvdbcrScalar, the type for the value field is one of the following:
+<br/>
+<b>boolean</b>,<b>byte</b>,<b>short</b>,<b>int</b>,<b>long</b>,
+<b>ubyte</b>,<b>ushort</b>,<b>uint</b>,<b>ulong</b>,
+,<b>float</b>,<b>double</b>, or <b>string</b>.
+</p>
+<p>
+For pvdbcrScalarArray the value field is an scalarArray of one of the above types.
+</p>
+<h2>pvdbcrTraceRecord</h2>
 <p>
 This is a record that sets the trace level in another record in the same pvDatabase.
 </p>
@@ -66,7 +137,7 @@ This is a record that sets the trace level in another record in the same pvDatab
 structure 
     structure argument
         string recordName 
-        int level 0
+        int level
     structure result
         string status 
 </pre>
@@ -86,7 +157,7 @@ where
       </dd>
 </dl>
 
-<h2>AddRecord</h2>
+<h2>pvdbcrAddRecord</h2>
 <p>
 This is a record that adds a record to the same pvDatabase.
 This can only be used to generate "soft" records, i. e. the only process support is that
@@ -118,7 +189,7 @@ where
       </dd>
 </dl>
 
-<h2>RemoveRecord</h2>
+<h2>pvdbcrRemoveRecord</h2>
 <p>
 This is a record that removes another record in the same pvDatabase.
 </p>
@@ -140,7 +211,7 @@ where
        The result of the request.
       </dd>
 </dl>
-<h2>ProcessRecord</h2>
+<h2>pvdbcrProcessRecord</h2>
 <p>
 This is a record that processes other records in the same pvDatabase.
 It keeps a map of all records to process.
@@ -170,26 +241,6 @@ where
       </dd>
 </dl>
 
-<h2>Configuring Special Records</h2>
-<p>In the source file where You build your IOC the appInclude.dbd file must
-have statements like:
-</p>
-<pre>
-include "PVAServerRegister.dbd"
-include "registerChannelProviderLocal.dbd"
-include "qsrv.dbd"
-include "traceRecordRegister.dbd"
-include "addRecordRegister.dbd"
-include "removeRecordRegister.dbd"
-include "processRecordRegister.dbd"
-</pre>
-<p>Then your st.cmd file can have statements like:</p>
-<pre>
-traceRecordCreate PVRsupportTraceRecord
-addRecordCreate PVRsupportAddRecord
-removeRecordCreate PVRsupportRemoveRecord
-processRecordCreate PVRsupportProcessRecord .5  // NOTE .5 second process rate
-</pre>
 </div>
 </body>
 </html>

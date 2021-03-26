@@ -41,7 +41,7 @@
   <dt>Editors:</dt>
     <dd>Marty Kraimer</dd>
 </dl>
-<h2 class="nocount">WORK IN PROGRESS: NOT READY FOR USERS</h2>
+<h2 class="nocount">Work is Progress; Making Progress!!</h2>
 <p>This product is available via an <a
 href="../../LICENSE">open source license
 </a></p>
@@ -59,21 +59,7 @@ href="../../LICENSE">open source license
 This document is the guide for pvDatabaseCPP, which is one of the components of
 <a href="https://epics-controls.org/resources-and-support/base/epics-7/">
 EPICS-7
-</a>.
-<br/>
-It is intended for developers that want to use pvDatabaseCPP.
-</p>
-<p>
-A guide for developers is available at
-<a
-href="https://mrkraimer.github.io/website/developerGuide/developerGuide.html">
-developerGuide
 </a>
-<br/>
-This guide discusses the modules that are part of an EPICS7 release.
-Some understanding of the components and how they are related is necessary in order to
-develop code that uses pvDatabaseCPP.
-In particular read everything related to pvDatabase.
 </p>
 
 <p>Doxgen for pvDatabase is located at:
@@ -83,44 +69,302 @@ href="./html/index.html">doxygen
 </p>
 
 <p><b>pvDatabase</b> is a framework for implementing a network accessible database of smart memory resident
-records. Network access is via pvAccess. The data in each record is a top level PVStructure as defined by
-pvData. The framework includes a complete implementation of ChannelProvider as defined by pvAccess.
-The framework can be extended in order to create record instances that implements services.
-The minimum that an extension must provide is a top level PVStructure and a process method.
-</p>
-
-
-<p>pvDatabase has plugin support, which is implemented in <b>pvCopy</b>.
+records.
 </p>
 <p>
-See
+This document is intended for the following:
+</p>
+<h4>Users</h4>
+<p>Anyone who starts epics IOCS that has support for PVRecords.
+If this is the only interest then only the section about "iocshell commands" is required reading.
+</p>
+<h4>PVRecord Developers</h4>
+This is anyone creating new PVRecords.
+The sections "exampleCPP", and "database" are suggested reading, especially "PVRecord".
+Also of interest are:
+<p>
 <a
-href="https://mrkraimer.github.io/website/pvRequest/pvRequest.html">
-pvRequest
+href="../recordSupport/recordSupport.html">recordSupport
 </a>
-for details.
+Descibes support that can be attached to a PVRecord.
+</p>
+<p>
+<a
+href="../pluginSupport/pluginSupport.html">pluginSupport
+</a>
+Description of the plugin filter support implemented by pvDatabase.
+</p>
+<p>
+<a
+href="../specialRecord/specialRecord.html">specialRecord
+</a>
+A description of the <b>dbprcr*</b>Records.
+</p>
+
+<h4>Hard Core Geeks</h4>
+<p>This entire document</p>
+
+<h4>PVDatabase Components</h4>
+<p><b>pvDatabase</b> has the following components:
+</p>
+
+<dl>
+<dt>iocshell commands</dt>
+<dd>
+This show commands that can be issued from the iocshell.
+</dd>
+
+<dt>exampleCPP</dt>
+<dd>
+This briefly describes examples that may be of interest to developers that want to create PVRecords.
+</dd>
+
+<dt>database</dt>
+<dd>
+The most important components are:
+<dl>
+    <dt>PVRecord</dt>
+      <dd>
+      This is a record. It has a <b>PVStructure</b> and a method <b>process</b>, which is what makes it smart.
+      </dd>
+    <dt>PVDatabase</dt>
+      <dd>
+      The is a database of PVRecords.
+      </dd>
+</dl>
+</dd>
+
+<dt>pvAccess</dt>
+<dd>
+This has the following:
+<dl>
+    <dt>ChannelProviderLocal</dt>
+      <dd>
+      This a ChannelProvider, defined in pvAccess, that provides access to the PVDatabse records.
+      </dd>
+    <dt>ChannelLocal</dt>
+      <dd>
+      This provides access to a single PVRecord.
+      </dd>  
+</dl>
+</dd>
+
+<dt>copy</dt>
+<dd>
+This has the code for pvStructureCopy and all the plugin support.
+</dd>
+</dl>
+
+<h2>iocshell commands</h2>
+<p>Shell commands are made available via the standard DBD include mechanism
+provided by iocCore.
+The following provide PVDatbase shell commands:</p>
+<pre>
+pvAccessCPP
+qsrv
+pvDatabaseCPP
+pvdbSpecialRegister.dbd
+</pre>
+
+<p>pvDatabaseCPP provides the following iocshell command.</p>
+<dl>
+   <dt>registerChannelProviderLocal</dt>
+     <dd>Including <b>registerChannelProviderLocal.dbd</b> as a dbd file automatically starts provider local
+      and also creates the pvdbl shell command.
+     </dd>
+   <dt>pvdbl</dt>
+      <dd>Provides a list of all the pvRecords in database <b>master</b>
+      </dd>
+</dl>
+<p><b>pvdbSpecialRegister.dbd</b> provides access to the following commands implemted in 
+<b>src/special</b>
+This provides the ability to create the following records:
+</p>
+<dl>
+    <dt>pvdbcrScalar</dt>
+      <dd>
+      Create a soft record with the value field having one of the scalar types.
+      </dd>
+    <dt>pvdbcrScalarArray</dt>
+      <dd>
+      Create a soft record with the value field being an array of one of the scalar types.
+      </dd>
+    <dt>pvdbcrAddRecord</dt>
+      <dd>
+      Create a record that adds a new soft record.
+      </dd>
+    <dt>pvdbcrRemoveRecord</dt>
+      <dd>
+      Create a record that removes a record from that database.
+      </dd>
+    <dt>pvdbcrProcessRecord</dt>
+      <dd>
+      Create a record that processes another record.
+      </dd>
+    <dt>pvdbcrTraceRecord</dt>
+      <dd>
+      Create a record that sets the trace level for another record.
+      </dd>
+            
+</dl>
+<p>Note that all start with <b>pvdbcr</b>.
+which stands for pvdatabase create record.
+</p>
+<p>In addition any code that implements a PVRecord must implement an iocshell command.
+Look at the examples in <b>exampleCPP</b> to see how to implement shell commands.</p>
+
+<h2>exampleCPP</h2>
+<p>Example code is available at:
+<a
+href="https://github.com/epics-base/exampleCPP">
+exampleCPP
+</a>
+</p>
+<p>In particular look at the example code mentioned in the following sub-sections.
+</p>
+
+<h3>database</h3>
+<p>This has many examples of how to create both soft records and records that implement
+other functionality.</p>
+<dl>
+   <dt>exampleDatabase.cpp</dt>
+     <dd>
+      This shows how to create soft records of each pvData type.<br />
+      In addition shows how to create instances of the following two records.
+     </dd>
+   <dt>exampleHelloRecord.cpp</dt>
+     <dd>
+       This is a simple "hello world" that is intentended to be used via a channelPutGet request.
+     </dd>
+   <dt>exampleHelloRPC.cpp</dt>
+     <dd>
+       This is a simple "hello world" that is intentended to be used via a channelRPC request.
+     </dd>
+   <dt>exampleDatabaseMain.cpp</dt>
+     <dd>
+      This shows how to create a standalone IOC.
+     </dd>
+   <dt>ioc and iocBoot</dt>
+     <dd>
+      This has code and examples to create a V3 IOC which also has a PVDatabase.
+     </dd>
+</dl>
+<h3>exampleLink</h3>
+<p>This shows how to implement a record that has a link to another record</p>
+<dl>
+  <dt>getLinkScalar</dt>
+     <dd>
+      This creates a get link to a record that has a scalar value field.
+     </dd>
+  <dt>getLinkScalarArray</dt>
+     <dd>
+      This creates a get link to a record that has a scalarArray value field.
+     </dd>
+  <dt>putLinkScalar</dt>
+     <dd>
+      This creates a put link to a record that has a scalar value field.
+     </dd>
+  <dt>putLinkScalar</dt>
+     <dd>
+      This creates a put link to a record that has a scalar array value field.
+     </dd>     
+</dl>
+<p>
+Each can access the linked record either via pvaClient or by directly accessing the PVDatabase.
+</p>
+
+<h3>support</h3>
+<p>This creates records that have the following features:</p>
+<dl>
+   <dt>value</dt>
+   <dd>
+    Each record has a value field the is a numeric scalar field.
+    In addition each has the following fields:
+    alarm,timeStamp,control,scalarAlarm, and display.
+   </dd>
+   <dt>support</dt>
+   <dd>
+     Each record uses the control and scalarAlarm support provided by pvDatabaseCPP.
+   </dd>
+</dl>
+<p>
+It also creates records that can be used by clients to show example of the plugin support.
 </p>
 
 
-<h2>pvDatabase.h</h2>
-<h3>PVDatabase Brief Description</h3>
-<p><b>PVDatabase</b> has methods:</p>
+<h2>database</h2>
+<p>
+This is the code for creating a PVDatabase, which is a database of PVRecords.
+</p>
+<h3>PVRecord</h3>
+<p>
+A PVRecord consists of a PVStructure and a set of methods for accessing the record.
+The PVStructure has the data for the record.
+There is a base class that implements all the methods associated with accessing the record.
+But some are virtual and can be implemented by a derived class.
+</p>
+<p>The virtual methods are:</p>
+<dl>
+   <dt>process</dt>
+   <dd>
+   This is the method that makes a record smart.
+   Often this is the only method a derived class needs to implement.
+   If it encounters errors it should raise alarms and/or
+   call the <b>message</b> method provided by the base class.
+   If the pvStructure has a top level timeStamp,
+   the base class sets the timeStamp to the current time.
+   </dd>
+   <dt>init</dt>
+   <dd>
+   A derived class can implement this if finds errors during initilization
+   and does not want the record added to the PVDatabase.
+   </dd>
+   <dt>start</dt>
+   <dd>
+   This is called before record is added to database.
+   </dd>
+   <dt>remove</dt>
+   <dd>
+   Remove the PVRecord. Release any resources used and
+   get rid of listeners and requesters.
+   If derived class overrides this then it must call PVRecord::remove()
+   after it has destroyed any resorces it uses.
+   </dd>
+   <dt>getService</dt>
+   <dd>
+   Return a service corresponding to the specified request PVStructure.
+   </dd>
+</dl>
+<p><b>ChannelProviderLocal</b>, described below, allows client to access a record
+via the network.
+But another record in the same ioc can access the record via the PVDatabase.
+For example if the other record wants to put data into the record it must do something like the following:
+</p>
 <pre>
-findRecord       Find a record in the database.
-addRecord        Add a record to the database.
-removeRecord     Remove a record from the database.
-getRecordNames   Get the names of all the records in the database.
-getMaster        Get the master database. This is what clients access.
+PVRecordPtr pvr(pvRecord.lock());
+if(!pvr) throw std::logic_error("pvRecord is deleted");
+try {
+    {
+        epicsGuard&lt;PVRecord&gt; guard(*pvr);
+        pvr->beginGroupPut();
+        // put data
+        pvr->process();
+        pvr->endGroupPut();
+    }
+} catch(std::exception&amp; ex) {
+        // handle error
+}
 </pre>
-<h3>PVRecord Brief Description</h3>
+<h4>method brief description</h4>
 <pre>
-The following are optional methods.
+The following are virtual methods.
 init                 Initialization method.
 start                Called before a record is added to database.
 process              Process the record.
 remove               Remove the PVRecord.
 getService           Return a service corresponding to the specified request PVStructure.
-The following are supplied by the base class.
+
+The following are implemented by the base class.
 create               Create a soft record.
 getRecordName        Get the record name.
 getPVStructure       Get the PVStructure for the record.
@@ -130,8 +374,8 @@ lock                 Lock the record. No other code can access the record until 
 unlock               Unlock the record.
 tryLock              Try to lock the record.
 lockOtherRecord      Client holding lock can lock one other record.
-addPVRecordClient    Every client that accesses the record must call this
-                     so that theclient can be notified when the record is deleted.
+addPVRecordClient    Every client that accesses the record can call this
+                     so that the client can be notified when the record is deleted.
 addListener          This must be called before calling pvRecordField.addListener.
 nextMasterPVField    PVCopyTraverseMasterCallback method.
 removeListener       Remove a listener.
@@ -147,98 +391,93 @@ setAsGroup           Set access security group.
 <h3>PVRecordStructure</h3>
 <p><b>PVRecordStructure</b> has methods:</p>
 <pre>
-getPVRecordFields
-getPVStructure
+getPVRecordFields    Get the sub fields.
+getPVStructure       Get the PVStructure.
 </pre>
 <h3>PVRecordField</h3>
 <p><b>PVRecordField</b> has methods:</p>
 <pre>
-getParent
-getPVField
-getFullFieldName
-getFullName
-getPVRecord
-postPut
+getParent            Get the PVRecordStructure.
+getPVField           Get the PVField.
+getFullFieldName     Get the full field name.
+getFullName          Get the recordName plus the full name of the field.
+getPVRecord          Get the PVRecord to which this field belongs.
+postPut              This is called by the code that implements the data interface.
+                     It is called whenever the put method is called.
 </pre>
 <h3>PVRecordClient</h3>
 <p><b>PVRecordClient</b> has methods:</p>
 <pre>
-detach
+detach  Detach from the record because it is being removed.
 </pre>
 <h3>PVListener</h3>
 <p><b>PVListener</b> has methods:</p>
 <pre>
-dataPut
-beginGroupPut
-endGroupPut
-unlisten
+dataPut        This is called if the listener has called PVRecordField::addListener for pvRecordField.
+beginGroupPut  Begin a set of puts.
+endGroupPut    End a set of puts.
+unlisten       Connection to record is being terminated.
 </pre>
-<h2>channelProviderLocal</h2>
+<h3>PVDatabase</h3>
+<p><b>PVDatabase</b> has methods:</p>
+<pre>
+findRecord       Find a record in the database.
+addRecord        Add a record to the database.
+removeRecord     Remove a record from the database.
+getRecordNames   Get the names of all the records in the database.
+getMaster        Get the master database. This is what clients access.
+</pre>
+
+<h2>pvAccess</h2>
+<p>This code provides the ability for a pvAccess client to  communicate with PVRecords.
+<b>qsrv</b> is the server side of pvAccess that provides access to an IOC.
+</p>
+<p>
+The pvAccess component of pvDatabase implements a provider named local and registers it
+with <b>qsrv</b>
+</p>
+
 <h3>ChannelProviderLocal</h3>
 <p><b>ChannelProviderLocal</b> has methods:</p>
 <pre>
-initAs
-isAsActive
-getProviderName
-channelFind
-channelList
-createChannel
-getTraceLevel
-setTraceLevel
-getChannelProvider
+initAs             Initialize access security configuration.
+isAsActive         Is access security active.
+getProviderName    Returns the channel provider name.
+channelFind        Returns either a null channelFind or a channelFind for records in the PVDatabase.
+channelList        Provide the caller with a list of the record names on the PVDatabase.
+createChannel      Create a channel for a record.
+getTraceLevel      Get trace level (0,1,2) means (nothing,lifetime,process)
+setTraceLevel      Set trace level (0,1,2) means (nothing,lifetime,process)
+getChannelProvider Get the channel provider.
 </pre>
 <h3>ChannelLocal</h3>
 <p><b>ChannelLocal</b> has methods:</p>
 <pre>
-detach
-getRequesterName
-message
-getProvider
-getRemoteAddress
-getConnectionState
-getChannelRequester
-isConnected
-getField
-getAccessRights
-createChannelProcess
-createChannelGet
-createChannelPut
-createChannelPutGet
-createChannelRPC
-createMonitor
-createChannelArray
-printInfo
-canWrite
-canRead
+detach               This is called when a record is being removed from the database, 
+getRequesterName     Get the requester name.
+message              Passes the message to the channel requester.
+getProvider          Get the channel provider.
+getRemoteAddress     Get the remote address.
+getConnectionState   Get the connection state.
+getChannelName       Get the channel name.
+getChannelRequester  Get the channel requester.
+isConnected          Is the channel connected?
+getField             Get the introspection interface for a subField.
+getAccessRights      Get the access rights for the record.
+createChannelProcess Create a channelProcess.
+createChannelGet     Create a channelGet.
+createChannelPut     Create a channelPut.
+createChannelPutGet  Create a channelPutGet.
+createChannelRPC     Create a channelRPC
+                     The PVRecord must implement <b>getService</b> or an empty shared pointer is returned.
+createMonitor        Create a Monitor
+createChannelArray   Create a channelArray.
+printInfo            Displays a message.
+canWrite             Can the client write to the record.
+canRead              Can the client read from the record.
 </pre>
-<h2>pvSupport</h2>
-<h3>PVSupport</h3>
-<p><b>PVSupport</b> has methods:</p>
-<pre>
-init
-start
-process
-reset
-</pre>
-<h3>ScalarAlarmSupport</h3>
-<p><b>ScalarAlarmSupport</b> has methods:</p>
-<pre>
-init
-process
-reset
-create
-scalarAlarmField
-</pre>
-<h3>ControlSupport</h3>
-<p><b>ControlSupport</b> has methods:</p>
-<pre>
-init
-process
-reset
-create
-controlField
-</pre>
-<h2>pvPlugin</h2>
+
+<h2>copy</h2>
 <h3>PVPlugin</h3>
 <p><b>PVPlugin</b> has methods:</p>
 <pre>
@@ -293,99 +532,6 @@ filter
 getName
 </pre>
 
-<h2>exampleCPP</h2>
-<p>Example code is available at:
-<a
-href="https://github.com/epics-base/exampleCPP">
-exampleCPP
-</a>
-</p>
-<p>In particular look at the example code mentioned in the following sub-sections.
-</p>
-
-<h3>database</h3>
-<p>This has many examples of how to create both soft records and records that implement
-other functionality.</p>
-<dl>
-   <dt>exampleDatabase.cpp</dt>
-     <dd>
-      This shows how to create soft records of each pvData type.<br />
-      In addition shows how to create instances of the following two records.
-     </dd>
-   <dt>exampleHelloRecord.cpp</dt>
-     <dd>
-       This is a simple "hello world" that is intentended to be used via a channelPutGet request.
-     </dd>
-   <dt>exampleHelloRPC.cpp</dt>
-     <dd>
-       This is a simple "hello world" that is intentended to be used via a channelRPC request.
-     </dd>
-   <dt>exampleDatabaseMain.cpp</dt>
-     <dd>
-      This shows how to create a standalone IOC.
-     </dd>
-   <dt>ioc and iocBoot</dt>
-     <dd>
-      This has code and examples to create a V3 IOC which also has a PVDatabase.
-     </dd>
-</dl>
-<h3>exampleLink</h3>
-<p>This shows how to implement a record that has a link to another record</p>
-<dl>
-  <dt>exampleMonitorLinkRecord</dt>
-     <dd>
-      This creates a monitor link to another record.
-     </dd>
-  <dt>exampleGetLinkRecord</dt>
-     <dd>
-      This creates a get link to another record.
-     </dd>
-  <dt>examplePutLinkRecord</dt>
-     <dd>
-      This creates a put link to another record.
-     </dd>
-</dl>
-
-<h3>support</h3>
-<p>This creates records that have the following features:</p>
-<dl>
-   <dt>value</dt>
-   <dd>
-    Each record has a value field the is a numeric scalar field.
-    In addition each has the following fields:
-    alarm,timeStamp,control,scalarAlarm, and display.
-   </dd>
-   <dt>support</dt>
-   <dd>
-     Each record uses the control and scalarAlarm support provided by pvDatabaseCPP.
-   </dd>
-</dl>
-<p>
-It also creates records that can be used by clients to show example of the plugin support.
-</p>
-
-<h2>iocshell commands</h2>
-<p>Shell commands are made available via the standard DBD include mechanism
-provided by iocCore.
-The following provide EPICS V4 shell commands:</p>
-<pre>
-pvAccessCPP
-qsrv
-pvDatabaseCPP
-</pre>
-
-<p>pvDatabaseCPP provides the following iocshell command.</p>
-<dl>
-   <dt>registerChannelProviderLocal</dt>
-     <dd>Including <b>registerChannelProviderLocal.dbd</b> as a dbd file automatically starts provider local
-      and also creates the pvdbl shell command.
-     </dd>
-   <dt>pvdbl</dt>
-      <dd>Provides a list of all the pvRecords in database <b>master</b>
-      </dd>
-</dl>
-<p>In addition any code that implements a PVRecord must implement an ioc command.
-Look at the examples in <b>exampleCPP/support</b> to see how to implement shell commands.</p>
 
 </div>
 </body>
