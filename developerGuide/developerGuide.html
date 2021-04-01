@@ -36,15 +36,15 @@
 <h1>EPICS V4 Developer's Guide</h1>
 <!-- Maturity: Working Draft or Request for Comments, or Recommendation, and date.  -->
 
-<h2 class="nocount">2019.04.19</h2>
+<h2 class="nocount">editions</h2>
+<dl>
+  <dt>2019.04.19</dt>
+     <dd>Original</dd>
+  <dt>2012.03.29</dt>
+     <dd>Update</dd>
+</dl>  
 <p>
-<b>NOTE: This is the working version of the developerGuide.</b>
-<br />
-EPICS V4 release versions are:
-<br />
-  <a href="http://epics-pvdata.sourceforge.net/informative/developerGuide/developerGuide_V4Release4_6.html">developerGuide_V4Release4_6</a>
-<br />
-  <a href="http://epics-pvdata.sourceforge.net/informative/developerGuide/developerGuide_20150825.html">developerGuide_V4Release4_5</a>
+<b>NOTE:</b> This is the working version of the developerGuide.
 </p>
 <dl>
     <dt>Editors:</dt>
@@ -55,14 +55,11 @@ EPICS V4 release versions are:
 
 <h2 class="nocount">Abstract</h2>
 
-<p>This is Developer's Guide for the PVA components of EPICS 7,
-which is a set of related products:<br />
-<a href="http://epics-pvdata.sourceforge.net/relatedDocumentsV4.html">relatedDocumentsV4.html</a>
-</p>
 <p>
-<b>NOTE:</b>
-The source-forge web site has not been updated for a long time.
-It is badly out of date.
+This document is a developer guide for the module components of
+<a href="https://epics-controls.org/resources-and-support/base/epics-7/">
+EPICS-7
+</a>
 </p>
 </div>
 
@@ -79,19 +76,9 @@ for PVA.</p>
 <p>
 These core APIs provide a toolkit for creating applications that access and/or provide sources of structured data. This document is intended for EPICS software developers who want to implement applications via the core APIs.
 </p>
-<h3>EPICS PVA resources and website</h3>
 <p>This document is a tutorial rather then a detailed reference manual.
 Links to the reference manual for each PVA modules are provided in the following overview sections.
 </p>
-<p>In addition the following are standards:</p>
-<ul>
-    <li><a href="http://epics-pvdata.sourceforge.net/pvAccess_Protocol_Specification.html">
-  Network protocol for <b>pva</b> provider</a>
-   </li>
-    <li><a href="http://epics-pvdata.sourceforge.net/alpha/normativeTypes/normativeTypes.html">
-  Normative Types Specification</a>
-   </li>
-</ul>
 <h3>PVA Modules</h3>
 <p>
 The current release of EPICS 7 includes the following PVA modules:
@@ -148,21 +135,13 @@ are based on PVA:
 Each has a single github repository.
 </p>
 <p>
-The other components are implemented in both C++ and Java,
-with each language having it's own github repository.
+All the components are implemented in C++.
+Some of the components are also implemented in Java, but the Java components are not described here.
+</p>
+<p>
+All components have it's own public repository.
 For example <b>pvDataCPP</b> has the repository
 <a href="https://github.com/epics-base/pvDataCPP">pvDataCPP</a>
-</p>
-<p>
-Java has bundled pvData, normative types, and pvAccess together with:
-<a href="https://github.com/epics-base/epicsCoreJava">epicsCoreJava</a>
-</p>
-<p>
-The other Java components have their own github repositories.
-For example:
-<a href="https://github.com/epics-base/pvaClientJava">pvaClientJava</a>
-</p>
-<p>EPICS 7 has separate C++ and Java releases.
 </p>
 <h3>Terminology</h3>
 <dl>
@@ -198,8 +177,6 @@ For example:
      <dd>
       The <b>pvData</b> API is how a client accesses the type system
       and data objects for each type.
-      In Java this consists mainly of Java interfaces.
-      In C++ this is via C++ classes.
       </dd>
    <dt>Introspection API</dt>
       <dd>The type system supports both introspection and data interfaces.
@@ -252,7 +229,7 @@ Each field is composed of one of the following types:
             <dt>double</dt>
                 <dd>IEEE 64 bit floating point.</dd>
             <dt>string</dt>
-                <dd>In C++ std::string and in Java String. On the network UTF8.</dd>
+                <dd>In C++ std::string and on the network UTF8.</dd>
         </dl>
       </dd>
    <dt>scalarArray</dt>
@@ -489,19 +466,16 @@ href="./pvRequest/pvRequest.html">pvRequest
 <h2>example code</h2>
 <p>
 <b>NOTE:</b>
-exampleCPP and exampleJava are not part of the EPICS 7 release.
+exampleCPP is not part of the EPICS 7 release.
 They must be cloned from github:
 </p>
 <pre>
 git clone https://github.com/epics-base/exampleCPP.git
 </pre>
-or
-<pre>
-git clone https://github.com/epics-base/exampleJava.git
-</pre>
-<p><b>exampleCPP</b> and <b>exampleJava</b> both have examples that use code from all modules
+
+<p><b>exampleCPP</b> has examples that use code from all modules
 described in this document except for <b>pvaPy</b>.
-In particular they both have examples:</p>
+In particular it has examples:</p>
 <dl>
     <dt>database</dt>
        <dd>
@@ -517,20 +491,17 @@ In particular they both have examples:</p>
        </dd>
     <dt>exampleLink</dt>
         <dd>
-        Implements PVRecords that monitor, get, and put to channel.<br />
+        Implements PVRecords that get and put to other records.
         </dd>
 </dl>
-<p>These examples that can be used while learning what is described in this document.
-Both exampleJava and exampleCPP have other examples.
+<p>These examples can be used while learning what is described in this document.
+ExampleCPP has other examples.
 </p>
 
-<p>Examples in exampleClient require that the database in exampleCPP/database 
-or exampleJava/database
-is started.
-If exampleCPP is used the exampleDatabase can be started either as a main
+<p>Examples in exampleClient require that the database in exampleCPP/database is started.
+The exampleDatabase can be started either as a main
 program or as part of a V3 IOC.
 If started as part of a V3 IOC, it also has V3 records and starts <b>qsrv</b>.
-If started as a main program the result is the same as starting exampleJava/database.
 All the V4 PVRecords have the prefix <b>PVR</b> and all the V3 DBRecords have the prefix
 <b>DBR</b>.
 </p>
@@ -566,17 +537,20 @@ mrk> pvget PVRushort01
 PVRushort01                       0
 mrk> 
 </pre>
-<p>The examples in <b>exampleCPP/exampleClient</b> and <b>exampleJava/exampleClient</b> can now be run.
+<p>The examples in <b>exampleCPP/exampleClient</b> can now be run.
 For example:</p>
 <pre>
 mrk> pwd
 /home/epicsv4/masterCPP/exampleCPP/exampleClient
 mrk> ls bin/linux-x86_64/
-examplePvaClientGet          examplePvaClientPut  monitorNoBlock
-examplePvaClientMonitor      getFieldNoBlock      putNoBlock
-examplePvaClientMultiDouble  getNoBlock           putUnion
-examplePvaClientNTMulti      helloWorldPutGet
-examplePvaClientProcess      helloWorldRPC
+addRecord                    getField            ntMultiGet
+examplePvaClientGet          getputmonitor       ntMultiMonitor
+examplePvaClientMonitor      helloWorldPutGet    ntMultiPut
+examplePvaClientMultiDouble  helloWorldRPC       process
+examplePvaClientNTMulti      monitor             put
+examplePvaClientProcess      multiGetDouble      putGet
+examplePvaClientPut          multiMonitorDouble  putUnion
+get                          multiPutDouble      rpc
 mrk> 
 mrk> bin/linux-x86_64/examplePvaClientGet
 _____examplePvaClientGet starting_______
@@ -622,11 +596,12 @@ alarm_t alarm
      This code restricts severity to be one of:
      </p>
 <pre>
-NONE,MINOR,MAJOR,INVALID,UNDEFINED
+noAlarm,minorAlarm,majorAlarm,invalidAlarm,undefinedAlarm
 </pre>
     <p> and status to be one of:</p>
 <pre>
-NONE,DEVICE,DRIVER,RECORD,DB,CONF,UNDEFINED,CLIENT
+noStatus,deviceStatus,driverStatus,recordStatus,
+dbStatus,confStatus,undefinedStatus,clientStatus
 </pre>      
    </dd>
    <dt>timeStamp</dt>
@@ -694,17 +669,6 @@ make
 <p>Clone it in the same directory that holds your EPICS 7 release.
 Documentation is provided in pvaClientTutorialCPP/documentation/clientTutorialCPP.html.
 </p>
-<h3>Java Tutorial</h3>
-<p>
-<b>NOT IMPLEMENTED</b>
-The current plan is to create this after pvaClientJava has been
-upgraded to support the same features that have been added to pvaClientCPP.
-</p>
-<h2>pvDatabase Tutorial</h2>
-<p>
-<b>NOT IMPLEMENTED</b>
-The current plan is to create this for both C++ and Java after pvaClientTutorialJava has been created.
-</p>
 
 <h2>pvAccess Channel Providers.</h2>
 <p>
@@ -718,20 +682,19 @@ and destroying client providers.
    </dd>
    <dt>pvDatabase</dt>
     <dd>
-If You are using exampleCPP/database or exampleJava/database as a basis for creating your own 
+If You are using exampleCPP/database as a basis for creating your own 
 server then the examples show how to start and destroy the server providers.
-exampleCPP/exampleLink or exampleJava/exampleLink show how to start and destroy both the client and server
+exampleCPP/exampleLink shows how to start and destroy both the client and server
 providers.
     </dd>
     <dt>pav2pva</dt>
      <dd>This provides support for starting a remote <b>pva</b> server and provider <b>qsrv</b> as part of an IOC.
      </dd>
 </dl>
-<p>pvAccessJava and pvAccessCPP implement the following providers:</p>
+<p>pvAccess implements the following providers:</p>
 <dl>
    <dt>pva</dt>
-     <dd>This is a provider that trasfers data via the network protocol defined in
-    <a href="http://epics-pvdata.sourceforge.net/pvAccess_Protocol_Specification.html">pvAccess Protocol Specification </a>
+     <dd>This is a provider that trasfers data via the network protocol defined pvAccess.
      <br/>
       This provides the client and server side of the network protocol.
       The client side is a complete implementation.
@@ -756,15 +719,9 @@ At present C++ provides two server side providers:
    <dt>local</dt>
       <dd>This is implemented by pvDatabaseCPP</dd>
 </dl>
-<p>
-At present Java provides one server side provider:
-</p>
-<dl>
-   <dt>local</dt>
-      <dd>This is implemented by pvDatabaseJava</dd>
-</dl>
 
-<h2>Appendix I: Standard Fields</h2>
+
+<h2>pvData: Standard Fields</h2>
 <p>The following discusses the following fields:
 </p>
 <dl>
@@ -794,21 +751,11 @@ At present Java provides one server side provider:
     </dd>
 </dl>
 
-<p><b>NOTES</b>:
-</p>
-<dl>
-    <dt>should not be here</dt>
-      <dd>
-        This should not be part of this document but not clear where  to put it.
-      </dd>
-    <dt>following have problems</dt>
-      <dd>
-       Code for display is broken. See below.
-       <br />
-       valueAlarm should only support double. See below.
-      </dd>
-</dl>
 <h3>enum</h3>
+Defined in:
+<pre>
+pvDataCPP/include/pv/pvEnumerated.h
+</pre>
 <h4>structure</h4>
 <p>An enumerated structure is a structure that has fields:</p>
 <pre>
@@ -819,7 +766,7 @@ enum_t
 <h4>PVEnumerated</h4>
 <pre>
 PVEnumerated
-    boolean attach(PVField pvField)
+    bool attach(PVField pvField)
     void detach()
     boolean isAttached()
     boolean setIndex(int index)
@@ -827,7 +774,8 @@ PVEnumerated
     String getChoice()
     boolean choicesMutable()
     String[] getChoices()
-    boolean setChoices(String[] choices)
+    int getNumberChoices()
+    bool setChoices(String[] choices)
 </pre>
 
 <p>where</p>
@@ -856,6 +804,8 @@ PVEnumerated
     <dd>Get the array of choices. An exception is thrown if not attached to a
       <b>pvData</b> structure. </dd>
   <dt>getNumberChoices</dt>
+     <dd>Return the number of choices</dd>
+  <dt>getNumberChoices</dt>
     <dd>Get the number of choices. An exception is thrown if not attached to a
       <b>pvData</b> structure. </dd>
   <dt>setChoices</dt>
@@ -864,6 +814,12 @@ PVEnumerated
 </dl>
 
 <h3>alarm</h3>
+Defined in:
+<pre>
+pvDataCPP/include/pv/alarm.h
+and
+pvDataCPP/include/pv/pvAlarm.h
+</pre>
 <h4>structure</h4>
 <p>An alarm structure is defined as follows:</p>
 <pre>
@@ -879,11 +835,13 @@ enumerated structure.</p>
 <h4>AlarmSeverity</h4>
 <p>Alarm Severity defines the possible alarm severities</p>
 <pre>
-enum AlarmSeverity
-    NONE,MINOR,MAJOR,INVALID,UNDEFINED
+enum AlarmSeverity{
+    noAlarm,minorAlarm,majorAlarm,invalidAlarm,undefinedAlarm
+}
+AlarmSeverityFunc {
     AlarmSeverity getSeverity(int value)
-    final String[] alarmSeverityNames
     String[] getSeverityNames()
+}
 </pre>
 where
 <dl>
@@ -895,11 +853,13 @@ where
 <h4>AlarmStatus</h4>
 <p>Alarm Status defines the possible alarm status conditions</p>
 <pre>
-enum AlarmStatus
-    NONE,DEVICE,DRIVER,RECORD,DB,CONF,UNDEFINED,CLIENT;
+enum AlarmStatus {
+    noStatus,deviceStatus,driverStatus,recordStatus,
+    dbStatus,confStatus,undefinedStatus,clientStatus
+}
 
-    AlarmStatus getStatus(int value)
-    String[] alarmStatusNames
+AlarmStatusFunc{
+    getStatus(int value)
     String[] getStatusNames()
 </pre>
 where
@@ -911,14 +871,15 @@ where
 </dl>
 <h4>Alarm</h4>
 <pre>
-Alarm
+Alarm {
     String getMessage()
     void setMessage(String message)
     AlarmSeverity getSeverity()
     void setSeverity(AlarmSeverity alarmSeverity)
     AlarmStatus getStatus()
     void setStatus(AlarmStatus alarmStatus)
-}</pre>
+}
+</pre>
 where
 <dl>
   <dt>getMessage</dt>
@@ -936,12 +897,13 @@ where
 </dl>
 <h4>PVAlarm</h4>
 <pre>
-PVAlarm 
-    boolean attach(PVField pvField)
+PVAlarm {
+    bool attach(PVField pvField)
     void detach()
     boolean isAttached()
     void get(Alarm alarm)
-    boolean set(Alarm alarm)
+    bool set(Alarm alarm)
+}
 </pre>
 <p>where</p>
 <dl>
@@ -969,6 +931,12 @@ PVAlarm
 
 
 <h3>timeStamp</h3>
+Defined in:
+<pre>
+pvDataCPP/include/pv/timeStamp.h
+and
+pvDataCPP/include/pv/pvTimeStamp.h
+</pre>
 <h4>structure</h4>
 <p>A timeStamp is represented by the following structure</p>
 <pre>
@@ -989,8 +957,10 @@ i. e. it has is 0&lt;=nanoseconds&lt;nanoSecPerSec..</p>
 <h4>TimeStamp</h4>
 <p>The definition of TimeStamp is:</p>
 <pre>
-TimeStamp 
+TimeStamp {
     void normalize()
+    void fromTime_t(time_t time)
+    void toTime_t(time_t time
     long getSecondsPastEpoch()
     long getEpicsSecondsPastEpoch()
     int getNanoseconds()
@@ -999,7 +969,8 @@ TimeStamp
     void put(long secondsPastEpoch,int nanoseconds)
     long getMilliSeconds()
     void put(long milliSeconds)
-    void getCurrentTime()
+    void getCurrent()
+    double toSeconds()
     boolean equals(TimeStamp other)
     boolean lt(TimeStamp other)
     boolean le(TimeStamp other)
@@ -1012,6 +983,10 @@ TimeStamp
 <dl>
   <dt>normalize</dt>
     <dd>Adjust secondsPastEpoch and nanoseconds so that 0&lt;=nanoseconds&lt;nanoSecPerSec.</dd>
+  <dt>fromTime_t</dt>
+    <dd>Set timeStamp from standard C time</dd>
+  <dt>toTime_t</dt>
+    <dd>Set time from timeStamp</dd>
   <dt>getSecondsPastEpoch</dt>
     <dd>Get the seconds part of timeStamp</dd>
   <dt>getEpicsSecondsPastEpoch</dt>
@@ -1030,8 +1005,10 @@ TimeStamp
   <dt>put(long milliSeconds);</dt>
     <dd>Put a value into the timeStamp given the number of milliSeconds since
       the epoch.</dd>
-  <dt>getCurrentTime</dt>
+  <dt>getCurrent/dt>
     <dd>Get the current time.</dd>
+  <dt>toSeconds</dt>
+    <dd>Convert the timeStamp to a double value that is seconds past epoch/</dd>
   <dt>equals</dt>
     <dd>Is this time equal other?</dd>
   <dt>lt</dt>
@@ -1052,12 +1029,13 @@ timeStamps for times previous to the epoch.</p>
 
 <h4>PVTimeStamp</h4>
 <pre>
-PVTimeStamp 
-    boolean attach(PVField pvField)
+PVTimeStamp {
+    bool attach(PVField pvField)
     void detach()
-    boolean isAttached()
+    bool isAttached()
     void get(TimeStamp timeStamp)
     boolean set(TimeStamp timeStamp)
+}
 </pre>
 where
 <dl>
@@ -1080,34 +1058,26 @@ where
 </dl>
 
 <h3>display</h3>
+Defined in:
+<pre>
+pvDataCPP/include/pv/display.h
+and
+pvDataCPP/include/pv/pvDisplay.h
+</pre>
+<b>NOTE:</b> Should format be replaced by precision and form?
 <h4>structure</h4>
 <p>Display information is represented by the following structure</p>
 <pre>
 structure display
     double limitLow
     double limitHigh
-    string description 
+    string description
+    string format
     string units
-    int precision
-    enum_t form Default
-        int index
-        string[] choices 
-            ["Default", "String", "Binary", "Decimal", "Hex", "Exponential", "Engineering"]
-
 </pre>
-<p>
-<b>NOTES:</b>
-pvDataJava has not been updated to use precision and form.
-It still has a string field named format.
-</p>
 <h4>Display</h4>
-<p>
-<b>NOTE</b> previously a field named format was present.
-This was replaced by precision and form.
-But the Display code was never changed.
-</p>
 <pre>
-Display
+Display {
     double getLow()
     double getHigh()
     void setLow(double value)
@@ -1118,6 +1088,7 @@ Display
     void setFormat(String value)       // broken 
     String getUnits()
     void setUnits(String value)
+}
 </pre>
 <p>where</p>
 <dl>
@@ -1145,12 +1116,13 @@ Display
 
 <h4>PVDisplay</h4>
 <pre>
-PVDisplay
-    boolean attach(PVField pvField)
+PVDisplay {
+    bool attach(PVField pvField)
     void detach()
-    boolean isAttached()
+    bool isAttached()
     void get(Display display)
-    boolean set(Display display)
+    bool set(Display display)
+}
 </pre>
 
 <p>where</p>
@@ -1178,6 +1150,13 @@ PVDisplay
 </dl>
 
 <h3>control</h3>
+Defined in:
+<pre>
+pvDataCPP/include/pv/control.h
+and
+pvDataCPP/include/pv/pvControl.h
+</pre>
+<b>NOTE:</b> Should minStep be named maxStep?
 <h4>structure</h4>
 <p>Control information is represented by the following structure</p>
 <pre>
@@ -1189,11 +1168,14 @@ structure control
 <h4>Control</h4>
 The definition for Control is:
 <pre>
-Control
+Control{
     double getLow()
     double getHigh()
+    double getMinStep()
     void setLow(double value)
     void setHigh(double value)
+    void setMinStep(double value)
+}
 </pre>
 
 <p>where</p>
@@ -1202,10 +1184,14 @@ Control
     <dd>Get the low limit.</dd>
   <dt>getHigh</dt>
     <dd>Get the high limit.</dd>
+  <dt>getMinStep</dt>
+    <dd>Get the minimum stepsize.</dd>
   <dt>setLow</dt>
     <dd>Set the low limit.</dd>
   <dt>setHigh</dt>
     <dd>Set the high limit.</dd>
+  <dt>setMinStep</dt>
+    <dd>Set the minimum stepsize.</dd>
 </dl>
 <h4>PVControl</h4>
 <pre>
@@ -1242,6 +1228,12 @@ PVControl
 </dl>
 
 <h3>valueAlarm</h3>
+Defined in:
+<pre>
+pvDataCPP/include/pv/standardField.h
+and
+pvDataCPP/include/pv/standardPVField.h
+</pre>
 <h4>structure</h4>
 <p>For each numeric scalar type the following is defined:</p>
 <pre>
@@ -1271,7 +1263,7 @@ int stateSeverity
 int changeStateSeverity
 </pre>
 
-<h2>Appendix II: Standard for Field::ID</h2>
+<h2>Appendix I: Standard for Field::ID</h2>
 <p>The introspection interface for every field has an ID, which is available via method:</p>
 <pre>
 class Field {
@@ -1338,35 +1330,15 @@ valueAlarm_t
 <p>Like structure except that <b>[]</b> is appended.
 </p>
 
-<h2>Appendix III: Convert Facility</h2>
-<p>Both pvDataJava and pvDataCPP have a Convert Facility.
-Although they have some common features they are different enough that they
-will be discussed separately.
-</p>
+<h2>Appendix II: Convert Facility</h2>
 <p>
-They main difference is support for scalar arrays.
-</p>
-<p>
-The Java Convert facility supports sub-array copies between any two numeric
-arrays.
-It does a deep copy except for a complete copy between two array of the same
-type and the source array is immutable.
-In this case to calls the shareData method and also makes the destination
-array immutable.
-</p>
-<p>
-The C++ faclity only supports complete array copies between 
+<b>pvDataCPP</b> has a Convert Facility.
+The faclity only supports complete array copies between 
 two scalar arrays of the same type and only does a shallow copy.
 It also does a shallow copy for union, unionArray, and structureArray fields.
 It also has a separate facility that does sub-array copies between two
 arrays of the same type.
 </p>
-<h3>Java</h3>
-<p><b>NOTE:</b> copying immutable array fields. If an entire immutable array
-field is copied to another array that has the same elementType, both offsets
-are 0, and the length is the length of the source array, then the shareData
-method of the target array is called and the target array is set immutable.
-Thus the source and target share the same primitive array.</p>
 
 <p>This section describes the supported conversions between data types.</p>
 <ul>
@@ -1492,10 +1464,6 @@ generates a newline and inserts blanks at the beginning of the newline.</p>
 pvData project overview. Note that the toString methods of PVField are
 implemented by calling these convert methods.</p>
 
-<h3>C++</h3>
-<p>Many of the Java convert methods have been moved to <b>class PVField</b> and it's extensions.
-This include all the comparison methods and also conversion between numeric types.
-</p>
 <h4>convert.h</h4>
 
 <pre>
@@ -1623,50 +1591,7 @@ other copy functions. The arguments are:</p>
       <dd>The destination array needs to have it's capacity extended
         but the capacity is immutable.</dd>
 </dl>
-<h4>PVField::copy</h4>
-<p>PVField has a method copy.
-It allows copying between any two compatible fields.
-Both fields must have the same type.
-For scalar and scalarArray conversion between the various scalarTypes is supported.
-</p>
-<p>The following:</p>
-<pre>
-    PVDataCreatePtr create = getPVDataCreate();
-    PVDoublePtr pvDouble = create->createPVScalar&lt;PVDouble&gt;();
-    PVBytePtr pvByte = create->createPVScalar&lt;PVByte&gt;();
-    pvByte->put(10);
-    pvDouble->copy(*pvByte);
-    cout &lt;&lt; "double " &lt;&lt; pvDouble &lt;&lt; " byte " &lt;&lt; pvByte &lt;&lt; endl;
 
-    PVStringPtr pvString = create->createPVScalar&lt;PVString&gt;();
-    pvString->copy(*pvByte);
-    cout &lt;&lt; "string " &lt;&lt; pvString &lt;&lt; " byte " &lt;&lt; pvByte &lt;&lt; endl;
-</pre>
-produces:
-<pre>
-double 10 byte 10
-string 10 byte 10
-</pre>
-<p>Likewise for scalarArray:</p>
-<pre>
-    PVDataCreatePtr create = getPVDataCreate();
-    PVDoubleArrayPtr pvDoubleArray = create->createPVScalarArray&lt;PVDoubleArray&gt;();
-    PVByteArrayPtr pvByteArray = create->createPVScalarArray&lt;PVByteArray&gt;();
-    shared_vector&lt;int8&gt; data(2);
-    data[0] = 1; data[1] = 10;
-    pvByteArray->replace(freeze(data));
-    pvDoubleArray->copy(*pvByteArray);
-    cout &lt;&lt; "double " &lt;&lt; pvDoubleArray &lt;&lt; " byte " &lt;&lt; pvByteArray &lt;&lt; endl;
-
-    PVStringArrayPtr pvStringArray = create->createPVScalarArray&lt;PVStringArray&gt;();
-    pvStringArray->copy(*pvByteArray);
-    cout &lt;&lt; "string " &lt;&lt; pvStringArray &lt;&lt; " byte " &lt;&lt; pvByteArray &lt;&lt; endl;
-</pre>
-produces:
-<pre>
-double [1,10] byte [1,10]
-string [1,10] byte [1,10]
-</pre>
 </div>
 </body>
 </html>

@@ -40,7 +40,7 @@
   <dt>Editors:</dt>
     <dd>Marty Kraimer</dd>
 </dl>
-<h2 class="nocount">WORK IN PROGRESS: NOT READY FOR USERS</h2>
+<h2 class="nocount">Work is Progress; Making Progress!!</h2>
 <p>This product is available via an <a
 href="../../LICENSE">open source license
 </a></p>
@@ -79,7 +79,154 @@ href="./html/index.html">doxygen
 </a>.
 </p>
 
+<h2>PvaClient Overview</h2>
+<p>
+<b>NOTE:</b>
+Before reading this overview, clone and build
+<a href="https://github.com/epics-base/exampleCPP">
+exampleCPP
+</a>.
+This has examples that are referenced in this overview.
+</p>
+<p>
+<b>pvaClient</b> is support for accessing a single channel.
+It provides the following:
+</p>
+<dl>
+   <dt>callbacks</dt>
+   <dd>
+   The <b>pvAccess</b> client code requires the client to implement callbacks.
+   <b>pvaClient</b> implements the callbacks.
+   Thus a client is not required to implement callbacks,
+   but can optionally implement any desired callback,
+   </dd>
+   <dt>convenience methods</dt>
+   <dd>
+   <b>pvaClient</b> provides methods that require much less code by the client.
+   These are mainly for channels that have a <b>value</b> field that is either a scalar or scalar array.
+   </dd>
+   <dt>caching</dt>
+   <dd>
+   A client can ask to connect to a channel without requiring calls to issueConnect and waitConnect.
+   If a connection is made, then the channel is cached.
+   This means that if the client makes further requests for the same channel it is already connected.
+   <br />
+   Caching is also done for channelGets and channelPuts.
+   </dd>
+</dl>
+<p>
+The client has many options for how to use pvaClient.
+The client be very simple or use additional features.
+</p>
+<p>Lets take an example that will work for any channel that has a top level value
+field which is a numeric scalar.
+</p>
+An example to get data is:
+<pre>
+double value = PvaClient::get("pva")->channel(channelName)-&gt;getDouble()
+</pre>
+<p>The following is psuedo code that shows what pvaClient does:</p>
+<pre>
+PvaClientPtr pvaClient = getSingleton()
+PvaClientChannelPtr pvaClientChannel= getFromChannelCache()
+if not in cache
+   pvaClientChannel = createChannel(channelName,providerName);
+       pvaClientChannel.connect(timeout)
+           issueConnect()
+           waitConnect(timeout)
+           if fail raise exception
+   add channel to cache.
+PvaClientGetPtr pvaClientGet = getFromGetCache()
+if not in cache
+   pvaClientGet =createGet()
+   pvaClientGet.connect()
+      issueConnect()
+      waitConnect(timeout)
+      if fail raise exception
+   add to getCache
+pvaClientGet.get()
+   issueGet
+   waitGet(timeout+
+   if fail raise exception
+PvaClientGetDataPtr getData = pvaClientGet.getData()
+value = getData.getDouble()
+   if fail raise exception
+return value
+</pre>
+<p>
+An example to put data is:
+</p>
+<pre>
+double value = 1;
+PvaClient::get("pva")-&gt;channel(channelName)-&gt;putDouble(value);
+</pre>
+where <b>channelName</b> is some channel.
+<br/>
+<b>exampleCPP/pvaClient</b> has <b>shortestPutGetDouble</b>
+and <b>shortestPutGetDouble</b>,
+which provide example code.
+<p>
+It is also easy to get/put data to a channel that has a value field that is an array
+of any numeric scalar type.
+</p>
+An example to get data is:
+<pre>
+shared_vector&lt;double&gt; value = PvaClient::get("pva")-&gt;channel(channelName)-&gt;getDoubleArray()
+</pre>
+<br/>
+An example to put data is:
+<pre>
+size_t num = 5;
+shared_vector&lt;double&gt; data(num,0);
+for(size_t i=0; i&lt;num; ++i) data[i] = i;
+PvaClient::get("pva")-&gt;channel(channelName)-&gt;putDoubleArray(freeze(data));
+</pre>
 
+<p>
+Note the following:
+</p>
+<dl>
+   <dt>exceptions</dt>
+   <dd>
+   If any problems are encountered, an exception is thrown.
+   </dd>
+   <dt>caching</dt>
+   <dd>
+   Whenever a channel first connects it is added to a channel cache.
+   This is a huge performance improvement when a client makes more than one request.
+   <br />
+   There is also a cache for channelGets and a cache for channelPuts.
+   </dd>
+</dl>
+<p>
+<b>exampleCPP/pvaClient</b> also have <b>longerPutGetDouble</b> and <b>longerPutGetDoubleArray</b>.
+They do not cause caching or execptions.
+They show how much work is required.
+</p>
+<p>
+A client can also access channels with a complex structure but has to do more work.
+Two features that make this possible are:
+</p>
+<dl>
+   <dt>pvRequest</dt>
+   <dd>
+   Many methods have a pvRequest argument, which allows the client to specify the set of fields desired.
+   </dd>
+   <dt>pvaClientData</dt>
+   <dd>
+   The data for a channel is made available via pvaClientData.
+   One of the methods is getPVStructure, which gets the entire data for a particular pvRequest.
+   </dd>
+</dl>
+<p>
+The following sections provide a brief summary of all methods provided by <b>pvaClient</b>
+<br/>
+Look at
+<a
+href="./html/index.html">doxygen
+</a>
+for details about each method,
+</p>
 <h2>PvaClient</h2>
 <h3>Brief Description</h3>
 <p><b>PvaClient</b> has methods:</p>
@@ -109,10 +256,7 @@ before it uses any other pvaClient classes.
 <p>
 This is a singleton method, i. e. only one instance of PvaClient is created.
 </p>
-<p>
-<b>pvaClient</b> must not be deleted until the client no longer wants to use any part
-of pvaClient.
-</p>
+
 <p>
 <b>providers</b> is a blank separated set of provider names.
 For example:</p>
@@ -400,7 +544,7 @@ Thus the client only gets access to an instance by getting it from <b>PvaChannel
 </p>
 <p>
 It provides all the methods from the base class <b>PVaClientData</b> and does not add any methods.
-</p>.
+</p>
 <h3>PvaClientPutData</h3>
 
 <p>This class provides access to data to send to the server via a <b>PvaChannelPut</b>.
@@ -719,6 +863,58 @@ It has the methods:</p>
         PvaClientRPCPtr const &amp; pvaClientRPC,
         epics::pvData::PVStructure::shared_pointer const &amp; pvResponse)()
 </pre>
+
+<h2>PvaClientMultiChannel Overview</h2>
+<p>
+<b>NOTE:</b>
+Before reading this overview, clone and build
+<a href="https://github.com/epics-base/exampleCPP">
+exampleCPP
+</a>.
+This has examples that are referenced in this overview.
+</p>
+<p>This is support for getting, putting, and monitoring multiple channels.
+Two kinds of support are available:
+</p>
+<dl>
+  <dt>MultiDouble</dt>
+  <dd>
+  Support for channels that have a numeric scalar value field.
+  </dd>
+  <dt>NTMulti</dt>
+  <dd>
+  Support for channels that have a value field with each channel having diferent tyoes.
+  </dd>
+</dl>
+<p><b>exampleCPP/pvaClientMultiChannel</b> has examples:</p>
+<dl>
+  <dt>multiPutGetDouble</dt>
+     <dd>
+     This supports get and put for a set of channels where each has a scalar value.
+     </dd>
+  <dt>multiMonitorDouble</dt>
+     <dd>
+     This supports monitor for  a set of channels where each has a scalar value.
+     </dd>
+  <dt>ntMultiPutGet</dt>
+      <dd>
+      This supports get and put for a set of channels where each has value with type scalar, scalarArray, or union.
+      Note that is more complex than the <b>MultiDouble</b> example.
+     </dd>
+  <dt>ntMultiMonitor</dt>
+     <dd>
+     This supports a set of channels where each has value of any type.
+     </dd>
+</dl>
+<p>
+The following sections provide a brief summary of all methods provided by <b>pvaClient</b>
+<br/>
+Look at
+<a
+href="./html/index.html">doxygen
+</a>
+for details about each method,
+</p>
 
 <h2>pvaClientMultiChannel</h2>
 <p>
