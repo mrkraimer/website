@@ -34,9 +34,14 @@
 
 <div class="head">
 <h1>EPICS 7: command line tools</h1>
-<!-- Maturity: Working Draft or Request for Comments, or Recommendation, and date.  -->
 
-<h2 class="nocount">2019.04.18</h2>
+<h2 class="nocount">editions</h2>
+<dl>
+  <dt>2019.04.18</dt>
+     <dd>Original</dd>
+  <dt>2012.04.06</dt>
+     <dd>Update</dd>
+</dl>  
 <dl>
     <dt>Editors:</dt>
    <dd>
@@ -74,10 +79,6 @@
    <dt>pvput</dt>
    <dd>
      Put data to a channel.
-   </dd>
-   <dt>eget</dt>
-   <dd>
-     Not described in this document.
    </dd>
 </dl>
 <p>pvAccessCPP provides command line tools. Each provides help. For example:</p>
@@ -458,7 +459,7 @@ The following shows an example that uses the array filter:</p>
 <pre>
 mrk> pvget DBRdoubleArray
 DBRdoubleArray 2019-04-16 08:59:37.622  [1,2,3,4,5]
-mrk> pvget DBRdoubleArray.[2:3]                        // BUG in qsrv
+mrk> pvget DBRdoubleArray.[2:3]
 DBRdoubleArray.[2:3] 2019-04-16 08:59:37.622  [1,2]
 mrk> caget DBRdoubleArray.[2:3]
 DBRdoubleArray.[2:3] 2 3 4

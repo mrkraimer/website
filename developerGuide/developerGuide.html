@@ -40,7 +40,7 @@
 <dl>
   <dt>2019.04.19</dt>
      <dd>Original</dd>
-  <dt>2012.03.29</dt>
+  <dt>2012.04.03</dt>
      <dd>Update</dd>
 </dl>  
 <p>
@@ -338,7 +338,6 @@ Thus it is easier to use than pvAccess itself.
 </p>
 <p>pvaClientCPP also provides simplified callback classes, which can be used to implement
 non blocking client code.
-pvaClientJava should be upgraded to support the same features.
 </p>
 <h3>Overview: pvDatabase</h3>
 <p>A framework for implementing a network accessible database of smart memory resident
@@ -390,18 +389,14 @@ Before either kind of provider can be used it must first register itself with th
 </p>
 <h4>Provider pva</h4>
 <p>An important component of EPICS V4 is provider <b>pva</b>, which is a provider
-that implements a connection between a client and a server that uses the pva network
-      protocal as defined in:
-         <a
-          href="http://epics-pvdata.sourceforge.net/pvAccess_Protocol_Specification.html">
-          pvAccess_Protocol_Specification.html</a>
+that implements a connection between a client and a server that uses the pva network protocol.
 </p>
 <p>Provider <b>pva</b> has two components:</p>
 <dl>
   <dt>client</dt>
      <dd>This is what a pvAccess client uses.</dd>
   <dt>remote</dt>
-     <dd>This connects to server providers</dd>
+     <dd>This connects to server providers.</dd>
 </dl>
 <p>Network communcation is used between client and server.
 Remote <b>pva</b> transfers data between the network and channel providers that
@@ -422,9 +417,7 @@ before it can be used by a client.
    <dt>pipelineService</dt>
       <dd>
        A pipelineService is a service that provides a lossless channel monitor.
-       A client requests access to a pipelineService via a pvRequest argument.<br />
-      pvGet and eget provide support.<br />
-      Other clients could also access a server that implements a pipelineService.
+       A client requests access to a pipelineService via a pvRequest argument.
        </dd>
 </dl>
 <h4>Server Providers</h4>
@@ -436,7 +429,6 @@ before it can be used by a client.
       <dd>This is a provider that directly accesses <b>DBRecord</b>s.</dd>
    <dt>pipelineService</dt>
       <dd>
-        
          pvAccess provides a helper class for a service that wants to implement a  pipelineService.
       </dd>
 </dl>
@@ -677,15 +669,13 @@ Documentation is provided in pvaClientTutorialCPP/documentation/clientTutorialCP
 <dl>
    <dt>pvaClient</dt>
    <dd>
-If you are using pvaClientCPP or pvaClientJava to write client code then pvaClient takes care of starting
-and destroying client providers.
+    If you are using pvaClientCPP to write client code then pvaClient takes care of starting
+    and shutting down client providers.
    </dd>
    <dt>pvDatabase</dt>
     <dd>
-If You are using exampleCPP/database as a basis for creating your own 
-server then the examples show how to start and destroy the server providers.
-exampleCPP/exampleLink shows how to start and destroy both the client and server
-providers.
+    If you are using pvDatabaseCPP then pvDatabase takes care of starting
+    and shutting down server providers.
     </dd>
     <dt>pav2pva</dt>
      <dd>This provides support for starting a remote <b>pva</b> server and provider <b>qsrv</b> as part of an IOC.
@@ -694,7 +684,7 @@ providers.
 <p>pvAccess implements the following providers:</p>
 <dl>
    <dt>pva</dt>
-     <dd>This is a provider that trasfers data via the network protocol defined pvAccess.
+     <dd>This is a provider that trasfers data via the <b>pva</b> network protocol implemented by <b>pvAccess</b>.
      <br/>
       This provides the client and server side of the network protocol.
       The client side is a complete implementation.
@@ -1005,7 +995,7 @@ TimeStamp {
   <dt>put(long milliSeconds);</dt>
     <dd>Put a value into the timeStamp given the number of milliSeconds since
       the epoch.</dd>
-  <dt>getCurrent/dt>
+  <dt>getCurrent</dt>
     <dd>Get the current time.</dd>
   <dt>toSeconds</dt>
     <dd>Convert the timeStamp to a double value that is seconds past epoch/</dd>
@@ -1228,6 +1218,10 @@ PVControl
 </dl>
 
 <h3>valueAlarm</h3>
+<p>
+<b>NOTE:</b> Not sure if this is being used by anyone.
+</p>
+
 Defined in:
 <pre>
 pvDataCPP/include/pv/standardField.h
@@ -1248,7 +1242,7 @@ int highWarningSeverity
 int highAlarmSeverity
 scalarType hysteresis
 </pre>
-<b>NOTE:</b> I think this should only be defined for double.
+
 <p>For boolean the following is defined:</p>
 <pre>
 boolean active
@@ -1366,15 +1360,11 @@ arrays of the same type.
   <li>Conversion between compatible unions.</li>
   <li>Conversion between compatible union arrays.</li>
   <li>Conversion between compatible structure arrays.</li>
-  <li>Support for unsigned integers. Because Java does primitive unsigned
-   integers the only support is in "widening" operations.
-   For example if a PVUByte is converted to short then the proper conversion will
-   be done.</li>
+  <li>Support for unsigned integers.</li>
   <li>A utility method the returns the full field name of a field.</li>
 </ul>
 <pre>
 interface Convert {
-    void getFullFieldName(StringBuilder builder,PVField pvField)
     void getString(StringBuilder buf,PVField pv, int indentLevel);
     void getString(StringBuilder buf,PVField pv);
     void fromString(PVScalar pv,String from);
@@ -1383,73 +1373,29 @@ interface Convert {
          int offset, int len, String[]from, int fromOffset);
     int toStringArray(PVScalarArray pv,
          int offset, int len, String[]to, int toOffset);
-    boolean isCopyCompatible(Field from, Field to);
-    void copy(PVField from,PVField to);
-    boolean isCopyScalarCompatible(Field from, Field to);
-    void copyScalar(PVField from, PVField to);
-    boolean isCopyScalarArrayCompatible(ScalarArray from, ScalarArray to);
-    int copyScalarArray(PVScalarArray from, int offset,
-         PVScalarArray to, int toOffset, int len);
-    boolean isCopyStructureCompatible(Structure from, Structure to);
-    void copyStructure(PVStructure from, PVStructure to);
-    boolean isCopyUnionCompatible(Union from, Union to);
-    void copyUnion(PVUnion from, PVUnion to);
-    boolean isCopyStructureArrayCompatible(StructureArray from, StructureArray to);
-    void copyStructureArray(PVStructureArray from, PVStructureArray to);
-    boolean isCopyUnionArrayCompatible(UnionArray from, UnionArray to);
-    void copyUnionArray(PVUnionArray from, PVUnionArray to);
     // For the following the pv Type must be PVByte, ...., PVDouble
-    byte toByte(PVField pv);
-    short toShort(PVField pv);
-    int   toInt(PVField pv);
-    long  toLong(PVField pv);
-    float toFloat(PVField pv);
-    double toDouble(PVField pv);
+    int8 toByte(PVScalar pv);
+    int16 toShort(PVScalar pv);
+    int32  toInt(PVScalar pv);
+    int64  toLong(PVScalar pv);
+    uint8 toUByte(PVScalar pv);
+    uint16 toUShort(PVScalar pv);
+    uint32  toUInt(PVScalar pv);
+    uint64  toULong(PVScalar pv);
+    float toFloat(PVScalar pv);
+    double toDouble(PVScalar pv);
     String toString(PVScalar pv);
-    void  fromByte(PVField pv, byte from);
-    void  fromShort(PVField pv, short from);
-    void  fromInt(PVField pv, int from);
-    void  fromLong(PVField pv, long from);
-    void  fromUByte(PVField pv, byte from);
-    void  fromUShort(PVField pv, short from);
-    void  fromUInt(PVField pv, int from);
-    void  fromULong(PVField pv, long from);
-    void  fromFloat(PVField pv, float from);
-    void  fromDouble(PVField pv, double from);
-// For the following the element type must be pvByte, ...., pvDouble
-    int toByteArray(PVScalarArray pv,
-        int offset, int len, byte[]to, int toOffset);
-    int toShortArray(PVScalarArray pv,
-        int offset, int len, short[]to, int toOffset);
-    int toIntArray(PVScalarArray pv,
-        int offset, int len, int[]to, int toOffset);
-    int toLongArray(PVScalarArray pv,
-        int offset, int len, long[]to, int toOffset);
-    int toFloatArray(PVScalarArray pv,
-        int offset, int len, float[]to, int toOffset);
-    int toDoubleArray(PVScalarArray pv,
-        int offset, int len, double[]to, int toOffset);
-    int fromByteArray(PVScalarArray pv,
-        int offset, int len, byte[]from, fromOffset);
-    int fromShortArray(PVScalarArray pv,
-        int offset, int len, short[]from, fromOffset);
-    int fromIntArray(PVScalarArray pv,
-        int offset, int len, int[]from, fromOffset);
-    int fromLongArray(PVScalarArray pv,
-        int offset, int len, long[]from, fromOffset);
-    int fromUByteArray(PVScalarArray pv,
-        int offset, int len, byte[]from, fromOffset);
-    int fromUShortArray(PVScalarArray pv,
-        int offset, int len, short[]from, fromOffset);
-    int fromUIntArray(PVScalarArray pv,
-        int offset, int len, int[]from, fromOffset);
-    int fromULongArray(PVScalarArray pv,
-        int offset, int len, long[]from, fromOffset);
-    int fromFloatArray(PVScalarArray pv,
-        int offset, int len, float[]from, fromOffset);
-    int fromDoubleArray(PVScalarArray pv,
-        int offset, int len, double[]from, fromOffset);
-    void newLine(StringBuilder builder, int indentLevel);
+    void  fromByte(PVScalar pv, int8 from);
+    void  fromShort(PVScalar pv, int16 from);
+    void  fromInt(PVScalar pv, int32 from);
+    void  fromLong(PVScalar pv, int64 from);
+    void  fromUByte(PVScalar pv, uint8 from);
+    void  fromUShort(PVScalar pv, uint16 from);
+    void  fromUInt(PVScalar pv, uint32 from);
+    void  fromULong(PVScalar pv, uint64 from);
+    void  fromFloat(PVScalar pv, float from);
+    void  fromDouble(PVScalar pv, double from);
+
 }
 </pre>
 <p>The array methods all return the number of elements copied or converted.
@@ -1515,10 +1461,15 @@ public:
     void fromFloat(PVScalarPtr const &amp; pv, float from);
     void fromDouble(PVScalarPtr const &amp; pv, double from);
 }
-
 static inline ConvertPtr getConvert() { return Convert::getConvert(); }
 </pre>
-
+<p>
+<b>NOTE:</b>
+PVField and derived classes provide method:
+</p>
+<pre>
+void copy(const PVField&amp; from);
+</pre>
 <h4>pvSubArrayCopy.h</h4>
 <p>This supports sub-array copying between arrays that have the same type.</p>
 <pre>
