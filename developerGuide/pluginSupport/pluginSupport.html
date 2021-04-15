@@ -332,10 +332,56 @@ It is used to suppress sending data to a client unless other fields have changed
 </pre>
 One of the examples shown at the beginning of this section shows how it can be used.
 <h2>Examples</h2>
+
+<h3>array</h3>
 <p>
-See
-<a href="../pvDatabaseTutorial/pvDatabaseTutorial.html">pvDatabaseTutorial</a>
+To see the array plugin in action.
 </p>
+<pre>
+pvput PVRdoubleArray value=[1,2,3,4,5,6,7,8,9,10]
+...
+</pre>
+<br/>
+then
+<pre>
+pvget -r "value[array=1:2:9]" PVRdoubleArray
+PVRdoubleArray [2,4,6,8,10]
+</pre>
+then
+<pre>
+pvput -r "value[array=1:2:9]" PVRdoubleArray [100,200,300,400,500]
+...
+</pre>
+then
+<pre>
+pvget -r value PVRdoubleArray
+PVRdoubleArray [1,100,3,200,5,300,7,400,9,500]
+</pre>
+<p>
+<b>NOTE:</b>
+The syntax for setting value, i. e.</p>
+<pre>
+value='[10,20,30]'
+</pre>
+Also could be:
+<pre>
+value='["10","20","30"]'
+</pre>
+In fact if the element values are anything except an integer,
+each element should be enclosed in quotes.
+<h3>deadband and ignore</h3>
+<p>In one window:</p>
+<pre>
+pvget -m -v -r "timeStamp[ignore=true],alarm[ignore=true],value[deadband=abs:1]" PVRdouble
+</pre>
+<p>Then in another window:</p>
+<pre>
+pvput PVRdouble 10
+pvput PVRdouble 9.5
+pvput PVRdouble 9
+pvput PVRdouble 8.5
+pvput PVRdouble 5
+</pre>
 
 <h2>Appendix I: ignore semantics</h2>
 <p>Plugin ignore is not a separate plugin, but is implemented by pvCopy itself.
