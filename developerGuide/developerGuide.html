@@ -40,9 +40,9 @@
 <dl>
   <dt>2019.04.19</dt>
      <dd>Original</dd>
-  <dt>2012.04.03</dt>
+  <dt>2012.04.22</dt>
      <dd>Update</dd>
-</dl>  
+</dl>
 <p>
 <b>NOTE:</b> This is the working version of the developerGuide.
 </p>
@@ -365,7 +365,6 @@ This is not discussed in this document.
    <li>Given a channel name, find and connect to the data source</li>
    <li>Implement one or more of the channel methods: getField, createChannelGet, etc.</li>
    <li>get/put all data as pvData.</li>
-   <li>Prefer normative types instead of raw pvData</li>
 </ol>
 <p><b>pvAccess</b> implements <b>channelProviderRegistry</b>, which
 allows an arbitrary number of providers.
@@ -459,7 +458,7 @@ href="./pvRequest/pvRequest.html">pvRequest
 <p>
 <b>NOTE:</b>
 exampleCPP is not part of the EPICS 7 release.
-They must be cloned from github:
+It must be cloned from github:
 </p>
 <pre>
 git clone https://github.com/epics-base/exampleCPP.git
@@ -476,65 +475,80 @@ In particular it has examples:</p>
          <br />
          It also shows how to start provider <b>qsrv</b> so that both <b>ca</b> and <b>pva</b>
          can be used to access the V3 records.
+         <br/>
+         In addition it uses several support modules that are also part of <b>exampleCPP</b>.
+         It also uses support from <b>pvDatabaseCPP</b>
+         <br/>
+         See:
+         <a
+         href="./pvService/pvService.html">pvService
+         </a>
+         for details
+       </dd>
+    <dt>serviceMain</dt>
+       <dd>
+       A main program that the same set support modules that are used by <b>database</b>.
        </dd>
     <dt>exampleClient</dt>
         <dd>
           example client code using the pvaClient API.
        </dd>
-    <dt>exampleLink</dt>
-        <dd>
-        Implements PVRecords that get and put to other records.
-        </dd>
 </dl>
 <p>These examples can be used while learning what is described in this document.
 ExampleCPP has other examples.
 </p>
 
-<p>Examples in exampleClient require that the database in exampleCPP/database is started.
-The exampleDatabase can be started either as a main
-program or as part of a V3 IOC.
-If started as part of a V3 IOC, it also has V3 records and starts <b>qsrv</b>.
+<p>Examples in exampleClient require that the database in exampleCPP/database or exampleCPP/serviceMain is started.
+The exampleDatabase is started as part of a V3 IOC.
+It has PVRecords and V3 DBRecords and starts <b>qsrv</b>.
 All the V4 PVRecords have the prefix <b>PVR</b> and all the V3 DBRecords have the prefix
 <b>DBR</b>.
 </p>
 <p>
+In linux <b>exampleCPP/serviceMain</b> can be started as follows:</p>
+<pre>
+pwd
+/home/epicsv4/master/exampleCPP/serviceMain
+bin/linux-x86_64/serviceMain
+</pre>
+<p>
 In linux <b>exampleCPP/database</b> can be started as follows:</p>
 <pre>
-mrk> pwd
+pwd
 /home/epicsv4/master/exampleCPP/database/iocBoot/exampleDatabase
-mrk> ../../bin/linux-x86_64/exampleDatabase st.cmd
+../../bin/linux-x86_64/exampleDatabase st.cmd
 </pre>
 <p>The example database has both V3 IOC records and V4 PVRecords.
 In addition <b>qsrv</b> is running. Thus all V3 records are available via either <b>ca</b> or <b>pva</b>.
 The PVRecords are only available via <b>pva</b>.
 Examples of using ca and pva command line tools are:</p>
 <pre>
-mrk> pvlist 
+pvlist 
 GUID 0x7F06B2560000000047B97D25 version 1: tcp@[10.0.0.37:45345, 192.168.124.1:45345]
-mrk> pvlist 0x7F06B2560000000047B97D25
+pvlist 0x7F06B2560000000047B97D25
 DBRao01
 DBRdouble00
 .... many more records
-mrk> pvget PVRlong
+pvget PVRlong
 PVRlong                        0
-mrk> caget PVRlong
+caget PVRlong
 Channel connect timed out: 'PVRlong' not found.
-mrk> caget DBRdouble01
+caget DBRdouble01
 DBRdouble01                       0
-mrk> pvget DBRdouble01
+pvget DBRdouble01
 DBRdouble01                       0
-mrk> caget PVRushort01
+caget PVRushort01
 Channel connect timed out: 'PVRushort01' not found.
-mrk> pvget PVRushort01
+pvget PVRushort01
 PVRushort01                       0
-mrk> 
+
 </pre>
 <p>The examples in <b>exampleCPP/exampleClient</b> can now be run.
 For example:</p>
 <pre>
-mrk> pwd
+pwd
 /home/epicsv4/masterCPP/exampleCPP/exampleClient
-mrk> ls bin/linux-x86_64/
+ls bin/linux-x86_64/
 addRecord                    getField            ntMultiGet
 examplePvaClientGet          getputmonitor       ntMultiMonitor
 examplePvaClientMonitor      helloWorldPutGet    ntMultiPut
@@ -543,8 +557,8 @@ examplePvaClientNTMulti      monitor             put
 examplePvaClientProcess      multiGetDouble      putGet
 examplePvaClientPut          multiMonitorDouble  putUnion
 get                          multiPutDouble      rpc
-mrk> 
-mrk> bin/linux-x86_64/examplePvaClientGet
+
+bin/linux-x86_64/examplePvaClientGet
 _____examplePvaClientGet starting_______
 __exampleDouble__
 short way

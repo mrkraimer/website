@@ -40,6 +40,8 @@
 <dl>
   <dt>2021.04.20</dt>
      <dd>Original</dd>
+  <dt>2021.04.22</dt>
+     <dd>latest</dd>
 </dl>
 
 <dl>
@@ -71,13 +73,14 @@ The process method implements the support details.
 A service can be created that uses the support modules.
 The service can implement a PVDatabase or can be part of an IOC.
 </p>
-<p>In order to understand the following the following should be cloned:
+<p>In order to understand the following
 <a href="https://github.com/epics-base/exampleCPP">exampleCPP</a>
+should be cloned.
 <br/>
 It has all the examples described below.
 </p>
 <p>You can clone it as a module for an EPICS 7 release.
-If you are on release 7.0.5 or earlier you will also have to replace pvDatabaseCPP by a version from github.
+If you are on release 7.0.5 or earlier you will also have to replace pvaClientCPP and pvDatabaseCPP by a version from github.
 </p>
 <p>After you have build exampleCPP then start one of the following:
 </p>
@@ -329,7 +332,7 @@ int main(int argc,char *argv[])
     return 0;
 }
 </pre>
-
+<p>After starting enter <b>pvdbl</b> to see all that records.</p>
 <h2>database</h2>
 <h3>top</h3>
 The top of <b>exampleCPP/database</b> has the following:
@@ -621,6 +624,9 @@ pwd
 /home/epics7/modules/exampleCPP/database/iocBoot/exampleDatabase
 ../../bin/linux-x86_64/exampleDatabase st.cmd 
 </pre>
+<p>After starting enter <b>pvdbl</b> to see all that records.
+You will see all the records created by serviceMain and all the additional records created by database.
+</p>
 <h4>Testing various record types</h4>
 <p>Sample configured records are available for various record types.
 Since epics-base does not provide scalar records of type
@@ -879,80 +885,269 @@ structure
 The client sets power.value and voltage.value
 When the record processes it computes current.value.
 In addition the timeStamp is set to the time when process is called.</p>
-<h3>Start Example</h3>
-<h3>Start Server</h3>
+<h3>Building</h3>
+<p>This goes into some detail because it is like all the other support modules
+that are used by serviceMain and database.
+The other support modules have a similar build structure.
+</p>
 <p>
-The example can be run on linux as follows:</p>
+The top level Makefile and configure are typical.
+It has a subdirectory src which has:
+</p>
+<h4>Makefile</h4>
 <pre>
-mrk> pwd
-/home/epicsv4/masterCPP/exampleCPP/powerSupply
-mrk> bin/linux-x86_64/powerSupplyMain 
+TOP=..
+include $(TOP)/configure/CONFIG
+#NOTE order is important
+EPICS_BASE_PVA_CORE_LIBS = pvaClient  pvDatabase pvAccess pvAccessCA pvData ca Com
 
-</pre>
-<p>To start powerSupply as part of a V3IOC:</p>
-<pre>
-mrk> pwd
-/home/epicsv4/masterCPP/exampleCPP/powerSupply/iocBoot/powerSupply
-mrk> ../../bin/linux-x86_64/powerSupply st.cmd 
+INC += powerSupply/powerSupplyRecord.h
+DBD += powerSupplyRecord.dbd
 
+LIBRARY = powerSupplyRecord
+LIBSRCS += powerSupplyRecord.cpp
+powerSupplyRecord_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
+
+PROD_HOST += powerSupplyClient
+powerSupplyClient_SRCS += powerSupplyClient.cpp
+powerSupplyClient_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
+
+PROD_HOST += powerSupplyMonitor
+powerSupplyMonitor_SRCS += powerSupplyMonitor.cpp
+powerSupplyMonitor_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
+
+# needed for Windows
+LIB_SYS_LIBS_WIN32 += netapi32 ws2_32
+
+include $(TOP)/configure/RULES
 </pre>
-<h3>Start Monitor</h3>
+where:
+<dl>
+  <dt>powerSupplyRecord</dt>
+  <dd>
+  This is the library is used by both serviceMain and database.
+  Details are shown below.
+  </dd>
+  <dt>powerSupplyClient</dt>
+  <dd>
+  This is client code. What it does is shown below.
+  </dd>
+  <dt>powerSupplyMonitor</dt>
+  <dd>
+  This is also client code. What it does is shown below.
+  </dd>
+</dl>
+<h4>powerSupply</h4>
+This subdirectory has a single include file <b>powerSupplyRecord.h</b>.
+It is what allows <b>serviceMain</b> to use the support.
+<br/>
+It is:
 <pre>
-mrk> pwd
-/home/epicsv4/masterCPP/exampleCPP/powerSupply
-mrk> bin/linux-x86_64/powerSupplyMonitor
+#ifndef POWERSUPPLYRECORD_H
+#define POWERSUPPLYRECORD_H
+
+
+#include &lt;pv/timeStamp.h&gt;
+#include &lt;pv/alarm.h&gt;
+#include &lt;pv/pvTimeStamp.h&gt;
+#include &lt;pv/pvAlarm.h&gt;
+#include &lt;pv/pvDatabase.h&gt;
+
+#include &lt;shareLib.h&gt;
+
+namespace epics { namespace example { namespace powerSupply {
+
+class PowerSupplyRecord;
+typedef std::tr1::shared_ptr&lt;PowerSupplyRecord&gt; PowerSupplyRecordPtr;
+
+class epicsShareClass PowerSupplyRecord :
+    public epics::pvDatabase::PVRecord
+{
+public:
+    POINTER_DEFINITIONS(PowerSupplyRecord);
+    static PowerSupplyRecordPtr create(
+        std::string const &amp; recordName);
+    virtual ~PowerSupplyRecord() {}
+    virtual bool init() {return false;}
+    virtual void process();
+    
+private:
+    PowerSupplyRecord(std::string const &amp; recordName,
+        epics::pvData::PVStructurePtr const &amp; pvStructure);
+    void initPvt();
+
+    epics::pvData::PVDoublePtr pvCurrent;
+    epics::pvData::PVDoublePtr pvPower;
+    epics::pvData::PVDoublePtr pvVoltage;
+    epics::pvData::PVAlarm pvAlarm;
+    epics::pvData::Alarm alarm;
+};
+
+
+}}}
+
+#endif  /* POWERSUPPLYRECORD_H */
 </pre>
-<h3>Start Client</h3>
+<h4>powerSupplyRecord.dbd</h4>
+The dbd definition used to create an iocshell command used by <b>database</b>:
 <pre>
-mrk> pwd
-/home/epicsv4/masterCPP/exampleCPP/powerSupply
-mrk> bin/linux-x86_64/powerSupplyClient 
+registrar("powerSupplyRecord")
+</pre>
+<h4>powerSupplyRecord.cpp</h4>
+<pre>
+//code the implements LIBRARY = powerSupplyRecord
+#include &lt;iocsh.h&gt;
+#include &lt;pv/pvDatabase.h&gt;
+#include &lt;pv/pvStructureCopy.h&gt;
+#include &lt;pv/timeStamp.h&gt;
+#include &lt;pv/standardField.h&gt;
+#include &lt;pv/pvAlarm.h&gt;
+#include &lt;pv/channelProviderLocal.h&gt;
+
+// The following must be the last include for code database uses
+#include &lt;epicsExport.h&gt;
+#define epicsExportSharedSymbols
+#include "powerSupply/powerSupplyRecord.h"
+
+using namespace epics::pvData;
+using namespace epics::pvDatabase;
+using std::string;
+
+namespace epics { namespace example { namespace powerSupply {
+
+PowerSupplyRecordPtr PowerSupplyRecord::create(
+    string const &amp; recordName)
+{
+    FieldCreatePtr fieldCreate = getFieldCreate();
+    StandardFieldPtr standardField = getStandardField();
+    PVDataCreatePtr pvDataCreate = getPVDataCreate();
+
+    StructureConstPtr  topStructure = fieldCreate-&gt;createFieldBuilder()-&gt;
+            add("alarm",standardField-&gt;alarm()) -&gt;
+            add("timeStamp",standardField-&gt;timeStamp()) -&gt;
+            addNestedStructure("power") -&gt;
+               add("value",pvDouble) -&gt;
+               endNested()-&gt;
+            addNestedStructure("voltage") -&gt;
+               add("value",pvDouble) -&gt;
+               endNested()-&gt;
+            addNestedStructure("current") -&gt;
+               add("value",pvDouble) -&gt;
+               endNested()-&gt;
+            createStructure();
+    PVStructurePtr pvStructure = pvDataCreate-&gt;createPVStructure(topStructure);
+    PowerSupplyRecordPtr pvRecord(
+        new PowerSupplyRecord(recordName,pvStructure));
+    pvRecord-&gt;initPvt();
+    return pvRecord;
+}
+
+PowerSupplyRecord::PowerSupplyRecord(
+    string const &amp; recordName,
+    PVStructurePtr const &amp; pvStructure)
+: PVRecord(recordName,pvStructure)
+{
+}
+
+
+void PowerSupplyRecord::initPvt()
+{
+    initPVRecord();
+    PVStructurePtr pvStructure = getPVStructure();
+    PVFieldPtr pvField;
+    pvField = pvStructure-&gt;getSubField("alarm");
+    pvAlarm.attach(pvField);
+    pvCurrent = pvStructure-&gt;getSubField&lt;PVDouble&gt;("current.value");
+    pvVoltage = pvStructure-&gt;getSubField&lt;PVDouble&gt;("voltage.value");
+    pvPower = pvStructure-&gt;getSubField&lt;PVDouble&gt;("power.value");
+    alarm.setMessage("bad voltage");
+    alarm.setSeverity(majorAlarm);
+    pvAlarm.set(alarm);
+}
+
+void PowerSupplyRecord::process()
+{
+    double voltage = pvVoltage-&gt;get();
+    double power = pvPower-&gt;get();
+    if(voltage&lt;1e-3 &amp;&amp; voltage&gt;-1e-3) {
+        alarm.setMessage("bad voltage");
+        alarm.setSeverity(majorAlarm);
+        pvAlarm.set(alarm);
+        throw std::runtime_error("bad voltage exception");
+    }
+    double current = power/voltage;
+    pvCurrent-&gt;put(current);
+    pvAlarm.get(alarm);
+    if(alarm.getSeverity()!=noAlarm) {
+        alarm.setMessage("");
+        alarm.setSeverity(noAlarm);
+        pvAlarm.set(alarm);
+    }
+    PVRecord::process();
+}
+}}}
+
+// code that implements the iocshell command
+static const iocshArg testArg0 = { "recordName", iocshArgString };
+static const iocshArg *testArgs[] = {
+    &amp;testArg0};
+
+static const iocshFuncDef powerSupplyFuncDef = {
+    "powerSupplyRecord", 1, testArgs};
+static void powerSupplyCallFunc(const iocshArgBuf *args)
+{
+    char *recordName = args[0].sval;
+    if(!recordName) {
+        throw std::runtime_error("powerSupplyRecord invalid number of arguments");
+    }
+    epics::example::powerSupply::PowerSupplyRecordPtr record
+       = epics::example::powerSupply::PowerSupplyRecord::create(recordName);
+    bool result = PVDatabase::getMaster()-&gt;addRecord(record);
+    if(!result) std::cout &lt;&lt; string(recordName) &lt;&lt; " not added" &lt;&lt; "\n";
+}
+
+static void powerSupplyRecord(void)
+{
+    static int firstTime = 1;
+    if (firstTime) {
+        firstTime = 0;
+        iocshRegister(&amp;powerSupplyFuncDef, powerSupplyCallFunc);
+    }
+}
+
+extern "C" {
+    epicsExportRegistrar(powerSupplyRecord);
+}
+</pre>
+<h4></h4>
+
+<h3>Testing</h3>
+<h4>Start Server</h4>
+<p>
+Start either serviceMain or database.
+</p>
+
+<h4>Start Monitor</h4>
+In another window:
+<pre>
+pwd
+/home/epicsv4/masterCPP/exampleCPP/powerSupplyRecord
+bin/linux-x86_64/powerSupplyMonitor
+</pre>
+<h4>Start Client</h4>
+In another window:
+<pre>
+pwd
+/home/epicsv4/masterCPP/exampleCPP/powerSupplyRecord
+bin/linux-x86_64/powerSupplyClient 
 </pre>
 <p><b>NOTE:</b> The client ends by requesting a voltage of 0.
 This results in the power supply record thowing an exception.
-This results in problems including the powerSupplyMonitor no longer updating.
-Needs investigation.
 </p>
-
-
-
-<h3>Overview</h3>
-<p>This creates various types of PVRecords.
-By looking at how each type is created a user can use this as model of how to create other records.
-This example also shows how to register ioc shell commands for creating record instances
-and also to start channel providers pva, local, and qsrv.
-</p>
-<p>
-<b>NOTE:</b>
-This document is mainly for developers, i. e. people who want to create databases
-and/or implement their own record semantics.
-Thus while reading this document please also look at the code.
-</p>
-
-<p>Start it as part of an EPICS V3 IOC:</p>
-<pre>
-pwd
-/home/epicsv4/masterCPP/exampleCPP/database/iocBoot/exampleDatabase
-../../bin/linux-x86_64/exampleDatabase st.cmd 
-</pre>
-<p>The database has both iocCore DBRecords and pvDatabase PVRecords.
-To see the DBRecords enter:
-</p>
-<pre>
-dbl
-</pre>
-To see the PVRecords enter:
-<pre>
-pvdbl
-</pre>
-<p>
-Since qsrv is also started, the DBRecords can be accesed via either channelAccess or pvAccess.
-For example both caget and pvget can be used to access the DBRecords.
-</p>
-
-
 
 <h2>linkRecord</h2>
+<p>The build structure is similar to <b>powerSupplyRecord</b>.
+</p>
 <h3>Overview</h3>
 <p>
 <b>exampleLink</b> implements PVRecords that link to another record.
@@ -983,26 +1178,10 @@ The following records are implemented:
 </dl>
 
 <h3>Running the example</h3>
-<h4>Start the example database</h4>
-<p>In one window run:
+<h4>Start Server</h4>
+<p>
+Start either serviceMain or database.
 </p>
-<pre>
-mrk&gt;pwd
-/home/epicsv4/masterCPP/exampleCPP/exampleLink/iocBoot/exampleLink
-../../bin/linux-x86_64/exampleLink st.cmd
-</pre>
-After the database has started:
-<pre>
-mrk&gt;pvdbl
-double
-doubleArray
-getLinkScalar
-getLinkScalarArray
-putLinkScalar
-putLinkScalarArray
-string
-stringArray
-</pre>
 <h4>Start monitoring all records</h4>
 <p>In another window run:
 </p>
@@ -1015,20 +1194,20 @@ pvget -m double doubleArray getLinkScalar getLinkScalarArray putLinkScalar putLi
 pvput putLinkScalar 1
 Old : &lt;undefined&gt;               
 New : 2021-03-18 13:51:46.816  1 
-mrk> pvput putLinkScalar 1
+pvput putLinkScalar 1
 Old : 2021-03-18 13:51:46.816  1 
 New : 2021-03-18 13:52:01.997  1 
 pvput putLinkScalar 1
 Old : 2021-03-18 13:52:01.997  1 
 New : 2021-03-18 13:52:06.052  1 
-mrk> pvput putLinkScalarArray [1,2,3]
+pvput putLinkScalarArray [1,2,3]
 Old : &lt;undefined&gt;              []
 New : 2021-03-18 13:52:23.698  [1, 2, 3]
 </pre>
 <p>Look at the the window where you are monitoring and see what happened.
 </p>
 <h3>fuctionalty</h3>
-<h3>record structure</h3>
+<h4>record structure</h4>
 <p>
 The record being access must have a top level <b>value</b> field, which
 must be a scalar or scalar array.
@@ -1079,7 +1258,7 @@ Type:
 The only difference is if <b>value</b> has type <b>string</b> or <b>string[]</b>.
 </p>
 
-<h3>processing</h3>
+<h4>processing</h4>
 <p>
 <b>pvput</b> and <b>pvget</b> are used for examples that demonstrate how the link records work.
 They are all that is needed for the put records.
@@ -1127,7 +1306,7 @@ But it is better to use <b>exampleClient/process</b> or the following:
 <pre>
 pvput getLinkScalarArray '{"linkRecord":"doubleArray","accessMethod":"client"}'
 </pre>
-<h3>connection management</h3>
+<h4>connection management</h4>
 <p>When the IOC is started
 <b>putLinkScalar</b>, <b>putLinkScalarArray</b>, <b>getLinkScalar</b>, and <b>getLinkScalarArray</b>
 are not connected to <b>linkRecord</b> for either <b>client</b> or <b>database</b> access.
@@ -1141,15 +1320,15 @@ This also means that if the client specifies <b>linkRecord</b> it has no effect.
 An example is:
 </p>
 <pre>
-mrk&gt; pvput putLinkScalar reconnect="true"
+ pvput putLinkScalar reconnect="true"
 Old : &lt;undefined&gt;               
 New : 2021-03-19 10:53:26.708   MINOR reconnecting 
-mrk&gt; pvput putLinkScalar '{"value":"a value","linkRecord":"string","accessMethod":"client"}'
+ pvput putLinkScalar '{"value":"a value","linkRecord":"string","accessMethod":"client"}'
 Old : 2021-03-19 10:53:26.708   MINOR reconnecting 
 New : 2021-03-19 10:55:41.463  "a value" 
 </pre>
 <h3>more client examples</h3>
-<h4>st.cmd</h4>
+<h4>database st.cmd</h4>
 <p>
 This file could be changes to add additional scalar or scalarArray types.
 For example instead of:
@@ -1171,24 +1350,181 @@ scalarArray stringArray string
 scalarArray booleanArrayRecord boolean
 scalarArray byteArrayRecord byte
 </pre>
+<h4>serviceMain</h4>
+<p>It could create additional scalar or scalarArray types.</p>
 <h4>additional pvput and pvget examples</h4>
 <pre>
-mrk&gt; pvput putLinkScalar '{"value":"a value","linkRecord":"string","accessMethod":"client"}'
+ pvput putLinkScalar '{"value":"a value","linkRecord":"string","accessMethod":"client"}'
 Old : &lt;undefined&gt;               
 New : 2021-03-19 11:20:29.381  "a value" 
-mrk&gt; pvput putLinkScalarArray '{"value":["a value","b value"],"linkRecord":"stringArray","accessMethod":"client"}'
+ pvput putLinkScalarArray '{"value":["a value","b value"],"linkRecord":"stringArray","accessMethod":"client"}'
 Old : &lt;undefined&gt;              []
 New : 2021-03-19 11:22:10.000  ["a value", "b value"]
-mrk&gt; pvput putLinkScalar '{"value":"a value","linkRecord":"string","accessMethod":"database"}'
+ pvput putLinkScalar '{"value":"a value","linkRecord":"string","accessMethod":"database"}'
 Old : 2021-03-19 11:20:29.381  "a value" 
 New : 2021-03-19 11:22:29.608  "a value" 
-mrk&gt; pvput putLinkScalarArray '{"value":["a value","b value"],"linkRecord":"stringArray","accessMethod":"database"}'
+ pvput putLinkScalarArray '{"value":["a value","b value"],"linkRecord":"stringArray","accessMethod":"database"}'
 Old : 2021-03-19 11:22:10.000  ["a value", "b value"]
 New : 2021-03-19 11:22:49.790  ["a value", "b value"]
 </pre>
 
 
+
+<h2>helloPutGetRecord</h2>
+<p>The build structure is similar to <b>powerSupplyRecord</b>.</p>
+<h3>Overview</h3>
+<p>The example implements a simple putGet that has a top level pvStructure:
+</p>
+<pre>
+structure
+    time_t timeStamp
+        long secondsPastEpoch
+        int nanoseconds
+        int userTag
+    structure argument
+        string value
+    structure result
+        string value
+</pre>
+<p>It is designed to be accessed via a channelPutGet request.
+The client sets argument.value
+When the record processes it sets result.value to "Hello " 
+concatenated with argument.value.
+Thus if the client sets argument.value equal to "World"
+result.value will be "Hello World".
+In addition the timeStamp is set to the time when process is called.</p>
+<p>
+The example can be run on linux as follows:</p>
+<h3>Server</h3>
+<pre>
+pwd
+/home/epicsv4/masterCPP/exampleCPP/helloPutGet
+ bin/linux-x86_64/helloPutGetMain
+</pre>
+<p>To start helloPutGet as part of a V3IOC:</p>
+<pre>
+ pwd
+/home/hg/exampleCPP/master/helloPutGet/iocBoot/helloPutGet
+ ../../../bin/linux-x86_64/helloPutGet st.cmd
+</pre>
+<h3>Hello World Client</h3>
+<p>This example requires that the server is running.
+In addition start a monitor as follows:
+</p>
+<pre>
+pvget -r "field()"  -m helloPutGet
+</pre>
+<p>When the following is executed:
+</p>
+<pre>
+ pwd
+/home/epicsv4/master/exampleCPP/helloPutGet
+ bin/linux-x86_64helloPutGetClient
+</pre>
+<p>The pvget shows:</p>
+<pre>
+helloPutGet
+structure 
+    time_t timeStamp 2017-09-26T09:32:05.560 0
+    structure argument
+        string value World
+    structure result
+        string value Hello World
+</pre>
+<h3>Non Blocking Client</h3>
+<p>A client with more functionality is also available.
+It can be started either before of after the server is started.
+It options are:
+</p>
+<pre>
+ pwd
+/home/epicsv4/masterCPP/exampleCPP/helloPutGet
+ bin/linux-x86_64/helloNoWaitPutGetClient -help
+providerName channelName request debug
+default
+pva helloPutGet "putField(argument)getField(result)" false
+</pre>
+<p>After it is started as follows:
+</p>
+<pre>
+ bin/linux-x86_64/helloNoWaitPutGetClient
+</pre>
+<p>Then it accepts several commands.
+To see the commands just type help:
+</p>
+<pre>
+help
+exit putGet getPut getGet
+</pre>
+<p>The commands are:</p>
+<dl>
+   <dt>exit</dt>
+      <dd>
+       The program terminates.
+      </dd>
+   <dt>putGet</dt>
+      <dd>
+       The client is prompted for a value, which is sent to the server
+       via a putGet request.
+      </dd>
+   <dt>getPut</dt>
+      <dd>
+       A getPut request is sent to the server and the result displayed.
+      </dd>
+   <dt>getGet</dt>
+      <dd>
+      A getGet request is sent to the server and the result displayed.
+      </dd>
+</dl>
+<h2>helloRPCRecord</h2>
+<p>The build structure is similar to <b>powerSupplyRecord</b>.</p>
+<p>This is an example of a channel RPC request.
+Look at the source code for details but note that it simulates a RPC server that take time to process
+each event.
+</p>
+<p>The following shows how to use the service:</p>
+<pre>
+pwd
+/home/epics7/modules/exampleCPP/exampleClient
+bin/linux-x86_64/helloWorldRPC
+_____HelloWorldRPC starting_______
+_____exampleSimple___
+send SimpleWorld
+result
+epics:nt/NTScalar:1.0 
+    string value "Hello SimpleWorld"
+
+_____exampleMore___
+send MoreWorld
+result
+epics:nt/NTScalar:1.0 
+    string value "Hello MoreWorld"
+
+send MoreAgain
+result
+epics:nt/NTScalar:1.0 
+    string value "Hello MoreAgain"
+
+_____exampleEvenMore___
+example channeRPC more
+send EvenMoreWorld
+response
+epics:nt/NTScalar:1.0 
+    string value "Hello EvenMoreWorld"
+
+send EvenMoreAgain
+response
+epics:nt/NTScalar:1.0 
+    string value "Hello EvenMoreAgain"
+
+send EvenMore one more
+Expected exception channel PVRhelloRPC PvaClientRPC::request request timeout 
+Expected exception channel PVRhelloRPC PvaClientRPC::request request aleady active 
+_____HelloWorldRPC done_______
+</pre>
+
 <h2>controlRecord</h2>
+<p>The build structure is similar to <b>powerSupplyRecord</b>.</p>
 <p><b>controlRecord</b> is support for any field that is a numeric scalar.
 The following must appear in the same structure as the field being supported:
 </p>
@@ -1295,14 +1631,11 @@ where:
    <li>
     hysteresis is ignored if <b>hysteresis&lt;=0</b>.
    </li>
-</ul>
-
-<h3>exampleCPP/support</h3>
-<p><b>NOTE:</b>
-Support for control is defined by a combination of definitions in pvData and in pvDatabase.
-I think the semantics are wrong.
-I think two improvments should be made:
-</p>
+   <li>
+   <b>NOTE:</b>
+    Support for control is defined by a combination of definitions in pvData and in pvDatabase.
+    I think the semantics are wrong.
+    I think two improvments should be made:
 <dl>
    <dt>minStep</dt>
    <dd>
@@ -1313,21 +1646,13 @@ I think two improvments should be made:
    This is what should be changed by maxStep each time the record is processed.
    </dd>
 </dl>
-<h3>Starting support</h3>
-<p>To start the database for this example:</p>
-<pre>
-pwd
-/home/epics7/modules/exampleCPP/support
-bin/linux-x86_64/supportMain
-</pre>
+   </li>
+</ul>
+<h3>Start Server</h3>
 <p>
-When the IOC is started it has the following records:
+Start either serviceMain or database.
 </p>
-<pre>
-PVRsupportDouble
-PVRsupportProcessRecord
-PVRsupportUByte
-</pre>
+
 <h4>supportRecordCreate</h4>
 <p>This is an iocshell command implemented in exampleCPP/support.
 It creates PVRecord instances that are used and described later in this tutorial.
@@ -1692,113 +2017,6 @@ Then no more monitors occur.
 </p>
 <p>Now issue some more pvputs. For example to 19 then 15 then 5 then 0.
 </p>
-
-<h2>helloPutGetRecord</h2>
-<h3>Overview</h3>
-<p>The example implements a simple putGet that has a top level pvStructure:
-</p>
-<pre>
-structure
-    time_t timeStamp
-        long secondsPastEpoch
-        int nanoseconds
-        int userTag
-    structure argument
-        string value
-    structure result
-        string value
-</pre>
-<p>It is designed to be accessed via a channelPutGet request.
-The client sets argument.value
-When the record processes it sets result.value to "Hello " 
-concatenated with argument.value.
-Thus if the client sets argument.value equal to "World"
-result.value will be "Hello World".
-In addition the timeStamp is set to the time when process is called.</p>
-<p>
-The example can be run on linux as follows:</p>
-<h3>Server</h3>
-<pre>
-mrk&gt; pwd
-/home/epicsv4/masterCPP/exampleCPP/helloPutGet
-mrk&gt; bin/linux-x86_64/helloPutGetMain
-</pre>
-<p>To start helloPutGet as part of a V3IOC:</p>
-<pre>
-mrk&gt; pwd
-/home/hg/exampleCPP/master/helloPutGet/iocBoot/helloPutGet
-mrk&gt; ../../../bin/linux-x86_64/helloPutGet st.cmd
-</pre>
-<h3>Hello World Client</h3>
-<p>This example requires that the server is running.
-In addition start a monitor as follows:
-</p>
-<pre>
-pvget -r "field()"  -m helloPutGet
-</pre>
-<p>When the following is executed:
-</p>
-<pre>
-mrk&gt; pwd
-/home/epicsv4/master/exampleCPP/helloPutGet
-mrk&gt; bin/linux-x86_64helloPutGetClient
-</pre>
-<p>The pvget shows:</p>
-<pre>
-helloPutGet
-structure 
-    time_t timeStamp 2017-09-26T09:32:05.560 0
-    structure argument
-        string value World
-    structure result
-        string value Hello World
-</pre>
-<h3>Non Blocking Client</h3>
-<p>A client with more functionality is also available.
-It can be started either before of after the server is started.
-It options are:
-</p>
-<pre>
-mrk&gt; pwd
-/home/epicsv4/masterCPP/exampleCPP/helloPutGet
-mrk&gt; bin/linux-x86_64/helloNoWaitPutGetClient -help
-providerName channelName request debug
-default
-pva helloPutGet "putField(argument)getField(result)" false
-</pre>
-<p>After it is started as follows:
-</p>
-<pre>
-mrk&gt; bin/linux-x86_64/helloNoWaitPutGetClient
-</pre>
-<p>Then it accepts several commands.
-To see the commands just type help:
-</p>
-<pre>
-help
-exit putGet getPut getGet
-</pre>
-<p>The commands are:</p>
-<dl>
-   <dt>exit</dt>
-      <dd>
-       The program terminates.
-      </dd>
-   <dt>putGet</dt>
-      <dd>
-       The client is prompted for a value, which is sent to the server
-       via a putGet request.
-      </dd>
-   <dt>getPut</dt>
-      <dd>
-       A getPut request is sent to the server and the result displayed.
-      </dd>
-   <dt>getGet</dt>
-      <dd>
-      A getGet request is sent to the server and the result displayed.
-      </dd>
-</dl>
-<h2>helloRPCRecord</h2>
 </div>
 </body>
 </html>

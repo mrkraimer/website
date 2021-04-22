@@ -64,11 +64,13 @@ Inheritance diagram for epics::pvDatabase::PVRecord:</div>
  <div class="center">
   <img src="classepics_1_1pvDatabase_1_1PVRecord.png" usemap="#epics::pvDatabase::PVRecord_map" alt=""/>
   <map id="epics::pvDatabase::PVRecord_map" name="epics::pvDatabase::PVRecord_map">
-<area href="classepics_1_1pvCopy_1_1PVCopyTraverseMasterCallback.html" title="Callback for traversing master structure." alt="epics::pvCopy::PVCopyTraverseMasterCallback" shape="rect" coords="294,0,578,24"/>
-<area href="classepics_1_1pvDatabase_1_1AddRecord.html" title="Add another record in the same database." alt="epics::pvDatabase::AddRecord" shape="rect" coords="0,112,284,136"/>
-<area href="classepics_1_1pvDatabase_1_1ProcessRecord.html" title="Process another record in the same database." alt="epics::pvDatabase::ProcessRecord" shape="rect" coords="294,112,578,136"/>
-<area href="classepics_1_1pvDatabase_1_1RemoveRecord.html" title="Remove another record in the same database." alt="epics::pvDatabase::RemoveRecord" shape="rect" coords="588,112,872,136"/>
-<area href="classepics_1_1pvDatabase_1_1TraceRecord.html" title="Trace activity of PVRecord." alt="epics::pvDatabase::TraceRecord" shape="rect" coords="882,112,1166,136"/>
+<area href="classepics_1_1pvCopy_1_1PVCopyTraverseMasterCallback.html" title="Callback for traversing master structure." alt="epics::pvCopy::PVCopyTraverseMasterCallback" shape="rect" coords="588,0,872,24"/>
+<area href="classepics_1_1pvDatabase_1_1PvdbcrAddRecord.html" title="PvdbcrAddRecord A record that adds a record to the master database." alt="epics::pvDatabase::PvdbcrAddRecord" shape="rect" coords="0,112,284,136"/>
+<area href="classepics_1_1pvDatabase_1_1PvdbcrProcessRecord.html" title="PvdbcrProcessRecord A record that processes other records in the master database." alt="epics::pvDatabase::PvdbcrProcessRecord" shape="rect" coords="294,112,578,136"/>
+<area href="classepics_1_1pvDatabase_1_1PvdbcrRemoveRecord.html" title="PvdbcrRemoveRecord A record that removes a record from the master database." alt="epics::pvDatabase::PvdbcrRemoveRecord" shape="rect" coords="588,112,872,136"/>
+<area href="classepics_1_1pvDatabase_1_1PvdbcrScalarArrayRecord.html" title="PvdbcrScalarArrayRecord creates a record with a scalar array value, alarm, and timeStamp." alt="epics::pvDatabase::PvdbcrScalarArrayRecord" shape="rect" coords="882,112,1166,136"/>
+<area href="classepics_1_1pvDatabase_1_1PvdbcrScalarRecord.html" title="PvdbcrScalarRecord creates a record with a scalar value, alarm, and timeStamp." alt="epics::pvDatabase::PvdbcrScalarRecord" shape="rect" coords="1176,112,1460,136"/>
+<area href="classepics_1_1pvDatabase_1_1PvdbcrTraceRecord.html" title="PvdbcrTraceRecord A record sets trace level for a record in the master database." alt="epics::pvDatabase::PvdbcrTraceRecord" shape="rect" coords="1470,112,1754,136"/>
   </map>
 </div></div>
 <table class="memberdecls">
@@ -702,7 +704,7 @@ Friends</h2></td></tr>
 <p>Optional initialization method. </p>
 <p>A derived method <b>Must</b> call initPVRecord. </p><dl class="section return"><dt>Returns</dt><dd><b>true</b> for success and <b>false</b> for failure. </dd></dl>
 
-<p>Reimplemented in <a class="el" href="classepics_1_1pvDatabase_1_1TraceRecord.html#a6288be6ecb0311db97b6f8259252ea21">epics::pvDatabase::TraceRecord</a>, <a class="el" href="classepics_1_1pvDatabase_1_1RemoveRecord.html#a051250d58beab0d38beeb41f6830976c">epics::pvDatabase::RemoveRecord</a>, <a class="el" href="classepics_1_1pvDatabase_1_1ProcessRecord.html#a4d604cd07daac69f1b2c03f6c2d9aaa3">epics::pvDatabase::ProcessRecord</a>, and <a class="el" href="classepics_1_1pvDatabase_1_1AddRecord.html#a3f1fe97692b72b024e85e612ab2adfa9">epics::pvDatabase::AddRecord</a>.</p>
+<p>Reimplemented in <a class="el" href="classepics_1_1pvDatabase_1_1PvdbcrTraceRecord.html#aa80a3a9c51ad01dcc44d6ef0eca57d55">epics::pvDatabase::PvdbcrTraceRecord</a>, <a class="el" href="classepics_1_1pvDatabase_1_1PvdbcrRemoveRecord.html#a89bffe53eba2c27645126c42813e9795">epics::pvDatabase::PvdbcrRemoveRecord</a>, <a class="el" href="classepics_1_1pvDatabase_1_1PvdbcrProcessRecord.html#a7d03b7b4f41560f72f0a741f046ee56b">epics::pvDatabase::PvdbcrProcessRecord</a>, and <a class="el" href="classepics_1_1pvDatabase_1_1PvdbcrAddRecord.html#a92a8aaf558319f622b51dfb7c9b77924">epics::pvDatabase::PvdbcrAddRecord</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="pvDatabase_8h_source.html#l00073">73</a> of file <a class="el" href="pvDatabase_8h_source.html">pvDatabase.h</a>.</p>
 
@@ -889,7 +891,7 @@ Friends</h2></td></tr>
 <p>Optional method for derived class. </p>
 <p>It is the method that makes a record smart. If it encounters errors it should raise alarms and/or call the <b>message</b> method provided by the base class. If the pvStructure has a top level timeStamp, the base class sets the timeStamp to the current time. </p>
 
-<p>Reimplemented in <a class="el" href="classepics_1_1pvDatabase_1_1TraceRecord.html#a7937a52ed1492ff4b5371796ee319771">epics::pvDatabase::TraceRecord</a>, <a class="el" href="classepics_1_1pvDatabase_1_1RemoveRecord.html#aeb389c4a45a6ea8d33adb37dbf1d66ca">epics::pvDatabase::RemoveRecord</a>, <a class="el" href="classepics_1_1pvDatabase_1_1ProcessRecord.html#a5ecc0c94f0785139b63b105ebd38704a">epics::pvDatabase::ProcessRecord</a>, and <a class="el" href="classepics_1_1pvDatabase_1_1AddRecord.html#a69278161795f373b4f79f638e5b4289d">epics::pvDatabase::AddRecord</a>.</p>
+<p>Reimplemented in <a class="el" href="classepics_1_1pvDatabase_1_1PvdbcrTraceRecord.html#a4b92ab4932fd7e8caed4240417f40208">epics::pvDatabase::PvdbcrTraceRecord</a>, <a class="el" href="classepics_1_1pvDatabase_1_1PvdbcrRemoveRecord.html#a8f1171c8328d976a68a0b3a05ee998cd">epics::pvDatabase::PvdbcrRemoveRecord</a>, <a class="el" href="classepics_1_1pvDatabase_1_1PvdbcrProcessRecord.html#a6cea0e5fc45907002351713ce381ee6a">epics::pvDatabase::PvdbcrProcessRecord</a>, and <a class="el" href="classepics_1_1pvDatabase_1_1PvdbcrAddRecord.html#a5a340a8c67fcfc95537d95b0215ef608">epics::pvDatabase::PvdbcrAddRecord</a>.</p>
 
 </div>
 </div>
@@ -1168,7 +1170,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 24 2021 11:31:33 for pvDatabaseCPP by&#160;<a href="http://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.8.20
+Generated on Thu Apr 22 2021 14:08:46 for pvDatabaseCPP by&#160;<a href="http://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.8.20
 </small></address>
 </body>
 </html>

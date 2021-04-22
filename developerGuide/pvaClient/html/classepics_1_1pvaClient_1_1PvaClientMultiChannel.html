@@ -112,9 +112,9 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a48c3674a6914d9fbeb8d567d5f4d8eb7"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="namespaceepics_1_1pvaClient.html#aba8eea06f3a612fb5966b2bd733a9bdb">PvaClientMultiChannelPtr</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classepics_1_1pvaClient_1_1PvaClientMultiChannel.html#a48c3674a6914d9fbeb8d567d5f4d8eb7">create</a> (<a class="el" href="namespaceepics_1_1pvaClient.html#ab826681fa8e61d31da91a4fed00b6393">PvaClientPtr</a> const &amp;pvaClient, epics::pvData::shared_vector&lt; const std::string &gt; const &amp;channelNames, std::string const &amp;providerName=&quot;pva&quot;, size_t maxNotConnected=0)</td></tr>
-<tr class="memdesc:a48c3674a6914d9fbeb8d567d5f4d8eb7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a <a class="el" href="classepics_1_1pvaClient_1_1PvaClientMultiChannel.html" title="PvaMultiChannel is a synchronous interface for accessing multiple channels.">PvaClientMultiChannel</a>.  <a href="classepics_1_1pvaClient_1_1PvaClientMultiChannel.html#a48c3674a6914d9fbeb8d567d5f4d8eb7">More...</a><br /></td></tr>
-<tr class="separator:a48c3674a6914d9fbeb8d567d5f4d8eb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6f6bb5634bb58abd993252ead052f1ea"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="namespaceepics_1_1pvaClient.html#aba8eea06f3a612fb5966b2bd733a9bdb">PvaClientMultiChannelPtr</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classepics_1_1pvaClient_1_1PvaClientMultiChannel.html#a6f6bb5634bb58abd993252ead052f1ea">create</a> (<a class="el" href="namespaceepics_1_1pvaClient.html#ab826681fa8e61d31da91a4fed00b6393">PvaClientPtr</a> const &amp;pvaClient, epics::pvData::shared_vector&lt; const std::string &gt; const &amp;channelNames, std::string const &amp;providerName=&quot;pva&quot;, size_t maxNotConnected=0, epics::pvData::shared_vector&lt; const std::string &gt; const &amp;providerNames=epics::pvData::shared_vector&lt; const std::string &gt;())</td></tr>
+<tr class="memdesc:a6f6bb5634bb58abd993252ead052f1ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a <a class="el" href="classepics_1_1pvaClient_1_1PvaClientMultiChannel.html" title="PvaMultiChannel is a synchronous interface for accessing multiple channels.">PvaClientMultiChannel</a>.  <a href="classepics_1_1pvaClient_1_1PvaClientMultiChannel.html#a6f6bb5634bb58abd993252ead052f1ea">More...</a><br /></td></tr>
+<tr class="separator:a6f6bb5634bb58abd993252ead052f1ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>PvaMultiChannel is a synchronous interface for accessing multiple channels. </p>
@@ -209,8 +209,8 @@ Static Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a48c3674a6914d9fbeb8d567d5f4d8eb7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a48c3674a6914d9fbeb8d567d5f4d8eb7">&#9670;&nbsp;</a></span>create()</h2>
+<a id="a6f6bb5634bb58abd993252ead052f1ea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6f6bb5634bb58abd993252ead052f1ea">&#9670;&nbsp;</a></span>create()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -240,7 +240,13 @@ Static Public Member Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>maxNotConnected</em> = <code>0</code>&#160;</td>
+          <td class="paramname"><em>maxNotConnected</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">epics::pvData::shared_vector&lt; const std::string &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>providerNames</em> = <code>epics::pvData::shared_vector&lt;&#160;const&#160;std::string&#160;&gt;()</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -260,8 +266,9 @@ Static Public Member Functions</h2></td></tr>
   <table class="params">
     <tr><td class="paramname"><a class="el" href="namespaceepics_1_1pvaClient.html">pvaClient</a></td><td>The interface to <a class="el" href="namespaceepics_1_1pvaClient.html">pvaClient</a>. </td></tr>
     <tr><td class="paramname">channelNames</td><td>The names of the channel.. </td></tr>
-    <tr><td class="paramname">providerName</td><td>The name of the provider. </td></tr>
+    <tr><td class="paramname">providerName</td><td>The name of the provider. This is also used for the provider for all channels with providerNames.size less than channelNames.size() </td></tr>
     <tr><td class="paramname">maxNotConnected</td><td>The maximum number of channels that can be disconnected. </td></tr>
+    <tr><td class="paramname">providerNames</td><td>The providerName for each Channells </td></tr>
   </table>
   </dd>
 </dl>
@@ -507,7 +514,7 @@ Static Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 4 2021 10:29:36 for pvaClientCPP by&#160;<a href="http://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.8.20
+Generated on Thu Apr 22 2021 14:02:19 for pvaClientCPP by&#160;<a href="http://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.8.20
 </small></address>
 </body>
 </html>
