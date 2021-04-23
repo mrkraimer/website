@@ -39,7 +39,7 @@
 <dl>
   <dt>2021.03.01</dt>
      <dd>Original</dd>
-  <dt>2012.04.21</dt>
+  <dt>2012.04.23</dt>
      <dd>Update</dd>
 </dl>  
 <dl>
@@ -48,11 +48,10 @@
       Marty Kraimer
     </dd>
 </dl>
-<h2 class="nocount">Work is Progress; Making Progress!!</h2>
+
 <p>This product is available via an <a
 href="../../LICENSE">open source license
 </a></p>
-<p><b>NOTE:</b> This is still a work in progress.</p>
 
 </div>
 
@@ -207,11 +206,6 @@ Note the following:
    </dd>
 </dl>
 <p>
-<b>exampleCPP/pvaClient</b> also have <b>longerPutGetDouble</b> and <b>longerPutGetDoubleArray</b>.
-They do not cause caching or execptions.
-They show how much work is required.
-</p>
-<p>
 A client can also access channels with a complex structure but has to do more work.
 Two features that make this possible are:
 </p>
@@ -227,7 +221,8 @@ Two features that make this possible are:
    </dd>
 </dl>
 <p>
-The following sections provide a brief summary of all methods provided by <b>pvaClient</b>
+The next section is a tutorial based on examples from exampleCPP/exampleClient.
+The remaining sections provide a brief summary of all methods provided by <b>pvaClient</b>
 <br/>
 Look at
 <a
@@ -236,33 +231,7 @@ href="./html/index.html">doxygen
 for details about each method,
 </p>
 <h2>Tutorial</h2>
-<h3>testRequest</h3>
-<p>This provides a way to run <b>CreateRequest</b> by providing a string that is passed to
-createRequest.</p>
-<p>Some examples are:</p>
-<pre>
-mrk> pwd
-/home/epicsv4/masterCPP/exampleCPP/exampleClient
-mrk> bin/linux-x86_64/testRequest
-enter a string to pass to createRequest
-mrk> bin/linux-x86_64/testRequest value
-pvRequest
-structure 
-    structure field
-        structure value
-mrk> bin/linux-x86_64/testRequest "record[block=true],field(value[max_elem=1],alarm.timeStamp)"
-pvRequest
-structure 
-    structure record
-        structure _options
-            string block true
-    structure field
-        structure value
-            structure _options
-                string max_elem 1
-        structure alarm
-            structure timeStamp
-</pre>
+
 <h3>Non-blocking Examples</h3>
 <p>These are examples that never block while waiting for a channel to connect.
 They are good examples for use by display manager tools that want to access channels
@@ -320,6 +289,47 @@ Two commands are accepted:</p>
 Note that if a channel disconnects and reconnects between gets the example should continuue
 to work.
 </p>
+<p>
+An example is:
+</p>
+<pre>
+bin/linux-x86_64/get PVRdouble PVRshort
+provider pva channelName PVRdouble request value,alarm,timeStamp debug false
+_____get starting__
+Type exit to stop: 
+channelGetConnect PVRdouble status Status [type=OK]
+channelGetConnect PVRshort status Status [type=OK]
+
+channelGetDone PVRdouble status Status [type=OK]
+changed PVRdouble
+ = structure 
+    double value 0
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 0
+        int nanoseconds 0
+        int userTag 0
+
+bitSet {0}
+channelGetDone PVRshort status Status [type=OK]
+changed PVRshort
+ = structure 
+    short value 0
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 0
+        int nanoseconds 0
+        int userTag 0
+
+bitSet {0}
+Type exit to stop: 
+</pre>
 <h4>put</h4>
 <p>This example uses PvaClientPut. It supports help as follows:</p>
 <pre>
@@ -371,6 +381,46 @@ Two commands are accepted:</p>
 Note that if a channel disconnects and reconnects between gets the example should continuue
 to work.
 </p>
+<p>
+An example is:
+</p>
+<pre>
+bin/linux-x86_64/put -help
+ -h -p provider -r request - d debug channelNames 
+default
+-p pva -r value -d false PVRdouble
+mrk> bin/linux-x86_64/put PVRdouble PVRshort
+provider pva channelName PVRdouble request value debug false
+_____put starting__
+enter one of: exit put get
+channelPutConnect PVRdouble status Status [type=OK]
+channelPutConnect PVRshort status Status [type=OK]
+put
+enter value or values to put
+4
+getDone PVRdouble status Status [type=OK]
+structure 
+    double value 0
+
+putDone PVRdouble status Status [type=OK]
+getDone PVRshort status Status [type=OK]
+structure 
+    short value 4
+
+enter one of: exit put get
+putDone PVRshort status Status [type=OK]
+get
+enter one of: exit put get
+getDone PVRdouble status Status [type=OK]
+structure 
+    double value 4
+
+getDone PVRshort status Status [type=OK]
+structure 
+    short value 4
+
+
+</pre>
 <h4>putGet</h4>
 <p>This example uses pvaClientPutGet. It supports help as follows:</p>
 <pre>
@@ -424,6 +474,43 @@ Two commands are accepted:</p>
 Note that if a channel disconnects and reconnects between gets the example should continuue
 to work.
 </p>
+<p>
+An example is:
+</p>
+<pre>
+bin/linux-x86_64/putGet
+provider pva channelName PVRhelloPutGet request putField(argument)getField(result) debug false
+_____put starting__
+enter one of: exit putGet getPut getGet
+channelPutGetConnect PVRhelloPutGet status Status [type=OK]
+putGet
+enter value
+Marty
+structure 
+    structure result
+        string value "Hello 3"
+
+structure 
+    structure argument
+        string value 3
+
+structure 
+    structure result
+        string value "Hello Marty"
+
+enter one of: exit putGet getPut getGet
+getPut
+enter one of: exit putGet getPut getGet
+structure 
+    structure argument
+        string value Marty
+
+getGet
+enter one of: exit putGet getPut getGet
+structure 
+    structure result
+        string value "Hello Marty"
+</pre>
 <h4>monitor</h4>
 <p>This example uses pvaClientMonitor. It supports help as follows:</p>
 <pre>
@@ -477,7 +564,57 @@ Two commands are accepted:</p>
 Note that if a channel disconnects and reconnects between gets the example should continuue
 to work.
 </p>
+<p>
+An example is:
+</p>
+<pre>
+bin/linux-x86_64/monitor -help
+ -h -p provider -r request - d debug channelNames 
+default
+-p pva -r value,alarm,timeStamp -d false PVRdouble
+mrk> bin/linux-x86_64/monitor PVRdouble PVRshort
+provider pva channelName PVRdouble request value,alarm,timeStamp debug false
+_____get starting__
+channelStateChange PVRdouble isConnected false
+channelStateChange PVRshort isConnected false
+Enter: exit start stop
+channelStateChange PVRdouble isConnected true
+monitorConnect PVRdouble status Status [type=OK]
+event PVRdouble
+monitor 
+changed
+ = structure 
+    double value 4
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619184903
+        int nanoseconds 418736113
+        int userTag 0
 
+overrun
+channelStateChange PVRshort isConnected true
+monitorConnect PVRshort status Status [type=OK]
+event PVRshort
+monitor 
+changed
+ = structure 
+    short value 4
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619184903
+        int nanoseconds 419209576
+        int userTag 0
+
+overrun
+
+Enter: exit start stop
+</pre>
 <h4>getField.</h4>
 <p>This is an example that calls <b>Channel::getField</b> , i. e.
 it gets the introspection interface for a field of a channel.
@@ -498,58 +635,43 @@ When <b>exit</b> is entered the example terminates.
 An example is:
 </p>
 <pre>
-mrk> bin/linux-x86_64/getField -p ca DBRdouble00
-providerName ca debug false
+bin/linux-x86_64/getField PVRdouble
+provider pva channelName PVRdouble debug false
 _____getField starting__
 Type exit, or a fieldname, or just enter return
+
+Type exit, or a fieldname, or just enter return
 getDone
-epics:nt/NTScalar:1.0
+structure
     double value
-    alarm_t alarm
-        int severity
-        int status
-        string message
     time_t timeStamp
         long secondsPastEpoch
         int nanoseconds
         int userTag
-    display_t display
-        double limitLow
-        double limitHigh
-        string description
-        string format
-        string units
-    control_t control
-        double limitLow
-        double limitHigh
-        double minStep
-    valueAlarm_t valueAlarm
-        boolean active
-        double lowAlarmLimit
-        double lowWarningLimit
-        double highWarningLimit
-        double highAlarmLimit
-        int lowAlarmSeverity
-        int lowWarningSeverity
-        int highWarningSeverity
-        int highAlarmSeverity
-        double hysteresis
+    alarm_t alarm
+        int severity
+        int status
+        string message
 
-Type exit, or a fieldname, or just enter return
 value
+Type exit, or a fieldname, or just enter return
 getDone
 double
-Type exit, or a fieldname, or just enter return
-timeStamp
-getDone
-time_t
-    long secondsPastEpoch
-    int nanoseconds
-    int userTag
 
 Type exit, or a fieldname, or just enter return
+getDone
+structure
+    double value
+    time_t timeStamp
+        long secondsPastEpoch
+        int nanoseconds
+        int userTag
+    alarm_t alarm
+        int severity
+        int status
+        string message
+
 exit
-mrk> 
 </pre>
 
 <h4>putUnion</h4>
@@ -583,31 +705,432 @@ The arguments are:
       If true then debug messages are displayed/
      </dd>
 </dl>
+<p>
+An example is:
+</p>
+<pre>
+bin/linux-x86_64/putUnion
+provider pva channelName PVRrestrictedUnion request value debug false
+_____putUnion starting__
+Type exit to stop: 
+channelPutConnect PVRrestrictedUnion status Status [type=OK]
 
+value 
+putDone PVRrestrictedUnion status Status [type=OK]
+Type exit to stop: 
+exit
+mrk> bin/linux-x86_64/putUnion
+provider pva channelName PVRrestrictedUnion request value debug false
+_____putUnion starting__
+Type exit to stop: 
+channelPutConnect PVRrestrictedUnion status Status [type=OK]
+2
+value 2
+putDone PVRrestrictedUnion status Status [type=OK]
+Type exit to stop: 
+exit
+
+pvget PVRrestrictedUnion
+PVRrestrictedUnion epics:nt/NTUnion:1.0 
+    union value
+        string  2
+    time_t timeStamp 2021-04-23 09:51:33.365  
+        long secondsPastEpoch 1619185893
+        int nanoseconds 365061410
+        int userTag 0
+
+</pre>
 <h4>process</h4>
-<b>TBD</b>
+<p>This is an example that issues a request to process a record.
+It supports help as follows:
+</p>
+<pre>
+bin/linux-x86_64/process -help
+ -h - d debug channelNames 
+default
+ -d false PVRdouble
+</pre>
+<p>An example is:
+</p>
+<pre>
+bin/linux-x86_64/process PVRdouble
+ channelName PVRdouble debug false
+_____process starting__
+exit or enter
+channelProcessConnect PVRdouble status Status [type=OK]
 
-<h4>getputmonitor</h4>
-<b>TBD</b>
+processDone PVRdouble status Status [type=OK]
+exit or enter
+exit
+</pre>
+<h4>addRecord</h4>
+<p>
+This is an example that issues a call a record that can add a record to an existing PVDatabase.
+<br/>
+An example is:
+</p>
+<pre>
+bin/linux-x86_64/addRecord  PVRaddRecord PVRdouble temp
+result=structure 
+    structure result
+        string status success
 
-<h4>multiGetDouble</h4>
-<b>TBD</b>
+pvinfo temp
+temp
+Server: 10.0.0.194:5075
+Type:
+    structure
+        double value
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+        alarm_t alarm
+            int severity
+            int status
+            string message
+</pre>
+
 
 <h4>multiPutDouble</h4>
-<b>TBD</b>
+<p>This an example that uses <b>PvaClientMultiPutDouble</b>.
+</p>
+<pre>
+bin/linux-x86_64/multiPutDouble -help
+ -h -p provider -d debug  channelNames 
+default
+ -d  {10}[PVRbyte, PVRshort, PVRint, PVRlong, PVRubyte, PVRushort, PVRuint, PVRulong, PVRfloat, PVRdouble]
+
+</pre>
+<p>
+An example is:
+</p>
+<pre>
+bin/linux-x86_64/multiPutDouble
+_____multiPutDouble starting_______
+ channelNames {10}[PVRbyte, PVRshort, PVRint, PVRlong, PVRubyte, PVRushort, PVRuint, PVRulong, PVRfloat, PVRdouble]
+Type exit or enter to put
+
+first element
+2
+data={10}[2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+put data ={10}[2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+after put data
+Type exit or enter to put
+exit
+_____multiPutDouble done_______
+</pre>
 
 <h4>multiMonitorDouble</h4>
-<b>TBD</b>
+<p>This an example that uses <b>PvaClientMultiMonitorDouble</b>.
+</p>
+<pre>
+bin/linux-x86_64/multiMonitorDouble -help
+ -h -p provider -d debug  channelNames 
+default
+ -d  {10}[PVRbyte, PVRshort, PVRint, PVRlong, PVRubyte, PVRushort, PVRuint, PVRulong, PVRfloat, PVRdouble]
+</pre>
+<p>
+An example is:
+</p>
+<pre>
+bin/linux-x86_64/multiMonitorDouble
+_____multiMonitorDouble starting_______
+ channelNames {10}[PVRbyte, PVRshort, PVRint, PVRlong, PVRubyte, PVRushort, PVRuint, PVRulong, PVRfloat, PVRdouble]
+Type exit or enter to poll
 
-<h4>ntMultiGet</h4>
-<b>TBD</b>
+value={10}[2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+Type exit or enter to poll
+exit
+_____multiMonitorDouble done_______
+</pre>
 
-<h4>ntMultiGet</h4>
-<b>TBD</b>
+<h4>multiGetDouble</h4>
+<p>This an example that uses <b>PvaClientMultiGetDouble</b>.
+</p>
+<pre>
+ bin/linux-x86_64/multiGetDouble -help
+ -h -p provider -d debug  channelNames 
+default
+ -d  {10}[PVRbyte, PVRshort, PVRint, PVRlong, PVRubyte, PVRushort, PVRuint, PVRulong, PVRfloat, PVRdouble]
+</pre>
+<p>
+An example is:
+</p>
+<pre>
+bin/linux-x86_64/multiGetDouble
+_____multiGetDouble starting_______
+ channelNames {10}[PVRbyte, PVRshort, PVRint, PVRlong, PVRubyte, PVRushort, PVRuint, PVRulong, PVRfloat, PVRdouble]
+Type exit or enter to get
+
+value={10}[0, 4, 0, 0, 0, 0, 0, 0, 0, 4]
+Type exit or enter to get
+exit
+_____multiGetDouble done_______
+</pre>
+<h4>ntMultiPut</h4>
+<p>This an example that uses <b>PvaClientNTMultiPut</b>.
+</p>
+<pre>
+bin/linux-x86_64/ntMultiPut -help
+ -h -p provider - d debug channelNames 
+default
+-p pva -d false {9}[PVRbyte, PVRshortArray, PVRint, PVRlongArray, PVRubyte, PVRushortArray, PVRdouble, PVRdoubleArray, PVRvariantUnion]
+</pre>
+<p>
+An example is:
+</p>
+<pre>
+bin/linux-x86_64/ntMultiPut -help
+ -h -p provider - d debug channelNames 
+default
+-p pva -d false {9}[PVRbyte, PVRshortArray, PVRint, PVRlongArray, PVRubyte, PVRushortArray, PVRdouble, PVRdoubleArray, PVRvariantUnion]
+mrk> bin/linux-x86_64/ntMultiPut
+_____ntMultiPut starting_______
+ channelNames {9}[PVRbyte, PVRshortArray, PVRint, PVRlongArray, PVRubyte, PVRushortArray, PVRdouble, PVRdoubleArray, PVRvariantUnion]
+Type exit or enter to put
+
+enter value
+4
+Type exit or enter to put
+exit
+___ntMultiPut done_______
+
+pvget PVRvariantUnion
+PVRvariantUnion epics:nt/NTUnion:1.0 
+    any value
+        string  4
+    time_t timeStamp 2021-04-23 10:54:17.944  
+        long secondsPastEpoch 1619189657
+        int nanoseconds 943713188
+        int userTag 0
+</pre>
 
 <h4>ntMultiMonitor</h4>
+<p>This an example that uses <b>PvaClientNTMultiMonitor</b>.
+</p>
+<pre>
+bin/linux-x86_64/ntMultiMonitor -help
+ -h -p provider -r request -v valueOnly - d debug channelNames 
+default
+-p pva -r value,alarm,timeStamp -v false -d false {8}[PVRbyte, PVRshortArray, PVRint, PVRlongArray, PVRubyte, PVRushortArray, PVRdouble, PVRdoubleArray]
+</pre>
+<p>
+An example is:
+</p>
+<pre>
+bin/linux-x86_64/ntMultiMonitor
+_____ntMultiMonitor starting_______
+ channelNames {8}[PVRbyte, PVRshortArray, PVRint, PVRlongArray, PVRubyte, PVRushortArray, PVRdouble, PVRdoubleArray]
+Type exit or enter to poll
 
-<b>TBD</b>
+PVRbyte = structure 
+    byte value 4
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619189657
+        int nanoseconds 943653531
+        int userTag 0
+
+PVRshortArray = structure 
+    short[] value [4]
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619189657
+        int nanoseconds 943675894
+        int userTag 0
+
+PVRint = structure 
+    int value 4
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619189657
+        int nanoseconds 943682101
+        int userTag 0
+
+PVRlongArray = structure 
+    long[] value [4]
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619189657
+        int nanoseconds 943687594
+        int userTag 0
+
+PVRubyte = structure 
+    ubyte value 4
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619189657
+        int nanoseconds 943691279
+        int userTag 0
+
+PVRushortArray = structure 
+    ushort[] value [4]
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619189657
+        int nanoseconds 943695179
+        int userTag 0
+
+PVRdouble = structure 
+    double value 4
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619189657
+        int nanoseconds 943701211
+        int userTag 0
+
+PVRdoubleArray = structure 
+    double[] value [4]
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619189657
+        int nanoseconds 943706137
+        int userTag 0
+
+Type exit or enter to poll
+no new data
+Type exit or enter to poll
+exit
+_____ntMultiMonitor done_______
+
+</pre>
+
+<h4>ntMultiGet</h4>
+<p>This an example that uses <b>PvaClientNTMultiGet</b>.
+</p>
+<pre>
+bin/linux-x86_64/ntMultiGet -help
+ -h -p provider -r request -v valueOnly - d debug channelNames 
+default
+-p pva -r value,alarm,timeStamp -v false -d false {8}[PVRbyte, PVRshortArray, PVRint, PVRlongArray, PVRubyte, PVRushortArray, PVRdouble, PVRdoubleArray]
+</pre>
+<p>
+An example is:
+</p>
+<pre>
+bin/linux-x86_64/ntMultiGet 
+_____ntMultiGet starting_______
+ channelNames {8}[PVRbyte, PVRshortArray, PVRint, PVRlongArray, PVRubyte, PVRushortArray, PVRdouble, PVRdoubleArray]
+Type exit or enter to get
+
+PVRbyte = structure 
+    byte value 4
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619189657
+        int nanoseconds 943653531
+        int userTag 0
+
+PVRshortArray = structure 
+    short[] value [4]
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619189657
+        int nanoseconds 943675894
+        int userTag 0
+
+PVRint = structure 
+    int value 4
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619189657
+        int nanoseconds 943682101
+        int userTag 0
+
+PVRlongArray = structure 
+    long[] value [4]
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619189657
+        int nanoseconds 943687594
+        int userTag 0
+
+PVRubyte = structure 
+    ubyte value 4
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619189657
+        int nanoseconds 943691279
+        int userTag 0
+
+PVRushortArray = structure 
+    ushort[] value [4]
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619189657
+        int nanoseconds 943695179
+        int userTag 0
+
+PVRdouble = structure 
+    double value 4
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619189657
+        int nanoseconds 943701211
+        int userTag 0
+
+PVRdoubleArray = structure 
+    double[] value [4]
+    alarm_t alarm
+        int severity 0
+        int status 0
+        string message 
+    time_t timeStamp
+        long secondsPastEpoch 1619189657
+        int nanoseconds 943706137
+        int userTag 0
+
+Type exit or enter to get
+exit
+_____ntMultiGet done_______
+
+</pre>
 
 <h3>Blocking Examples</h3>
 <p>These are examples only work if a channel is already connected when the client starts.
@@ -656,6 +1179,34 @@ pvaClientMultiGetDouble, pvaClientMultiPutDouble, and pvaClientMultiMonitorDoubl
 <h4>helloWorldRPC</h4>
 <p>This is an example of issuing a PvaClientRPC request.
 </p>
+
+<h3>testRequest</h3>
+<p>This provides a way to run <b>CreateRequest</b> by providing a string that is passed to
+createRequest.</p>
+<p>Some examples are:</p>
+<pre>
+mrk> pwd
+/home/epicsv4/masterCPP/exampleCPP/exampleClient
+mrk> bin/linux-x86_64/testRequest
+enter a string to pass to createRequest
+mrk> bin/linux-x86_64/testRequest value
+pvRequest
+structure 
+    structure field
+        structure value
+mrk> bin/linux-x86_64/testRequest "record[block=true],field(value[max_elem=1],alarm.timeStamp)"
+pvRequest
+structure 
+    structure record
+        structure _options
+            string block true
+    structure field
+        structure value
+            structure _options
+                string max_elem 1
+        structure alarm
+            structure timeStamp
+</pre>
 
 <h2>PvaClient</h2>
 <h3>Brief Description</h3>

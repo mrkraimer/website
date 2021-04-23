@@ -36,12 +36,17 @@
 
 <div class="head">
 <h1>pvDatabaseCPP</h1>
-<h2 class="nocount">March 2021</h2>
+<h2 class="nocount">editions</h2>
+<dl>
+  <dt>2021.03.01</dt>
+     <dd>Original</dd>
+  <dt>2012.04.23</dt>
+     <dd>Update</dd>
+</dl>  
 <dl>
   <dt>Editors:</dt>
     <dd>Marty Kraimer</dd>
 </dl>
-<h2 class="nocount">Work is Progress; Making Progress!!</h2>
 <p>This product is available via an <a
 href="../../LICENSE">open source license
 </a></p>
@@ -72,53 +77,16 @@ href="./html/index.html">doxygen
 records.
 </p>
 <p>
-This document is intended for the following:
-</p>
-<h4>Users</h4>
-<p>Anyone who starts epics IOCS that has support for PVRecords.
-If this is the only interest then only the section about "iocshell commands" is required reading.
-</p>
-<h4>PVRecord Developers</h4>
-This is anyone creating new PVRecords.
-The sections "exampleCPP", and "database" are suggested reading, especially "PVRecord".
-Also of interest are:
-<p>
+This document is intended for anyone creating new PVRecords.
 <a
-href="../recordSupport/recordSupport.html">recordSupport
+href="../pvService/pvService.html">pvService
 </a>
-Descibes support that can be attached to a PVRecord.
+Describes a good way to create services via PVRecords.
 </p>
-<p>
-<a
-href="../pluginSupport/pluginSupport.html">pluginSupport
-</a>
-Description of the plugin filter support implemented by pvDatabase.
-</p>
-<p>
-<a
-href="../specialRecord/specialRecord.html">specialRecord
-</a>
-A description of the <b>dbprcr*</b>Records.
-</p>
-
-<h4>Hard Core Geeks</h4>
-<p>This entire document</p>
-
 <h4>PVDatabase Components</h4>
 <p><b>pvDatabase</b> has the following components:
 </p>
-
 <dl>
-<dt>iocshell commands</dt>
-<dd>
-This show commands that can be issued from the iocshell.
-</dd>
-
-<dt>exampleCPP</dt>
-<dd>
-This briefly describes examples that may be of interest to developers that want to create PVRecords.
-</dd>
-
 <dt>database</dt>
 <dd>
 The most important components are:
@@ -153,144 +121,15 @@ This has the following:
 <dd>
 This has the code for pvStructureCopy and all the plugin support.
 </dd>
-</dl>
 
-<h2>iocshell commands</h2>
-<p>Shell commands are made available via the standard DBD include mechanism
-provided by iocCore.
-The following provide PVDatbase shell commands:</p>
-<pre>
-pvAccessCPP
-qsrv
-pvDatabaseCPP
-pvdbSpecialRegister.dbd
-</pre>
-
-<p>pvDatabaseCPP provides the following iocshell command.</p>
-<dl>
-   <dt>registerChannelProviderLocal</dt>
-     <dd>Including <b>registerChannelProviderLocal.dbd</b> as a dbd file automatically starts provider local
-      and also creates the pvdbl shell command.
-     </dd>
-   <dt>pvdbl</dt>
-      <dd>Provides a list of all the pvRecords in database <b>master</b>
-      </dd>
-</dl>
-<p><b>pvdbSpecialRegister.dbd</b> provides access to the following commands implemted in 
-<b>src/special</b>
-This provides the ability to create the following records:
-</p>
-<dl>
-    <dt>pvdbcrScalar</dt>
-      <dd>
-      Create a soft record with the value field having one of the scalar types.
-      </dd>
-    <dt>pvdbcrScalarArray</dt>
-      <dd>
-      Create a soft record with the value field being an array of one of the scalar types.
-      </dd>
-    <dt>pvdbcrAddRecord</dt>
-      <dd>
-      Create a record that adds a new soft record.
-      </dd>
-    <dt>pvdbcrRemoveRecord</dt>
-      <dd>
-      Create a record that removes a record from that database.
-      </dd>
-    <dt>pvdbcrProcessRecord</dt>
-      <dd>
-      Create a record that processes another record.
-      </dd>
-    <dt>pvdbcrTraceRecord</dt>
-      <dd>
-      Create a record that sets the trace level for another record.
-      </dd>
-            
-</dl>
-<p>Note that all start with <b>pvdbcr</b>.
-which stands for pvdatabase create record.
-</p>
-<p>In addition any code that implements a PVRecord must implement an iocshell command.
-Look at the examples in <b>exampleCPP</b> to see how to implement shell commands.</p>
-
-<h2>exampleCPP</h2>
-<p>Example code is available at:
-<a
-href="https://github.com/epics-base/exampleCPP">
-exampleCPP
-</a>
-</p>
-<p>In particular look at the example code mentioned in the following sub-sections.
-</p>
-
-<h3>database</h3>
-<p>This has many examples of how to create both soft records and records that implement
-other functionality.</p>
-<dl>
-   <dt>exampleDatabase.cpp</dt>
-     <dd>
-      This shows how to create soft records of each pvData type.<br />
-      In addition shows how to create instances of the following two records.
-     </dd>
-   <dt>exampleHelloRecord.cpp</dt>
-     <dd>
-       This is a simple "hello world" that is intentended to be used via a channelPutGet request.
-     </dd>
-   <dt>exampleHelloRPC.cpp</dt>
-     <dd>
-       This is a simple "hello world" that is intentended to be used via a channelRPC request.
-     </dd>
-   <dt>exampleDatabaseMain.cpp</dt>
-     <dd>
-      This shows how to create a standalone IOC.
-     </dd>
-   <dt>ioc and iocBoot</dt>
-     <dd>
-      This has code and examples to create a V3 IOC which also has a PVDatabase.
-     </dd>
-</dl>
-<h3>exampleLink</h3>
-<p>This shows how to implement a record that has a link to another record</p>
-<dl>
-  <dt>getLinkScalar</dt>
-     <dd>
-      This creates a get link to a record that has a scalar value field.
-     </dd>
-  <dt>getLinkScalarArray</dt>
-     <dd>
-      This creates a get link to a record that has a scalarArray value field.
-     </dd>
-  <dt>putLinkScalar</dt>
-     <dd>
-      This creates a put link to a record that has a scalar value field.
-     </dd>
-  <dt>putLinkScalar</dt>
-     <dd>
-      This creates a put link to a record that has a scalar array value field.
-     </dd>     
-</dl>
-<p>
-Each can access the linked record either via pvaClient or by directly accessing the PVDatabase.
-</p>
-
-<h3>support</h3>
-<p>This creates records that have the following features:</p>
-<dl>
-   <dt>value</dt>
+<dt>special</dt>
    <dd>
-    Each record has a value field the is a numeric scalar field.
-    In addition each has the following fields:
-    alarm,timeStamp,control,scalarAlarm, and display.
+   PVRecords that can be created by pvDatabase itself.
+   A record can be created directly by a client or via iocshell commands.
    </dd>
-   <dt>support</dt>
-   <dd>
-     Each record uses the control and scalarAlarm support provided by pvDatabaseCPP.
-   </dd>
+<dt>support</dt>
+   <dd>deprecated</dd>
 </dl>
-<p>
-It also creates records that can be used by clients to show example of the plugin support.
-</p>
-
 
 <h2>database</h2>
 <p>
@@ -481,57 +320,56 @@ canRead              Can the client read from the record.
 <h3>PVPlugin</h3>
 <p><b>PVPlugin</b> has methods:</p>
 <pre>
-create
+create               Creates a plugin filter
 </pre>
 <h3>PVPluginRegistry</h3>
 <p><b>PVPluginRegistry</b> has methods:</p>
 <pre>
-registerPlugin
-find
+registerPlugin       Register a plugin.
+find                 Find a plugin.
 </pre>
 <h3>PVFilter</h3>
 <p><b>PVFilter</b> has methods:</p>
 <pre>
-filter
-getName
+filter       Update copy or master
+getName      Get the filter name.
 </pre>
 <h3>PVArrayPlugin</h3>
 <p><b>PVArrayPlugin</b> has methods:</p>
 <pre>
-create
+create       Create a PVArrayFilter
 </pre>
 <h3>PVArrayFilter</h3>
 <p><b>PVArrayFilter</b> has methods:</p>
 <pre>
-create
-filter
-getName
+create      Create an array filter
+filter      Perform a filter operation.
+getName     Get the filter name.
 </pre>
 <h3>PVDeadbandPlugin</h3>
 <p><b>PVDeadbandPlugin</b> has methods:</p>
 <pre>
-create
+create      Create a PVDeadbandFilter
 </pre>
 <h3>PVDeadbandFilter</h3>
 <p><b>PVDeadbandFilter</b> has methods:</p>
 <pre>
-create
-filter
-getName
+create      Create a deadband filter  
+filter      Perform a filter operation.
+getName     Get the filter name.
 </pre>
 <h3>PVTimestampPlugin</h3>
 <p><b>PVTimestampPlugin</b> has methods:</p>
 <pre>
-create
+create    A plugin for a filter that sets a timeStamp to the current time
 </pre>
 <h3>PVTimestampFilter</h3>
 <p><b>PVTimestampFilter</b> has methods:</p>
 <pre>
-create
-filter
-getName
+create      Create a timeStamp filter
+filter      Perform a filter operation.
+getName     Get the filter name.
 </pre>
-
 
 </div>
 </body>
