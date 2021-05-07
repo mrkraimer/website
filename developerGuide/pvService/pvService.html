@@ -40,7 +40,7 @@
 <dl>
   <dt>2021.04.20</dt>
      <dd>Original</dd>
-  <dt>2021.04.22</dt>
+  <dt>2021.05.07</dt>
      <dd>latest</dd>
 </dl>
 
@@ -862,6 +862,368 @@ where
        The result of the request.
       </dd>
 </dl>
+<h2>scalarLimit</h2>
+<h3>Overview</h3>
+<p>This is an example that implements a record that has the following structure:</p>
+<pre>
+pvget -v  PVRscalarLimitUbyte
+PVRscalarLimitUbyte structure 
+    ubyte value 100
+    time_t timeStamp &lt;undefined&gt;              
+        long secondsPastEpoch 0
+        int nanoseconds 0
+        int userTag 0
+    alarm_t alarm 
+        int severity 0
+        int status 0
+        string message 
+    structure control
+        ubyte limitLow 0
+        ubyte limitHigh 250
+        ubyte maxStep 10
+    structure alarmLimit
+        ubyte lowAlarmLimit 20
+        ubyte lowWarningLimit 50
+        ubyte highAlarmLimit 230
+        ubyte highWarningLimit 200
+</pre>
+Both <b>serviceMain</b> and <b>database</b> create record PVRscalarLimitUbyte as well
+as record PVRscalarLimitDouble.
+The difference is the field types.
+Wherever ubyte appears in PVRscalarLimitUbyte double appears in PVRscalarLimitDouble.
+<p>
+After starting either <b>serviceMain</b> or <b>database</b> then in another window enter:</p>
+<pre>
+pvget -m  -v PVRscalarLimitUbyte
+</pre>
+You will see the above structure.
+Leave this running.
+<p>In another window enter</p>
+<pre>
+pvput PVRprocessRecord argument='{"command":"add","recordName":"PVRscalarLimitUbyte"}'
+</pre>
+<p>
+Then enter:
+</p>
+<pre>
+pvput PVRscalarLimitUbyte 1
+</pre>
+<p>
+In the window where you started monitoring You will see:
+</p>
+<pre>
+PVRscalarLimitUbyte structure 
+    ubyte value 90
+    time_t timeStamp 2021-05-07 07:10:40.325  
+        long secondsPastEpoch 1620385840
+        int nanoseconds 324700934
+PVRscalarLimitUbyte structure 
+    ubyte value 80
+    time_t timeStamp 2021-05-07 07:10:40.676  
+        int nanoseconds 676307219
+PVRscalarLimitUbyte structure 
+    ubyte value 70
+    time_t timeStamp 2021-05-07 07:10:41.677  
+        long secondsPastEpoch 1620385841
+        int nanoseconds 676575626
+PVRscalarLimitUbyte structure 
+    ubyte value 60
+    time_t timeStamp 2021-05-07 07:10:42.677  
+        long secondsPastEpoch 1620385842
+        int nanoseconds 676853907
+PVRscalarLimitUbyte structure 
+    ubyte value 50
+    time_t timeStamp 2021-05-07 07:10:43.677  
+        long secondsPastEpoch 1620385843
+        int nanoseconds 677155943
+    alarm_t alarm MINOR minor low alarm 
+        int severity 1
+        string message "minor low alarm"
+PVRscalarLimitUbyte structure 
+    ubyte value 40
+    time_t timeStamp 2021-05-07 07:10:44.677  
+        long secondsPastEpoch 1620385844
+        int nanoseconds 677432384
+PVRscalarLimitUbyte structure 
+    ubyte value 30
+    time_t timeStamp 2021-05-07 07:10:45.678  
+        long secondsPastEpoch 1620385845
+        int nanoseconds 677795226
+PVRscalarLimitUbyte structure 
+    ubyte value 20
+    time_t timeStamp 2021-05-07 07:10:46.678  
+        long secondsPastEpoch 1620385846
+        int nanoseconds 678169012
+    alarm_t alarm MAJOR major low alarm 
+        int severity 2
+        string message "major low alarm"
+PVRscalarLimitUbyte structure 
+    ubyte value 10
+    time_t timeStamp 2021-05-07 07:10:47.678  
+        long secondsPastEpoch 1620385847
+        int nanoseconds 678459518
+PVRscalarLimitUbyte structure 
+    ubyte value 1
+    time_t timeStamp 2021-05-07 07:10:48.679  
+        long secondsPastEpoch 1620385848
+        int nanoseconds 678830388
+</pre>
+Note the following:
+<dl>
+  <dt>value</dt>
+  <dd>
+  This changes by 10 until 1 is reached.
+  This is because control.maxStep is 10.
+  </dd>
+  <dt>alarm</dt>
+  <dd>
+  Note that this changes when the value 50 is reached and again when the value 20 is reached.
+  Look at alarmLimit to see why.
+  </dd>
+</dl>
+<p>
+Now enter:
+</p>
+<pre>
+pvput PVRscalarLimitUbyte 255
+</pre>
+To see why the final value is 250 instead of 255 look at control.limitHigh.
+<h3>Building</h3>
+<p>
+The top level Makefile and configure are typical.
+It has two subdirectories: scalarLimit/src and scalarLimit/src/scalarLimit.
+The later has the interface for code that wants to create scalarLimit records.
+scalarLimit/src has the implementation.
+</p>
+<h4>scalarLimit/src/scalarLimit/scalarLimitRecord.h</h4>
+<pre>
+#ifndef SCALARLIMITRECORDCREATE_H
+#define SCALARLIMITRECORDCREATE_H
+
+#include &lt;shareLib.h&gt;
+
+namespace epics { namespace scalarLimit {
+
+class ScalarLimitRecord;
+typedef std::tr1::shared_ptr&lt;ScalarLimitRecord&gt; ScalarLimitRecordPtr;
+
+class epicsShareClass ScalarLimitRecordCreate
+{
+public:
+    /**
+     * @brief Create a record.
+     *
+     * @param recordName The record name.
+     * @param scalarType The type for the value field
+     * @param asLevel  The access security level.
+     * @param asGroup  The access security group.
+     */
+     static void create(
+        std::string const &amp; recordName,std::string const &amp;  scalarType,
+        int asLevel=0,std::string const &amp; asGroup = std::string("DEFAULT"));
+};
+
+}}
+
+#endif  /* SCALARLIMITRECORDCREATE_H */
+</pre>
+NOTE:
+<dl>
+   <dt>shareLib.h and epicsShareClass</dt>
+     <dd>
+     These are for windows DLL.
+     </dd>
+   <dt>ScalarLimitRecord and ScalarLimitRecordPtr</dt>
+     <dd>
+     These are required for code that calls ScalarLimitRecordCreate::create.
+     </dd>
+   <dt>ScalarLimitRecordCreate</dt>
+     <dd>
+     This has a single static method that creates a ScalarLimitRecord.
+     The caller must supply a recordName and a scalarType.
+     <br/>
+     The scalarType must can be any numeric scalar type, i.e.
+     byte, short, int, long, ubyte, ushort, uint, ulong, float, double.
+     <br/>
+     The implementation is in scalarLimit/src.
+     </dd>
+</dl>
+<h4>scalarLimit.src</h4>
+This has the following:
+<pre>
+Makefile
+scalarLimitRecord.cpp
+scalarLimitRecord.dbd
+</pre>
+<h4>Makefile</h4>
+<pre>
+TOP=..
+include $(TOP)/configure/CONFIG
+EPICS_BASE_PVA_CORE_LIBS = pvDatabase pvAccess pvAccessCA nt pvData ca Com
+INC += scalarLimit/scalarLimitRecord.h
+DBD += scalarLimitRecord.dbd
+LIBRARY = scalarLimitRecord
+LIBSRCS += scalarLimitRecord.cpp
+scalarLimitRecord_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
+# needed for Windows
+LIB_SYS_LIBS_WIN32 += netapi32 ws2_32
+include $(TOP)/configure/RULES
+</pre>
+<h4>scalarLimitRecord.cpp</h4>
+<p>This starts with</p>
+<pre>
+#include &lt;iocsh.h&gt;
+#include &lt;pv/standardField.h&gt;
+#include &lt;pv/standardPVField.h&gt;
+#include &lt;pv/timeStamp.h&gt;
+#include &lt;pv/pvTimeStamp.h&gt;
+#include &lt;pv/alarm.h&gt;
+#include &lt;pv/pvAlarm.h&gt;
+#include &lt;pv/convert.h&gt;
+#include &lt;pv/pvDatabase.h&gt;
+
+// The following must be the last include for code scalarLimit implements
+#include &lt;epicsExport.h&gt;
+#define epicsExportSharedSymbols
+#include "scalarLimit/scalarLimitRecord.h"
+using namespace epics::pvData;
+using namespace epics::pvDatabase;
+using namespace std;
+</pre>
+<p>Next is the class definition for ScalarLimitRecord
+</p>
+<pre>
+namespace epics { namespace scalarLimit {
+
+class epicsShareClass ScalarLimitRecord :
+     public epics::pvDatabase::PVRecord
+{
+private:
+friend class ScalarLimitRecordCreate;
+    ScalarLimitRecord(
+      std::string const &amp; recordName,epics::pvData::PVStructurePtr const &amp; pvStructure,
+      int asLevel,std::string const &amp; asGroup);
+   double desiredValue;
+   double currentValue;
+public:
+    virtual ~ScalarLimitRecord() {}
+    virtual void process();
+    virtual bool init(){
+        initPVRecord();
+        return true;
+    }
+}; 
+
+ScalarLimitRecord::ScalarLimitRecord(
+    std::string const &amp; recordName,epics::pvData::PVStructurePtr const &amp; pvStructure,
+    int asLevel,std::string const &amp; asGroup)
+: PVRecord(recordName,pvStructure,asLevel,asGroup)
+{}
+</pre>
+<p>
+Next is the definition of process.
+Only the beginning is shown.
+See the source code for details.
+</p>
+<pre>
+void ScalarLimitRecord::process()
+{
+    ConvertPtr convert = getConvert();
+    PVStructurePtr top = this-&gt;getPVStructure();
+... LOTS OF CODE
+    PVRecord::process();
+}
+</pre>
+<p>Next is the code for ScalarLimitRecordCreate.
+Only the beginning is shown.
+See the source code for details.
+</p>
+<pre>
+void ScalarLimitRecordCreate::create(
+    std::string const &amp; recordName,std::string const &amp;  scalarType,
+    int asLevel,std::string const &amp; asGroup)
+{
+    ConvertPtr convert = getConvert();
+    ScalarType st = epics::pvData::ScalarTypeFunc::getScalarType(scalarType);
+    FieldCreatePtr fieldCreate = getFieldCreate();
+    StandardFieldPtr standardField = getStandardField();
+    PVDataCreatePtr pvDataCreate = getPVDataCreate();
+    StructureConstPtr top = fieldCreate-&gt;createFieldBuilder()-&gt;
+        add("value",st) -&gt;
+        add("timeStamp",standardField-&gt;timeStamp()) -&gt;
+        add("alarm",standardField-&gt;alarm()) -&gt;
+        addNestedStructure("control") -&gt;
+            add("limitLow",st) -&gt;
+            add("limitHigh",st) -&gt;
+            add("maxStep",st) -&gt;
+        endNested()-&gt;
+        addNestedStructure("alarmLimit") -&gt;
+            add("lowAlarmLimit",st) -&gt;
+            add("lowWarningLimit",st) -&gt;
+            add("highAlarmLimit",st) -&gt;
+            add("highWarningLimit",st) -&gt;
+        endNested()-&gt;
+        createStructure();
+... CODE to initialize fields
+    PVDatabasePtr master = PVDatabase::getMaster();
+    if(!master-&gt;addRecord(pvRecord)) {
+        cerr &lt;&lt; recordName &lt;&lt; " not added to master\n";
+    }
+}
+
+}}
+</pre>
+<p>Next is code to create an iocshell command.
+</p>
+<pre>
+static const iocshArg arg0 = { "recordName", iocshArgString };
+static const iocshArg arg1 = { "scalarType", iocshArgString };
+static const iocshArg arg2 = { "asLevel", iocshArgInt };
+static const iocshArg arg3 = { "asGroup", iocshArgString };
+static const iocshArg *args[] = {&amp;arg0,&amp;arg1,&amp;arg2,&amp;arg3};
+
+static const iocshFuncDef scalarLimitFuncDef = {"scalarLimitRecord", 4,args};
+
+static void scalarLimitCallFunc(const iocshArgBuf *args)
+{
+    char *sval = args[0].sval;
+    if(!sval) {
+        throw std::runtime_error("scalarLimitRecord recordName not specified");
+    }
+    string recordName = string(sval);
+    sval = args[1].sval;
+    if(!sval) {
+        throw std::runtime_error("scalarLimitRecord scalarType not specified");
+    }
+    string scalarType = string(sval);
+    int asLevel = args[2].ival;
+    string asGroup("DEFAULT");
+    sval = args[3].sval;
+    if(sval) {
+        asGroup = string(sval);
+    }
+    epics::scalarLimit::ScalarLimitRecordCreate::create(recordName,scalarType,asLevel,asGroup); 
+}
+
+static void scalarLimitRecord(void)
+{
+    static int firstTime = 1;
+    if (firstTime) {
+        firstTime = 0;
+        iocshRegister(&amp;scalarLimitFuncDef, scalarLimitCallFunc);
+    }
+}
+
+extern "C" {
+    epicsExportRegistrar(scalarLimitRecord);
+}
+</pre>
+<h4>scalarLimitRecord.dbd</h4>
+<pre>
+registrar("scalarLimitRecord")
+</pre>
+
+
 
 <h2>powerSupplyRecord</h2>
 <h3>Overview</h3>
