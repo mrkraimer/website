@@ -39,7 +39,7 @@
 <dl>
   <dt>2019.04.18</dt>
      <dd>Original</dd>
-  <dt>2012.04.06</dt>
+  <dt>2012.05.07</dt>
      <dd>Update</dd>
 </dl>  
 <dl>
@@ -244,9 +244,9 @@ Type:
             int highWarningSeverity
             int highAlarmSeverity
             byte hysteresis
-mrk> pvinfo PVRdumbPowerSupply
-PVRdumbPowerSupply
-Server: 10.0.0.26:5075
+mrk> pvinfo PVRpowerSupply
+PVRpowerSupply
+Server: 10.0.0.194:42997
 Type:
     structure
         alarm_t alarm
@@ -259,22 +259,10 @@ Type:
             int userTag
         structure power
             double value
-            alarm_t alarm
-                int severity
-                int status
-                string message
         structure voltage
             double value
-            alarm_t alarm
-                int severity
-                int status
-                string message
         structure current
             double value
-            alarm_t alarm
-                int severity
-                int status
-                string message
 
 </pre>
 <h2>pvget - pvmonitor</h2>
@@ -336,8 +324,8 @@ mrk> pvget PVRdouble
 PVRdouble                      5
 mrk> pvget PVRdoubleArray
 PVRdoubleArray 5 1 2 3 4 5
-mrk> pvget PVRenum01
-PVRenum01                         zero
+mrk> pvget PVRenum
+PVRenum                         zero
 mrk> pvget -v PVRenum
 PVRenum epics:nt/NTEnum:1.0 
     enum_t value (1) one
@@ -460,7 +448,7 @@ The following shows an example that uses the array filter:</p>
 mrk> pvget DBRdoubleArray
 DBRdoubleArray 2019-04-16 08:59:37.622  [1,2,3,4,5]
 mrk> pvget DBRdoubleArray.[2:3]
-DBRdoubleArray.[2:3] 2019-04-16 08:59:37.622  [1,2]
+DBRdoubleArray.[2:3] 2019-04-16 08:59:37.622  [3,4]
 mrk> caget DBRdoubleArray.[2:3]
 DBRdoubleArray.[2:3] 2 3 4
 mrk> pvget -p ca DBRdoubleArray.[2:3]
@@ -553,9 +541,9 @@ It can write to any field type except for <b>union</b> and <b>unionArray</b>.
 </p>
 <p>For example</p>
 <pre>
-mrk> pvinfo PVRdumbPowerSupply
-PVRdumbPowerSupply
-Server: 10.0.0.26:5075
+mrk> pvinfo PVRpowerSupply
+PVRpowerSupply
+Server: 10.0.0.194:42997
 Type:
     structure
         alarm_t alarm
@@ -568,50 +556,29 @@ Type:
             int userTag
         structure power
             double value
-            alarm_t alarm
-                int severity
-                int status
-                string message
         structure voltage
             double value
-            alarm_t alarm
-                int severity
-                int status
-                string message
         structure current
             double value
-            alarm_t alarm
-                int severity
-                int status
-                string message
 
-mrk> pvput -r "voltage" PVRdumbPowerSupply voltage='{"value":"5"}'
+mrk> pvput -r "voltage" PVRpowerSupply voltage='{"value":"5"}'
 Old : structure 
-    ...
+    structure voltage
+        double value 0
 New : structure 
     structure voltage
         double value 5
-        alarm_t alarm 
-            int severity 0
-            int status 0
-            string message 
-mrk> pvput -r "voltage,power" PVRdumbPowerSupply  power='{"value":1.2}' voltage='{"value":1.2}'
+mrk> pvput -r "voltage,power" PVRpowerSupply  power='{"value":1.2}' voltage='{"value":1.2}'
 Old : structure 
-    ...
+    structure voltage
+        double value 5
+    structure power
+        double value 0
 New : structure 
     structure voltage
         double value 1.2
-        alarm_t alarm 
-            int severity 0
-            int status 0
-            string message 
     structure power
         double value 1.2
-        alarm_t alarm 
-            int severity 0
-            int status 0
-            string message 
-mrk>
 mrk> pvinfo PVRBigRecord
 PVRBigRecord
 Server: 10.0.0.26:5075
@@ -734,25 +701,12 @@ PVRdoubleArray 2019-04-16 13:57:02.736  [1,100,200,300,5,6,7,8,9,10]
 mrk> 
 </pre>
 <h3>IocCore Channel Filters</h3>
-<p>Does not seem to work for pvput:</p>
 <pre>
-mrk> pvput DBRdoubleArray [1,2,3,4,5,6]
-Old : 2019-04-16 08:59:37.622  [1,2,3,4,5]
-New : 2019-04-16 13:59:09.886  [1,2,3,4,5]
-mrk> pvput DBRdoubleArray.[2:3] [100,200]
-Old : 2019-04-16 13:59:09.886  [1,2]
-New : 2019-04-16 14:00:39.714  [100,200]
-mrk> pvget DBRdoubleArray
-DBRdoubleArray 2019-04-16 14:00:39.714  [100,200]
-mrk> pvput DBRdoubleArray [1,2,3,4,5,6]
-Old : 2019-04-16 14:00:39.714  [100,200]
-New : 2019-04-16 14:01:09.475  [1,2,3,4,5]
-mrk> pvput -p ca DBRdoubleArray.[2:3] [100,200]
-Old : [3,4]
-New : []
-mrk> pvget DBRdoubleArray
-DBRdoubleArray 2019-04-16 14:01:27.982  [100,200]
-mrk> 
+mrk> pvput DBRdoubleArray [1,2,3,4,5]
+Old : 2021-05-07 10:20:22.373  [1,2,3,4,5]
+New : 2021-05-07 10:22:07.437  [1,2,3,4,5]
+mrk> pvget DBRdoubleArray.[2:3]
+DBRdoubleArray.[2:3] 2021-05-07 10:22:07.437  [3,4]
 </pre>
 </div>
 </body>
