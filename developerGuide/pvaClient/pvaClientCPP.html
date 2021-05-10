@@ -39,7 +39,7 @@
 <dl>
   <dt>2021.03.01</dt>
      <dd>Original</dd>
-  <dt>2021.04.23</dt>
+  <dt>2021.04.10</dt>
      <dd>Update</dd>
 </dl>  
 <dl>
@@ -92,8 +92,8 @@ href="./html/index.html">doxygen
 Before reading this overview, clone and build
 <a href="https://github.com/epics-base/exampleCPP">
 exampleCPP
-</a>.
-This has examples that are referenced in this overview.
+</a>,
+which has examples that are referenced in this overview.
 </p>
 <p>
 <b>pvaClient</b> is support for accessing a single channel.
@@ -117,7 +117,6 @@ It provides the following:
    A client can ask to connect to a channel without requiring calls to issueConnect and waitConnect.
    If a connection is made, then the channel is cached.
    This means that if the client makes further requests for the same channel it is already connected.
-   <br />
    Caching is also done for channelGets and channelPuts.
    </dd>
 </dl>
@@ -201,7 +200,6 @@ Note the following:
    <dd>
    Whenever a channel first connects it is added to a channel cache.
    This is a huge performance improvement when a client makes more than one request.
-   <br />
    There is also a cache for channelGets and a cache for channelPuts.
    </dd>
 </dl>
@@ -276,30 +274,22 @@ The arguments are:
 When the example is started a PvaClientChannel is created and issueConnect is called.
 The first time the channel connects a PvaChannelGet is created and issueConnect is called.
 </p>
-<p>The example then enters a forever loop the lets the client enter commands.
-Two commands are accepted:</p>
-<dl>
-   <dt>exit</dt>
-     <dd>The example terminates.</dd>
-   <dt>get</dt>
-     <dd>A channel get is requested. The results are displayed.</dd>
-</dl>
-
-<p>
-Note that if a channel disconnects and reconnects between gets the example should continuue
-to work.
+<p>The example then enters a forever loop that waits for the client to enter some input.
+If <b>exit</b> is entered then the program exits.
+If anything else is entered a channel get is requested and the results displayed.
+Note that the example works if the channel is not connected.
 </p>
 <p>
 An example is:
 </p>
 <pre>
-bin/linux-x86_64/get PVRdouble PVRshort
+bin/linux-x86_64/get
 provider pva channelName PVRdouble request value,alarm,timeStamp debug false
 _____get starting__
 Type exit to stop: 
 channelGetConnect PVRdouble status Status [type=OK]
-channelGetConnect PVRshort status Status [type=OK]
-
+channelGetConnect PVRdouble status Status [type=OK]
+get
 channelGetDone PVRdouble status Status [type=OK]
 changed PVRdouble
  = structure 
@@ -314,21 +304,8 @@ changed PVRdouble
         int userTag 0
 
 bitSet {0}
-channelGetDone PVRshort status Status [type=OK]
-changed PVRshort
- = structure 
-    short value 0
-    alarm_t alarm
-        int severity 0
-        int status 0
-        string message 
-    time_t timeStamp
-        long secondsPastEpoch 0
-        int nanoseconds 0
-        int userTag 0
-
-bitSet {0}
 Type exit to stop: 
+exit
 </pre>
 <h4>put</h4>
 <p>This example uses PvaClientPut. It supports help as follows:</p>
@@ -393,8 +370,6 @@ mrk> bin/linux-x86_64/put PVRdouble PVRshort
 provider pva channelName PVRdouble request value debug false
 _____put starting__
 enter one of: exit put get
-channelPutConnect PVRdouble status Status [type=OK]
-channelPutConnect PVRshort status Status [type=OK]
 put
 enter value or values to put
 4
@@ -655,21 +630,6 @@ structure
 
 value
 Type exit, or a fieldname, or just enter return
-getDone
-double
-
-Type exit, or a fieldname, or just enter return
-getDone
-structure
-    double value
-    time_t timeStamp
-        long secondsPastEpoch
-        int nanoseconds
-        int userTag
-    alarm_t alarm
-        int severity
-        int status
-        string message
 
 exit
 </pre>
