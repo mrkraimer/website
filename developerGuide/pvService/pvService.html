@@ -40,7 +40,7 @@
 <dl>
   <dt>2021.04.20</dt>
      <dd>Original</dd>
-  <dt>2021.05.07</dt>
+  <dt>2021.05.16</dt>
      <dd>latest</dd>
 </dl>
 
@@ -48,9 +48,6 @@
   <dt>Editors:</dt>
     <dd>Marty Kraimer</dd>
 </dl>
-<p>
-<b>NOTE</b> This is a work in progress.
-</p>
 <p>This product is available via an <a
 href="../../LICENSE">open source license
 </a></p>
@@ -73,14 +70,10 @@ The process method implements the support details.
 A service can be created that uses the support modules.
 The service can implement a PVDatabase or can be part of an IOC.
 </p>
-<p>In order to understand the following
-<a href="https://github.com/epics-base/exampleCPP">exampleCPP</a>
-should be cloned.
-<br/>
+<p>In order to understand the following <b>exampleCPP</b> should be cloned.
 It has all the examples described below.
 </p>
-<p>You can clone it as a module for an EPICS 7 release.
-If you are on release 7.0.5 or earlier you will also have to replace pvaClientCPP and pvDatabaseCPP by a version from github.
+<p>The next section shows how to build exampleCPP from an EPICS7 release.
 </p>
 <p>After you have build exampleCPP then start one of the following:
 </p>
@@ -97,7 +90,7 @@ bin/linux-x86_64/serviceMain
 </pre>
 <b>NOTE:</b> do not start both because they have many of the same channels.
 <p>
-The next section describes serviceMain, which implements a service as a main program.
+Section 3 describes serviceMain, which implements a service as a main program.
 </p>
 <p>
 Following serviceMain is a description of database, which implements a service as part of an IOC database.
@@ -105,6 +98,47 @@ Following serviceMain is a description of database, which implements a service a
 <p>
 The remaining sections describes the support modules  used by both serviceMain and database.
 </p>
+<h2>Building exampleCPP from an EPICS7 release</h2>
+<p>The following examples are using linux. I have built release 7.0.5 at
+</p>
+<pre>
+pwd
+/home/install/epics/base-7.0.5
+cd modules
+</pre>
+<h3>Releases up to and including 7.0.5</h3>
+<p>
+<b>exampleCPP</b> requires changes to pvaClient and pvDatabase that have been made since 7.0.5.
+But each can be replaced by the latest via the following:
+</p>
+<pre>
+/bin/rm -fr pvaClient pvDatabase
+git clone https://github.com/epics-base/pvaClientCPP pvaClient
+git clone https://github.com/epics-base/pvDatabaseCPP pvDatabase
+cd pvaClient
+make
+cd ..
+cd pvDatabase
+make
+cd ..
+</pre>
+<h3>Build exampleCPP</h3>
+<pre>
+git clone https://github.com/epics-base/exampleCPP
+cd exampleCPP
+cp MasterRELEASE.local RELEASE.local
+</pre>
+<p>You have to edit RELEASE.local.
+The only line You need to change is the one starting with <b>EPICS7_DIR=</b>
+This must show where you are building the EPICS7 release.
+<br/>
+Then enter:
+</p>
+<pre>
+cp RELEASE.local configure
+make
+</pre>
+
 <h2>serviceMain</h2>
 <h3>top</h3>
 The top of <b>exampleCPP/serviceMain</b> has the following:
@@ -116,11 +150,12 @@ The top of <b>exampleCPP/serviceMain</b> has the following:
   <dt>RELEASE.support</dt>
   <dd>
 <pre>
-CONTROLRECORD=$(TOP)/../controlRecord
+SCALARLIMITRECORD=$(TOP)/../scalarLimit
 POWERSUPPLYRECORD=$(TOP)/../powerSupplyRecord
 LINKRECORD=$(TOP)/../linkRecord
 HELLOPUTGETRECORD=$(TOP)/../helloPutGetRecord
 HELLORPCRECORD=$(TOP)/../helloRPCRecord
+CONTROLRECORD=$(TOP)/../controlRecord
 </pre>
   This refers to each of the support modules being used.
   </dd>
@@ -130,7 +165,7 @@ HELLORPCRECORD=$(TOP)/../helloRPCRecord
   But note:
 <pre>
 grep RELEASE.support configure/RELEASE
-configure/RELEASE:include $(TOP)/RELEASE.support
+include $(TOP)/RELEASE.support
 </pre>
   </dd>
  <dt>src</dt>
@@ -150,11 +185,12 @@ EPICS_BASE_PVA_CORE_LIBS = pvaClient  pvDatabase pvAccess pvAccessCA pvData ca C
 PROD_HOST += serviceMain
 # NOTE: The order of the following is important
 serviceMain_SRCS += serviceMain.cpp
-serviceMain_LIBS += controlRecord
+serviceMain_LIBS += scalarLimitRecord
 serviceMain_LIBS += powerSupplyRecord
 serviceMain_LIBS += linkRecord
 serviceMain_LIBS += helloPutGetRecord
 serviceMain_LIBS += helloRPCRecord
+serviceMain_LIBS += controlRecord
 serviceMain_LIBS +=  $(EPICS_BASE_PVA_CORE_LIBS)
 
 include $(TOP)/configure/RULES
@@ -172,7 +208,7 @@ Look at the source for more.
 #include &lt;pv/pvdbcrRemoveRecord.h&gt;
 #include &lt;pv/pvdbcrProcessRecord.h&gt;
 #include &lt;pv/pvdbcrTraceRecord.h&gt;
-#include &lt;pvcontrol/controlRecord.h&gt;
+#include &lt;scalarLimit/scalarLimitRecord.h&gt;
 #include &lt;powerSupply/powerSupplyRecord.h&gt;
 #include &lt;linkRecord/getLinkScalarRecord.h&gt;
 #include &lt;linkRecord/getLinkScalarArrayRecord.h&gt;
@@ -180,6 +216,7 @@ Look at the source for more.
 #include &lt;linkRecord/putLinkScalarArrayRecord.h&gt;
 #include &lt;helloPutGet/helloPutGetRecord.h&gt;
 #include &lt;helloRPC/helloRPCRecord.h&gt;
+#include &lt;pvcontrol/controlRecord.h&gt;
 </pre>
 <p>
 These are for all the supports used by serviceMain.
@@ -187,7 +224,7 @@ The order is important.
 </p>
 <p>
 The main program creates all it's PVRecord via the support.
-The complete main program is:
+Excerpts from the main program are:
 </p>
 <pre>
 int main(int argc,char *argv[])
@@ -199,14 +236,7 @@ int main(int argc,char *argv[])
     std::vector&lt;std::string&gt; valueType;   
     recordNames.push_back("PVRboolean"); valueType.push_back("boolean");
     recordNames.push_back("PVRbyte"); valueType.push_back("byte"); 
-    recordNames.push_back("PVRshort"); valueType.push_back("short"); 
-    recordNames.push_back("PVRint"); valueType.push_back("int"); 
-    recordNames.push_back("PVRlong"); valueType.push_back("long");
-    recordNames.push_back("PVRubyte"); valueType.push_back("ubyte"); 
-    recordNames.push_back("PVRushort"); valueType.push_back("ushort"); 
-    recordNames.push_back("PVRuint"); valueType.push_back("uint"); 
-    recordNames.push_back("PVRulong"); valueType.push_back("ulong");
-    recordNames.push_back("PVRfloat"); valueType.push_back("float"); 
+...
     recordNames.push_back("PVRdouble"); valueType.push_back("double"); 
     recordNames.push_back("PVRstring"); valueType.push_back("string"); 
     for(size_t i=0;i&lt;recordNames.size(); ++i)
@@ -219,15 +249,8 @@ int main(int argc,char *argv[])
     recordNames.clear();
     valueType.clear();
     recordNames.push_back("PVRbooleanArray"); valueType.push_back("boolean");
-    recordNames.push_back("PVRbyteArray"); valueType.push_back("byte"); 
-    recordNames.push_back("PVRshortArray"); valueType.push_back("short"); 
-    recordNames.push_back("PVRintArray"); valueType.push_back("int"); 
-    recordNames.push_back("PVRlongArray"); valueType.push_back("long");
-    recordNames.push_back("PVRubyteArray"); valueType.push_back("ubyte"); 
-    recordNames.push_back("PVRushortArray"); valueType.push_back("ushort"); 
-    recordNames.push_back("PVRuintArray"); valueType.push_back("uint"); 
-    recordNames.push_back("PVRulongArray"); valueType.push_back("ulong");
-    recordNames.push_back("PVRfloatArray"); valueType.push_back("float"); 
+    recordNames.push_back("PVRbyteArray"); valueType.push_back("byte");
+...
     recordNames.push_back("PVRdoubleArray"); valueType.push_back("double"); 
     recordNames.push_back("PVRstringArray"); valueType.push_back("string"); 
     for(size_t i=0;i&lt;recordNames.size(); ++i)
@@ -261,10 +284,10 @@ int main(int argc,char *argv[])
     if(!master-&gt;addRecord(controlRecordDouble)) {
         cerr &lt;&lt; "record " &lt;&lt; recordName &lt;&lt; " not added to master\n";
     }
-    recordName = "PVRcontrolUByte";
-    epics::example::control::ControlRecordPtr controlRecordUByte
+    recordName = "PVRcontrolUbyte";
+    epics::example::control::ControlRecordPtr controlRecordUbyte
        = epics::example::control::ControlRecord::create(recordName,"ubyte");
-    master-&gt;addRecord(controlRecordUByte);
+    master-&gt;addRecord(controlRecordUbyte);
 
     recordName = "PVRpowerSupply";
     epics::example::powerSupply::PowerSupplyRecordPtr powerSupply
@@ -314,6 +337,12 @@ int main(int argc,char *argv[])
     if(!master-&gt;addRecord(helloRPC)) { 
         cerr &lt;&lt; recordName &lt;&lt; " not added to master\n";
     }
+
+    recordName = "PVRscalarLimitUbyte";  
+    epics::scalarLimit::ScalarLimitRecordCreate::create(recordName,"ubyte");
+
+    recordName = "PVRscalarLimitDouble";  
+    epics::scalarLimit::ScalarLimitRecordCreate::create(recordName,"double");
 
     ServerContext::shared_pointer ctx =
         startPVAServer("local",0,true,true);
@@ -522,8 +551,6 @@ This is a static method of ExampleDatabase that creates all the PVRecords that m
        <dd>Creates <b>PVRrestrictedUnionArray</b> </dd>
    <dt>createVariantUnionArrayRecord</dt>
        <dd>Creates <b>PVRvariantUnionArray</b> </dd>
-   <dt>createDumbPowerSupplyRecord</dt>
-       <dd>Creates <b>PVRdumbPowerSupply</b> </dd>
    <dt>createBigRecord</dt>
        <dd>Creates <b>PVRBigRecord</b> </dd>
 </dl>
@@ -572,12 +599,13 @@ exampleDatabase_SRCS_DEFAULT += exampleDatabaseMain.cpp
 
 exampleDatabase_LIBS += exampleDatabase
 exampleDatabase_LIBS += example
-
-exampleDatabase_LIBS += controlRecord
+exampleDatabase_LIBS += scalarLimitRecord
 exampleDatabase_LIBS += powerSupplyRecord
 exampleDatabase_LIBS += linkRecord
 exampleDatabase_LIBS += helloPutGetRecord
 exampleDatabase_LIBS += helloRPCRecord
+exampleDatabase_LIBS += controlRecord
+
 exampleDatabase_LIBS += pvaClient pvDatabase qsrv pvAccessIOC pvAccess pvAccessCA nt pvData
 exampleDatabase_LIBS += $(EPICS_BASE_IOC_LIBS)
 
@@ -603,6 +631,7 @@ include "putLinkScalarRecord.dbd"
 include "putLinkScalarArrayRecord.dbd"
 include "helloPutGetRecord.dbd"
 include "helloRPCRecord.dbd"
+include "scalarLimitRecord.dbd"
 include "exampleDatabaseRegister.dbd"
 include "simpleBusyRecord.dbd"
 include "charoutRecord.dbd"
@@ -621,7 +650,7 @@ include "floatoutRecord.dbd"
 <h4>Starting example database</h4>
 <pre>
 pwd
-/home/epics7/modules/exampleCPP/database/iocBoot/exampleDatabase
+/home/install/epics/base-7.0.5/modules/exampleCPP/database/iocBoot/exampleDatabase
 ../../bin/linux-x86_64/exampleDatabase st.cmd 
 </pre>
 <p>After starting enter <b>pvdbl</b> to see all that records.
@@ -677,9 +706,9 @@ You can also create PVRecord instances.
 For example:
 </p>
 <pre>
-epics> help pvdbcrScalar
-pvdbcrScalar recordName scalarType asLevel asGroup
-epics> pvdbcrScalar PVRscalarDouble double
+epics> help pvdbcrScalarRecord
+pvdbcrScalarRecord recordName scalarType asLevel asGroup
+epics> pvdbcrScalarRecord PVRscalarDouble double
 </pre>
 This creates a record:
 <pre>
@@ -698,18 +727,18 @@ Type:
             int status
             string message
 </pre>
-<h3>pvdbcrScalar and pvdbcrScalarArray</h3>
+<h3>pvdbcrScalarRecord and pvdbcrScalarArrayRecord</h3>
 <p>Both create a record that has fields <b>value</b>, <b>timeStamp</b>, and <b>alarm</b>.
 </p>
 <p>
-For pvdbcrScalar, the type for the value field is one of the following:
+For pvdbcrScalarRecord, the type for the value field is one of the following:
 <br/>
 <b>boolean</b>,<b>byte</b>,<b>short</b>,<b>int</b>,<b>long</b>,
 <b>ubyte</b>,<b>ushort</b>,<b>uint</b>,<b>ulong</b>,
 ,<b>float</b>,<b>double</b>, or <b>string</b>.
 </p>
 <p>
-For pvdbcrScalarArray the value field is an scalarArray of one of the above types.
+For pvdbcrScalarArrayRecord the value field is an scalarArray of one of the above types.
 </p>
 <h3>pvdbcrTraceRecord</h3>
 <p>
@@ -762,7 +791,7 @@ where
      </dd>
    <dt>union</dt>
       <dd>
-      The caller must give this a PVStructure value, which will be used to generate the top
+      The caller must give this a PVStructure, which will be used to generate the top
        level PVStructure for the new record.
       </dd>
    <dt>status</dt>
@@ -774,7 +803,7 @@ where
 </p>
 <pre>
 pwd
-/home/epics7/modules/exampleCPP/exampleClient
+/home/install/epics/base-7.0.5/modules/exampleCPP/exampleClient
 bin/linux-x86_64/addRecord PVRaddRecord PVRdouble test
 result=structure 
     structure result
@@ -1233,15 +1262,25 @@ registrar("scalarLimitRecord")
 <p>The example has a top level pvStructure:
 </p>
 <pre>
-structure
-    alarm_t alarm
-    time_t timeStamp
-    structure power
-        double value
-    structure voltage
-        double value
-    structure current
-        double value
+pvinfo PVRpowerSupply
+PVRpowerSupply
+Server: 10.0.0.194:5075
+Type:
+    structure
+        alarm_t alarm
+            int severity
+            int status
+            string message
+        time_t timeStamp
+            long secondsPastEpoch
+            int nanoseconds
+            int userTag
+        structure power
+            double value
+        structure voltage
+            double value
+        structure current
+            double value
 </pre>
 <p>It is designed to be accessed via a channelPutGet request.
 The client sets power.value and voltage.value
@@ -1357,7 +1396,7 @@ registrar("powerSupplyRecord")
 </pre>
 <h4>powerSupplyRecord.cpp</h4>
 <pre>
-//code the implements LIBRARY = powerSupplyRecord
+//code that implements LIBRARY = powerSupplyRecord
 #include &lt;iocsh.h&gt;
 #include &lt;pv/pvDatabase.h&gt;
 #include &lt;pv/pvStructureCopy.h&gt;
@@ -1493,14 +1532,14 @@ Start either serviceMain or database.
 In another window:
 <pre>
 pwd
-/home/epicsv4/masterCPP/exampleCPP/powerSupplyRecord
+/home/install/epics/base-7.0.5/modules/exampleCPP/powerSupplyRecord
 bin/linux-x86_64/powerSupplyMonitor
 </pre>
 <h4>Start Client</h4>
 In another window:
 <pre>
 pwd
-/home/epicsv4/masterCPP/exampleCPP/powerSupplyRecord
+/home/install/epics/base-7.0.5/modules/exampleCPP/powerSupplyRecord
 bin/linux-x86_64/powerSupplyClient 
 </pre>
 <p><b>NOTE:</b> The client ends by requesting a voltage of 0.
@@ -1548,21 +1587,15 @@ Start either serviceMain or database.
 <p>In another window run:
 </p>
 <pre>
-pvget -m double doubleArray getLinkScalar getLinkScalarArray putLinkScalar putLinkScalarArray string stringArray
+pvget -m PVRdouble PVRdoubleArray PVRgetLinkScalar PVRgetLinkScalarArray PVRputLinkScalar PVRputLinkScalarArray PVRstring PVRstringArray
 </pre>
 <h4>Try some simple tests</h4>
 <p>Try the following:</p>
 <pre>
-pvput putLinkScalar 1
+pvput PVRputLinkScalar 1
 Old : &lt;undefined&gt;               
 New : 2021-03-18 13:51:46.816  1 
-pvput putLinkScalar 1
-Old : 2021-03-18 13:51:46.816  1 
-New : 2021-03-18 13:52:01.997  1 
-pvput putLinkScalar 1
-Old : 2021-03-18 13:52:01.997  1 
-New : 2021-03-18 13:52:06.052  1 
-pvput putLinkScalarArray [1,2,3]
+pvput PVRputLinkScalarArray [1,2,3]
 Old : &lt;undefined&gt;              []
 New : 2021-03-18 13:52:23.698  [1, 2, 3]
 </pre>
@@ -1571,14 +1604,14 @@ New : 2021-03-18 13:52:23.698  [1, 2, 3]
 <h3>fuctionalty</h3>
 <h4>record structure</h4>
 <p>
-The record being access must have a top level <b>value</b> field, which
+The record being accessed must have a top level <b>value</b> field, which
 must be a scalar or scalar array.
 </p>
 <p>An example of a valid record is:
 </p>
 <pre>
-pvinfo doubleArray
-doubleArray
+pvinfo PVRdoubleArray
+PVRdoubleArray
 Server: 10.0.0.194:49943
 Type:
     structure
@@ -1597,8 +1630,8 @@ all have the same basic structure.
 For example:
 </p>
 <pre>
-pvinfo putLinkScalar
-putLinkScalar
+pvinfo PVRputLinkScalar
+PVRputLinkScalar
 Server: 10.0.0.194:49943
 Type:
     structure
@@ -1632,7 +1665,7 @@ Note that <b>exampleCPP/exampleClient</b> has an example that just asks for a re
 The following is an example of how a client can specify all fields that are related to processing.
 </p>
 <pre>
-pvput putLinkScalarArray '{"value":["1","2"],"linkRecord":"doubleArray","accessMethod":"client"}'
+pvput PVRputLinkScalarArray '{"value":["1","2"],"linkRecord":"PVRdoubleArray","accessMethod":"client"}'
 </pre>
 <p>
 Thus a client can put values to the following:
@@ -1659,18 +1692,18 @@ This is actually the default for <b>linkRecord</b> and <b>accessMethod</b> when 
 Once the desired <b>linkRecord</b> and <b>accessMethod</b> have been specified the following will work.
 </p>
 <pre>
-pvput putLinkScalarArray ["100","200","300"]
+pvput PVRputLinkScalarArray ["100","200","300"]
 </pre>
 <p>
 For the get records the above will also work.
 But it is better to use <b>exampleClient/process</b> or the following:
 </p>
 <pre>
-pvput getLinkScalarArray '{"linkRecord":"doubleArray","accessMethod":"client"}'
+pvput PVRgetLinkScalarArray '{"linkRecord":"PVRdoubleArray","accessMethod":"client"}'
 </pre>
 <h4>connection management</h4>
 <p>When the IOC is started
-<b>putLinkScalar</b>, <b>putLinkScalarArray</b>, <b>getLinkScalar</b>, and <b>getLinkScalarArray</b>
+<b>PVRputLinkScalar</b>, <b>PVRputLinkScalarArray</b>, <b>PVRgetLinkScalar</b>, and <b>gPVRetLinkScalarArray</b>
 are not connected to <b>linkRecord</b> for either <b>client</b> or <b>database</b> access.
 The first time <b>client</b> connects <b>PvaClientChannelPtr</b> and <b>PvaClientGetPtr</b>
 are saved.
@@ -1682,50 +1715,26 @@ This also means that if the client specifies <b>linkRecord</b> it has no effect.
 An example is:
 </p>
 <pre>
- pvput putLinkScalar reconnect="true"
+pvput PVRputLinkScalar reconnect="true"
 Old : &lt;undefined&gt;               
 New : 2021-03-19 10:53:26.708   MINOR reconnecting 
- pvput putLinkScalar '{"value":"a value","linkRecord":"string","accessMethod":"client"}'
+pvput PVRputLinkScalar '{"value":"a value","linkRecord":"PVRstring","accessMethod":"client"}'
 Old : 2021-03-19 10:53:26.708   MINOR reconnecting 
 New : 2021-03-19 10:55:41.463  "a value" 
 </pre>
 <h3>more client examples</h3>
-<h4>database st.cmd</h4>
-<p>
-This file could be changes to add additional scalar or scalarArray types.
-For example instead of:
-</p>
+
 <pre>
-scalar double double
-scalar string string
-scalarArray doubleArray double
-scalarArray stringArray string
-</pre>
-You could have:
-<pre>
-scalar double double
-scalar string string
-scalar booleanRecord boolean
-scalar byteRecord byte
-scalarArray doubleArray double
-scalarArray stringArray string
-scalarArray booleanArrayRecord boolean
-scalarArray byteArrayRecord byte
-</pre>
-<h4>serviceMain</h4>
-<p>It could create additional scalar or scalarArray types.</p>
-<h4>additional pvput and pvget examples</h4>
-<pre>
- pvput putLinkScalar '{"value":"a value","linkRecord":"string","accessMethod":"client"}'
+pvput PVRputLinkScalar '{"value":"a value","linkRecord":"PVRstring","accessMethod":"client"}'
 Old : &lt;undefined&gt;               
 New : 2021-03-19 11:20:29.381  "a value" 
- pvput putLinkScalarArray '{"value":["a value","b value"],"linkRecord":"stringArray","accessMethod":"client"}'
+pvput PVRputLinkScalarArray '{"value":["a value","b value"],"linkRecord":"PVRstringArray","accessMethod":"client"}'
 Old : &lt;undefined&gt;              []
 New : 2021-03-19 11:22:10.000  ["a value", "b value"]
- pvput putLinkScalar '{"value":"a value","linkRecord":"string","accessMethod":"database"}'
+pvput PVRputLinkScalar '{"value":"a value","linkRecord":"PVRstring","accessMethod":"database"}'
 Old : 2021-03-19 11:20:29.381  "a value" 
 New : 2021-03-19 11:22:29.608  "a value" 
- pvput putLinkScalarArray '{"value":["a value","b value"],"linkRecord":"stringArray","accessMethod":"database"}'
+pvput PVRputLinkScalarArray '{"value":["a value","b value"],"linkRecord":"PVRstringArray","accessMethod":"database"}'
 Old : 2021-03-19 11:22:10.000  ["a value", "b value"]
 New : 2021-03-19 11:22:49.790  ["a value", "b value"]
 </pre>
@@ -1755,43 +1764,34 @@ concatenated with argument.value.
 Thus if the client sets argument.value equal to "World"
 result.value will be "Hello World".
 In addition the timeStamp is set to the time when process is called.</p>
+<h3>Start Server</h3>
 <p>
-The example can be run on linux as follows:</p>
-<h3>Server</h3>
-<pre>
-pwd
-/home/epicsv4/masterCPP/exampleCPP/helloPutGet
- bin/linux-x86_64/helloPutGetMain
-</pre>
-<p>To start helloPutGet as part of a V3IOC:</p>
-<pre>
- pwd
-/home/hg/exampleCPP/master/helloPutGet/iocBoot/helloPutGet
- ../../../bin/linux-x86_64/helloPutGet st.cmd
-</pre>
+Start either serviceMain or database.
+</p>
 <h3>Hello World Client</h3>
 <p>This example requires that the server is running.
 In addition start a monitor as follows:
 </p>
 <pre>
-pvget -r "field()"  -m helloPutGet
+pvget -r "field()"  -m PVRhelloPutGet
 </pre>
 <p>When the following is executed:
 </p>
 <pre>
- pwd
-/home/epicsv4/master/exampleCPP/helloPutGet
- bin/linux-x86_64helloPutGetClient
+pwd
+/home/install/epics/base-7.0.5/modules/exampleCPP/helloPutGetRecord
+bin/linux-x86_64/helloPutGetClient
 </pre>
 <p>The pvget shows:</p>
 <pre>
-helloPutGet
-structure 
-    time_t timeStamp 2017-09-26T09:32:05.560 0
+PVRhelloPutGet structure 
+    time_t timeStamp 2021-05-15 10:25:59.502  
+        long secondsPastEpoch 1621088759
+        int nanoseconds 502028194
     structure argument
         string value World
     structure result
-        string value Hello World
+        string value "Hello World"
 </pre>
 <h3>Non Blocking Client</h3>
 <p>A client with more functionality is also available.
@@ -1800,11 +1800,11 @@ It options are:
 </p>
 <pre>
  pwd
-/home/epicsv4/masterCPP/exampleCPP/helloPutGet
+/home/install/epics/base-7.0.5/modules/exampleCPP/helloPutGet
  bin/linux-x86_64/helloNoWaitPutGetClient -help
 providerName channelName request debug
 default
-pva helloPutGet "putField(argument)getField(result)" false
+pva PVRhelloPutGet "putField(argument)getField(result)" false
 </pre>
 <p>After it is started as follows:
 </p>
@@ -1847,7 +1847,7 @@ each event.
 <p>The following shows how to use the service:</p>
 <pre>
 pwd
-/home/epics7/modules/exampleCPP/exampleClient
+/home/install/epics/base-7.0.5/modules/exampleCPP/exampleClient
 bin/linux-x86_64/helloWorldRPC
 _____HelloWorldRPC starting_______
 _____exampleSimple___
@@ -1886,7 +1886,24 @@ _____HelloWorldRPC done_______
 </pre>
 
 <h2>controlRecord</h2>
-<p>The build structure is similar to <b>powerSupplyRecord</b>.</p>
+<p>The build structure is similar to <b>powerSupplyRecord</b>.
+It uses the support code from pvDatabase, which is deprecated for the following reasons:
+</p>
+<dl>
+   <dt>minStep</dt>
+   <dd>
+   This should be named <b>maxStep</b>.
+   </dd>
+   <dt>value</dt>
+   <dd>
+   When a client puts to <b>value</b> the value immediately changes to that value.
+   Then each time the record processes <b>outputValue</b> changes by <b>minStep</b>
+   until it reaches value.
+   <br/>
+   I think these are the wrong semantics. The semantics should be like scalarLimit.
+   </dd>
+</dl>
+
 <p><b>controlRecord</b> is support for any field that is a numeric scalar.
 The following must appear in the same structure as the field being supported:
 </p>
@@ -2023,8 +2040,8 @@ pvDatabase.
 </p>
 <p>A created record has the following structure:</p>
 <pre>
-pvinfo PVRsupportDouble
-PVRsupportDouble
+pvinfo PVRcontrolDouble
+PVRcontrolDouble
 Server: 10.0.0.9:5075
 Type:
     structure
@@ -2061,16 +2078,16 @@ example usage appears later in this tutorial.
 <p>Run the following:</p>
 <pre>
 pwd
-/home/epicsv4/masterCPP/exampleCPP/support/client/scripts
+/home/install/epics/base-7.0.5/modules/exampleCPP/support/client/scripts
 ./configAll
 </pre>
 <p>configAll does the following:</p>
 <ul>
    <li>
-    Sets control and scalarAlarm fields for both PVRsupportDouble and PVRsupportUByte.
+    Sets control and scalarAlarm fields for both PVRcontrolDouble and PVRcontrolUbyte.
    </li>
    <li>
-    Asks PVRsupportProcessRecord to process PVRsupportDouble and PVRsupportUByte.
+    Asks PVRprocessRecord to process PVRcontrolDouble and PVRcontrolUbyte.
     <br />
     Thus each of these records will be periodically processed.
    </li>
@@ -2078,13 +2095,13 @@ pwd
 <h3>Run an example client</h3>
 <h4>Look at the following</h4>
 <pre>
-pvget -r "control,scalarAlarm" PVRsupportDouble
-PVRsupportDouble structure 
+pvget -r "control,scalarAlarm" PVRcontrolDouble
+PVRcontrolDouble structure 
     control_t control
         double limitLow -10
         double limitHigh 10
         double minStep 0.5
-        double outputValue 10
+        double outputValue 0
     scalarAlarm_t scalarAlarm
         double lowAlarmLimit -8
         double lowWarningLimit -6
@@ -2094,17 +2111,17 @@ PVRsupportDouble structure
 </pre>
 <h4>In one window enter</h4>
 <pre>
-pvget -m -r "value,control.outputValue,alarm,timeStamp" -v PVRsupportDouble
+pvget -m -r "value,control.outputValue,alarm,timeStamp" -v PVRcontrolDouble
 </pre>
 The output from this window will be described after you enter the next command.
 <h4>Enter:</h4>
 <pre>
-pvput PVRsupportDouble  20
+pvput PVRcontrolDouble  20
 </pre>
 <h4>Results</h4>
 In the window where you issued pvget you will first see:
 <pre>
-PVRsupportDouble structure 
+PVRcontrolDouble structure 
     double value 10
     structure control
         double outputValue 0.5
@@ -2123,7 +2140,7 @@ PVRsupportDouble structure
 </p>
 <p>Next you will see output like:</p>
 <pre>
-PVRsupportDouble structure 
+PVRcontrolDouble structure 
     structure control
         double outputValue .5
     time_t timeStamp 2021-04-06 10:39:28.987
@@ -2131,7 +2148,7 @@ PVRsupportDouble structure
 </pre>
 <p>This will continue until You see:</p>
 <pre>
-PVRsupportDouble structure 
+PVRcontrolDouble structure 
     structure control
         double outputValue 10
     time_t timeStamp  2021-04-06 10:44:50.660
@@ -2139,14 +2156,14 @@ PVRsupportDouble structure
 </pre>
 <p>No more output occurs because <b>outputValue</b> is now equal to <b>value</b>.
 </p>
-<p>Later in the tutorial there is a similar example except for channel <b>PVRsupportUByte</b>.
+<p>Later in the tutorial there is a similar example except for channel <b>PVRcontrolUbyte</b>.
 </p>
 <h3>scripts</h3>
 <p>The scripts all appear in:
 </p>
 <pre>
 pwd
-/home/epicsv4/masterCPP/exampleCPP/support/client/scripts
+/home/install/epics/base-7.0.5/modules/exampleCPP/controlRecord/client/scripts
 </pre>
 <p>The scripts with names that start with config can be run either interactively
 or via arguments.
@@ -2160,7 +2177,7 @@ An example usage is:
 <pre>
 ./configControl
 recordName?
-PVRsupportDouble
+PVRcontrolDouble
 limitLow
 -10
 limitHigh
@@ -2183,7 +2200,7 @@ New : structure
 <p>It could do the same without prompts via:
 </p>
 <pre>
-./configControl PVRsupportDouble -10 10 .5
+./configControl PVRcontrolDouble -10 10 .5
 Old : structure 
     control_t control
         double limitLow -10
@@ -2200,7 +2217,7 @@ New : structure
 <p>The same could be done using pvput as follows:
 </p>
 <pre>
-pvput -r "control" PVRsupportDouble control='{"limitLow":"-10","limitHigh":"10","minStep":".5"}'
+pvput -r "control" PVRcontrolDouble control='{"limitLow":"-10","limitHigh":"10","minStep":".5"}'
 </pre>
 
 <h4>configScalarAlarm</h4>
@@ -2210,7 +2227,7 @@ An example usage is:
 <pre>
 ./configScalarAlarm
 recordName?
-PVRsupportDouble
+PVRcontrolDouble
 lowAlarmLimit
 -8
 lowWarningLimit
@@ -2245,24 +2262,24 @@ Just like configControl it can be invoked by giving all values as arguments.
 <pre>
 ./configProcessRecord
 processRecordName
-PVRsupportProcessRecord
+PVRprocessRecord
 command?
 remove
 recordName?
-PVRsupportDouble
+PVRcontrolDouble
 // result is
-PVRsupportProcessRecord
-argument={"command":"remove","recordName":"PVRsupportDouble"}
+PVRprocessRecord
+argument={"command":"remove","recordName":"PVRcontrolDouble"}
 Old : structure 
     structure argument
         string command add
-        string recordName PVRsupportDouble
+        string recordName PVRcontrolDouble
     structure result
         string status success
 New : structure 
     structure argument
         string command remove
-        string recordName PVRsupportDouble
+        string recordName PVRcontrolDouble
     structure result
         string status success
 </pre>
@@ -2271,20 +2288,20 @@ New : structure
 The following also works:
 </p>
 <pre>
-pvput -r "argument,result" PVRsupportProcessRecord argument='{"command":"add","recordName":"PVRsupportDouble"}'
+pvput -r "argument,result" PVRprocessRecord argument='{"command":"add","recordName":"PVRcontrolDouble"}'
 Old : structure 
     structure argument
-        string command add
-        string recordName PVRsupportDouble
+        string command remove
+        string recordName PVRcontrolDouble
     structure result
-        string status PVRsupportDouble already present
+        string status PVRcontrolDouble already present
 New : structure 
     structure argument
         string command add
         spwd
-tring recordName PVRsupportDouble
+tring recordName PVRcontrolDouble
     structure result
-        string status PVRsupportDouble already present
+        string status PVRcontrolDouble already present
 </pre>
 <h4>controlSigned</h4>
 <p>
@@ -2292,7 +2309,7 @@ Convenience script for signed control limits.
 </p>
 <pre>
 #!/bin/sh
-./configControl PVRsupportDouble -10 10 .5
+./configControl PVRcontrolDouble -10 10 .5
 </pre>
 <h4>controlUnsigned</h4>
 <p>
@@ -2300,7 +2317,7 @@ Convenience script for unsigned control limits.
 </p>
 <pre>
 #!/bin/sh
-./configControl PVRsupportUByte 1 20 1
+./configControl PVRcontrolUbyte 1 20 1
 </pre>
 <h4>scalarAlarmSigned</h4>
 <p>
@@ -2308,7 +2325,7 @@ Convenience script for signed scalarAlarm limits.
 </p>
 <pre>
 #!/bin/sh
-./configScalarAlarm PVRsupportDouble -8 -6 6 8 .1
+./configScalarAlarm PVRcontrolDouble -8 -6 6 8 .1
 </pre>
 <h4>scalarAlarmUnsigned</h4>
 <p>
@@ -2316,7 +2333,7 @@ Convenience script for unsigned scalarAlarm limits.
 </p>
 <pre>
 #!/bin/sh
-./configScalarAlarm PVRsupportUByte 2 4 16 18 1
+./configScalarAlarm PVRcontrolUbyte 2 4 16 18 1
 </pre>
 <h4>configAll</h4>
 <p>Use of this was shown above.</p>
@@ -2326,26 +2343,24 @@ Convenience script for unsigned scalarAlarm limits.
 ./scalarAlarmSigned
 ./controlUnsigned
 ./scalarAlarmUnsigned
-./configProcessRecord PVRsupportProcessRecord add PVRsupportDouble
-./configProcessRecord PVRsupportProcessRecord add PVRsupportUByte
-./configProcessRecord PVRsupportProcessRecord add PVRsupportDouble
-./configProcessRecord PVRsupportProcessRecord add PVRsupportUByte
+./configProcessRecord PVRprocessRecord add PVRcontrolDouble
+./configProcessRecord PVRprocessRecord add PVRcontrolUbyte
 </pre>
 
 <h4>Support Examples</h4>
-<p>Records PVRsupportDouble and PVRsupportUByte both use the <b>control</b>
+<p>Records PVRcontrolDouble and PVRcontrolUbyte both use the <b>control</b>
 and <b>scalarAlarm</b>
 record support from pvDatabaseCPP.
 </p>
-<p>Previously there was an example accessing PVRsupportDouble.
-Now lets look at an example accessing PVRsupportUByte.
+<p>Previously there was an example accessing PVRcontrolDouble.
+Now lets look at an example accessing PVRcontrolUbyte.
 </p>
 <p>
 After starting the database and running configAll, look at:
 </p>
 <pre>
-pvget -r "control,scalarAlarm" PVRsupportUByte
-PVRsupportUByte structure 
+pvget -r "control,scalarAlarm" PVRcontrolUbyte
+PVRcontrolUbyte structure 
     control_t control
         double limitLow 1
         double limitHigh 20
@@ -2362,12 +2377,12 @@ Look at the control and scalarAlarm settings.
 <p>In one window:
 </p>
 <pre>
-pvget -r "value,alarm,timeStamp,control.outputValue" -v -m PVRsupportUByte
+pvget -r "value,alarm,timeStamp,control.outputValue" -v -m PVRcontrolUbyte
 </pre>
 <p>Keep this window and see what happens when you run the following in another window:
 </p>
 <pre>
-pvput PVRsupportUByte 40
+pvput PVRcontrolUbyte 40
 </pre>
 <p>In the first window you will see that <b>value</b> goes to 20 and the alarm changes.
 It did NOT go to 40 because <b>control.limitHigh</b> is 20.
